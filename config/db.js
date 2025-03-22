@@ -1,16 +1,45 @@
-const { createClient } = require('@supabase/supabase-js');
-
-// Load environment variables
+const { Pool } = require('pg');
 require('dotenv').config();
 
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_KEY;
+const connectionString = process.env.DATABASE_URL;
 
-if (!supabaseUrl || !supabaseKey) {
-	throw new Error('Missing SUPABASE_URL or SUPABASE_KEY in environment variables');
+if (!connectionString) {
+  throw new Error('Missing DATABASE_URL in environment variables');
 }
 
-// Initialize Supabase client
-const supabase = createClient(supabaseUrl, supabaseKey);
+const pool = new Pool({
+  connectionString,
+  ssl: {
+    rejectUnauthorized: false
+  }
+});
 
-module.exports = supabase;
+pool.connect((err, client, release) => {
+  if (err) {
+    console.error('Error connecting to database:', err.stack);
+  } else {
+    console.log('Successfully connected to PostgreSQL database');
+    release();
+  }
+});
+
+const query = (text, params) => pool.query(text, params);
+
+module.exports = {
+  query,
+  pool,
+  transaction: async (callback) => {
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      const result = await callback(client);
+      await client.query('COMMIT');
+      return result;
+    } catch (e) {
+      await client.query('ROLLBACK');
+      throw e;
+    } finally {
+      client.release();
+    }
+  }
+};

@@ -1,68 +1,93 @@
-const supabase = require('../../config/db');
+const db = require('../../config/db');
 
 class UserPictures {
     static async findByUserId(userId) {
-        const { data, error } = await supabase
-            .from('user_pictures')
-            .select('*')
-            .eq('user_id', userId);
-            
-        if (error) console.log(error);
-        return data;
+        try {
+            const result = await db.query(
+                'SELECT * FROM user_pictures WHERE user_id = $1',
+                [userId]
+            );
+            return result.rows;
+        } catch (error) {
+            console.log(error);
+            return [];
+        }
     }
     
     static async create(pictureData) {
-        const { data, error } = await supabase
-            .from('user_pictures')
-            .insert(pictureData)
-            .select();
+        try {
+            // Extract and separate keys and values for SQL
+            const keys = Object.keys(pictureData);
+            const values = Object.values(pictureData);
             
-        if (error) console.log(error);
-        return data ? data[0] : null;
+            // Create parameterized query
+            const placeholders = keys.map((_, i) => `$${i+1}`).join(', ');
+            const columns = keys.join(', ');
+            
+            const query = `
+                INSERT INTO user_pictures (${columns})
+                VALUES (${placeholders})
+                RETURNING *
+            `;
+            
+            const result = await db.query(query, values);
+            return result.rows[0] || null;
+        } catch (error) {
+            console.log(error);
+            return null;
+        }
     }
     
     static async delete(userId, pictureId) {
-        const { data, error } = await supabase
-            .from('user_pictures')
-            .delete()
-            .eq('id', pictureId)
-            .eq('user_id', userId);
-            
-        if (error) console.log(error);
-        return !error;
+        try {
+            await db.query(
+                'DELETE FROM user_pictures WHERE id = $1 AND user_id = $2',
+                [pictureId, userId]
+            );
+            return true;
+        } catch (error) {
+            console.log(error);
+            return false;
+        }
     }
     
     static async resetProfilePictures(userId) {
-        const { error } = await supabase
-            .from('user_pictures')
-            .update({ is_profile: false })
-            .eq('user_id', userId);
-            
-        if (error) console.log(error);
-        return !error;
+        try {
+            await db.query(
+                'UPDATE user_pictures SET is_profile = false WHERE user_id = $1',
+                [userId]
+            );
+            return true;
+        } catch (error) {
+            console.log(error);
+            return false;
+        }
     }
     
     static async setAsProfile(userId, pictureId) {
-        const { data, error } = await supabase
-            .from('user_pictures')
-            .update({ is_profile: true })
-            .eq('id', pictureId)
-            .eq('user_id', userId)
-            .select();
-            
-        if (error) console.log(error);
-        return data ? data[0] : null;
+        try {
+            const result = await db.query(
+                'UPDATE user_pictures SET is_profile = true WHERE id = $1 AND user_id = $2 RETURNING *',
+                [pictureId, userId]
+            );
+            return result.rows[0] || null;
+        } catch (error) {
+            console.log(error);
+            return null;
+        }
     }
     
     static async findById(pictureId) {
-        const { data, error } = await supabase
-            .from('user_pictures')
-            .select('*')
-            .eq('id', pictureId)
-            .single();
-            
-        if (error) console.log(error);
-        return data;
+        try {
+            const result = await db.query(
+                'SELECT * FROM user_pictures WHERE id = $1',
+                [pictureId]
+            );
+            return result.rows[0] || null;
+        } catch (error) {
+            console.log(error);
+            return null;
+        }
     }
 }
 
