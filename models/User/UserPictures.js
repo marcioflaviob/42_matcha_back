@@ -10,17 +10,15 @@ class UserPictures {
             return result.rows;
         } catch (error) {
             console.log(error);
-            return [];
+            throw new Error('Failed to get user pictures');
         }
     }
     
     static async create(pictureData) {
         try {
-            // Extract and separate keys and values for SQL
             const keys = Object.keys(pictureData);
             const values = Object.values(pictureData);
             
-            // Create parameterized query
             const placeholders = keys.map((_, i) => `$${i+1}`).join(', ');
             const columns = keys.join(', ');
             
@@ -34,7 +32,7 @@ class UserPictures {
             return result.rows[0] || null;
         } catch (error) {
             console.log(error);
-            return null;
+            throw new Error('Failed to create picture');
         }
     }
     
@@ -47,11 +45,11 @@ class UserPictures {
             return true;
         } catch (error) {
             console.log(error);
-            return false;
+            throw new Error('Failed to delete picture');
         }
     }
     
-    static async resetProfilePictures(userId) {
+    static async resetProfilePicture(userId) {
         try {
             await db.query(
                 'UPDATE user_pictures SET is_profile = false WHERE user_id = $1',
@@ -60,7 +58,7 @@ class UserPictures {
             return true;
         } catch (error) {
             console.log(error);
-            return false;
+            throw new Error('Failed to reset profile pictures');
         }
     }
     
@@ -73,7 +71,7 @@ class UserPictures {
             return result.rows[0] || null;
         } catch (error) {
             console.log(error);
-            return null;
+            throw new Error('Failed to set picture as profile');
         }
     }
     
@@ -86,7 +84,7 @@ class UserPictures {
             return result.rows[0] || null;
         } catch (error) {
             console.log(error);
-            return null;
+            throw new Error('Failed to find picture');
         }
     }
 }

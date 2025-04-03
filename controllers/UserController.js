@@ -30,9 +30,18 @@ exports.getUserById = async (req, res) => {
     }
 };
 
+exports.getUserByEmail = async (req, res) => {
+    try {
+        const user = await UserService.getUserByEmail(req.params.email);
+        res.send(user);
+    } catch (err) {
+        res.status(404).send({ error: err.message });
+    }
+}
+
 exports.updateUser = async (req, res) => {
     try {
-        const user = await UserService.updateUser(req.body);
+        const user = await UserService.updateUser(req);
         res.send(user);
     } catch (err) {
         res.status(400).send({ error: err.message });

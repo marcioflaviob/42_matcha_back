@@ -2,9 +2,12 @@ const { getUserById } = require("../services/UserService");
 
 module.exports = function validateUser(req, res, next) {
     const user = req.body;
+    const userId = req.body.id ? req.body.id : req.user.id ? req.user.id : null;
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-    if (!user.id && user.status !== 'step_one') {
+    console.log(user);
+
+    if (!userId && user.status !== 'step_one') {
         return res.status(400).send('Missing required fields: id');
     }
 
@@ -12,11 +15,11 @@ module.exports = function validateUser(req, res, next) {
         return res.status(400).send('User not found');
     }
 
-    if (user.first_name && typeof user.first_name !== 'string' || user.first_name.trim().length < 3) {
+    if (user.first_name && (typeof user.first_name !== 'string' || user.first_name.trim().length < 3)) {
         return res.status(400).send('Invalid first name');
     }
 
-    if (user.last_name && typeof user.last_name !== 'string' || user.last_name.trim().length < 3) {
+    if (user.last_name && (typeof user.last_name !== 'string' || user.last_name.trim().length < 3)) {
         return res.status(400).send('Invalid last name');
     }
 
