@@ -3,20 +3,20 @@ const UserPictureService = require('../services/UserPictureService');
 exports.uploadPicture = async (req, res) => {
     try {
 
-        const userId = req.params.userId;
-        // if (req.user.id !== parseInt(userId)) {
-        //     return res.status(403).send({ error: 'Unauthorized to upload for this user' });
-        // }
+        const userId = req.user.id;
 
         if (!req.file) {
             return res.status(400).send({ error: 'No file uploaded' });
         }
 
-        const result = await UserPictureService.uploadPicture(
-            userId, 
-            req.file, 
-            req.body.isProfile
-        );
+        const isProfilePicture = req.body.isProfilePicture === 'true';
+
+        const photo = {
+            file: req.file,
+            isProfilePicture: isProfilePicture
+        };
+
+        const result = await UserPictureService.uploadAndPersistPicture(userId, photo);
 
         return res.status(201).send(result);
     } catch (err) {
@@ -42,10 +42,6 @@ exports.deleteUserPicture = async (req, res) => {
     try {
         const { userId, pictureId } = req.params;
         
-        // if (req.user.id !== parseInt(userId)) {
-        //     return res.status(403).send({ error: 'Unauthorized to delete this picture' });
-        // }
-        
         const result = await UserPictureService.deleteUserPicture(userId, pictureId);
         
         return res.status(200).send(result);
@@ -58,10 +54,6 @@ exports.deleteUserPicture = async (req, res) => {
 exports.setProfilePicture = async (req, res) => {
     try {
         const { userId, pictureId } = req.params;
-        
-        // if (req.user.id !== parseInt(userId)) {
-        //     return res.status(403).send({ error: 'Unauthorized to modify this user' });
-        // }
         
         const updatedPicture = await UserPictureService.setProfilePicture(userId, pictureId);
         

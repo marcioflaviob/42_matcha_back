@@ -15,8 +15,13 @@ const getUserById = async (userId) => {
     return user;
 };
 
-const updateUser = async (userData) => {
-    const user = await User.update(userData);
+const getUserByEmail = async (email) => {
+    const user = await User.findByEmail(email);
+    return user;
+};
+
+const updateUser = async (req) => {
+    const user = await User.update(req);
     return user;
 };
 
