@@ -53,7 +53,6 @@ const updateInterests = async (userId, interests) => {
 const getInterestsNamesByUserId = async (userId) => {
 	const interests = await getInterestsByUserId(userId);
 	const allInterests = await getAllInterests();
-	console.log('Interests:', interests);
 	const interestNames = interests.map(interestId => {
 		const matchingInterest = allInterests.find(
 			dbInterest => dbInterest.id === interestId
@@ -66,7 +65,6 @@ const getInterestsNamesByUserId = async (userId) => {
 			throw new Error(`Interest with ID "${interestId}" not found in database`);
 		}
 	}).filter(name => name !== null);
-	console.log('Interest names:', interestNames);
 	return interestNames;
 }
 

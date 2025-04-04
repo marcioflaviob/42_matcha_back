@@ -2,10 +2,8 @@ const { getUserById } = require("../services/UserService");
 
 module.exports = function validateUser(req, res, next) {
     const user = req.body;
-    const userId = req.body.id ? req.body.id : req.user.id ? req.user.id : null;
+    const userId = req.body.id ? req.body.id : req.user ? req.user.id : null;
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-    console.log(user);
 
     if (!userId && user.status !== 'step_one') {
         return res.status(400).send('Missing required fields: id');
