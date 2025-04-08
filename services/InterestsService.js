@@ -6,8 +6,8 @@ const getAllInterests = async () => {
 }
 
 const getInterestsByUserId = async (userId) => {
-	const interests = await Interests.findByUserId(userId);
-	return interests;
+	const interestsIds = await Interests.findByUserId(userId);
+	return interestsIds;
 }
 
 const addInterest = async (userId, interestId) => {
@@ -68,10 +68,30 @@ const getInterestsNamesByUserId = async (userId) => {
 	return interestNames;
 }
 
+const getInterestsListByUserId = async (userId) =>
+{
+	const interestIds = await getInterestsByUserId(userId);
+	const allInterests = await getAllInterests();
+	const interestsList = interestIds.map(interestId => {
+		const matchingInterest = allInterests.find(
+			dbInterest => dbInterest.id === interestId
+		);
+		
+		if (matchingInterest) {
+			return { id: matchingInterest.id, name: matchingInterest.name };
+		} else {
+			console.log(`Interest with ID "${interestId}" not found in database`);
+			throw new Error(`Interest with ID "${interestId}" not found in database`);
+		}
+	}).filter(name => name !== null);
+	return interestsList
+}
+
 module.exports = {
 	getAllInterests,
 	getInterestsByUserId,
 	getInterestsNamesByUserId,
+	getInterestsListByUserId,
 	addInterest,
 	removeInterest,
 	removeAllInterests,
