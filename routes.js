@@ -11,6 +11,7 @@ const router = express.Router();
 
 // Authentication
 router.post('/auth/login', AuthController.login);
+router.get('/auth/verify', AuthController.verify);
 router.get('/auth/me', Authenticate, AuthController.getCurrentUser);
 
 // User
