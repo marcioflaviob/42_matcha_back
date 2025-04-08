@@ -11,7 +11,7 @@ exports.getAllInterests = async (req, res) => {
 
 exports.getInterestsByUserId = async (req, res) => {
 	try {
-		const interests = await InterestsService.getInterestsByUserId(req.params.userId);
+		const interests = await InterestsService.getInterestsListByUserId(req.params.userId);
 		res.send(interests);
 	} catch (err) {
 		res.status(404).send({ error: err.message });
