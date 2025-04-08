@@ -36,9 +36,7 @@ class User {
         try {
             const queryResult = await db.query('SELECT * FROM users WHERE email = $1', [email]);
             if (queryResult.rows.length === 0) return null;
-            const { password, ...userWithoutPassword } = queryResult.rows[0];
-
-            return userWithoutPassword;
+            return queryResult.rows[0];
         } catch (error) {
             console.log(error);
             throw new Error(error);
