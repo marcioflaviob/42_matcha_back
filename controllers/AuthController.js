@@ -70,6 +70,28 @@ const AuthController = {
       res.status(500).json({ message: "Server error" });
     }
   },
+
+  verify: async (req, res) => {
+    try {
+      const token = req.header("Authorization")?.replace("Bearer ", "");
+
+      if (!token) {
+        return res.status(401).json({ message: "No token, authorization denied" });
+      }
+
+      jwt.verify(token, JWT_SECRET, (err, decoded) => {
+        if (err) {
+          return res.status(401).json({ message: "Token is not valid" });
+        }
+
+        req.user = decoded;
+        res.status(200).json({ message: "Token is valid", user: decoded });
+      });
+    } catch (error) {
+      console.error("Token verification error:", error);
+      res.status(500).json({ message: "Server error" });
+    }
+  }
 };
 
 module.exports = AuthController;
