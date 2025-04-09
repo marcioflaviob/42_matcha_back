@@ -7,14 +7,7 @@ const { setupSocketServer } = require('../utils/WebSocket');
 const http = require('http');
 
 const corsOptions = {
-    origin: function (origin, callback) {
-        const allowedOrigins = (process.env.FRONTEND_URL).split(',');
-        if (!origin || allowedOrigins.indexOf(origin) !== -1 || allowedOrigins.includes('*')) {
-            callback(null, true);
-        } else {
-            callback(new Error('Not allowed by CORS'));
-        }
-    },
+    origin: true,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true,
     optionsSuccessStatus: 204

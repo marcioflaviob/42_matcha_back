@@ -9,9 +9,11 @@ const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret_key';
 function setupSocketServer(server) {
   const io = new Server(server, {
     cors: {
-      origin: process.env.FRONTEND_URL,
-      methods: ['GET', 'POST'],
-      credentials: true
+		origin: (origin, callback) => {
+			callback(null, origin);
+		},
+		methods: ['GET', 'POST'],
+		credentials: true
     }
   });
 
