@@ -6,7 +6,7 @@ const UserService = require("./UserService");
 const JWT_SECRET = process.env.JWT_SECRET;
 
 const login = async (email, password) => {
-	const user = await UserService.getUserByEmail(email);
+	const user = await UserService.getUserByEmailWithPassword(email);
 
 	if (!user) {
 		throw new Error("Invalid credentials");
