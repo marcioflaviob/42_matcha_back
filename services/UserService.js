@@ -22,7 +22,7 @@ const formatUser = async (data) =>
 {
     interestsList = await InterestsService.getInterestsListByUserId(data.id);
     pictures = await UserPictureService.getUserPictures(data.id);
-    data.interets = interestsList;
+    data.interests = interestsList;
     data.pictures = pictures;
     const { password, ...userWithoutPassword } = data;
     return userWithoutPassword;
