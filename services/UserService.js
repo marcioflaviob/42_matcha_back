@@ -18,12 +18,34 @@ const createUser = async (userData) => {
     return user;
 };
 
+const calculateAge = (birthdate) => {
+    try {
+        if (!birthdate) return null;
+        
+        const birthDate = new Date(birthdate);
+        if (isNaN(birthDate.getTime())) return null;
+        
+        const today = new Date();
+        let age = today.getFullYear() - birthDate.getFullYear();
+        const m = today.getMonth() - birthDate.getMonth();
+        
+        if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+            age--;
+        }
+    return age >= 0 ? age : null; // Prevent negative ages
+    } catch (e) {
+        console.error("Age calculation error:", e);
+        return null;
+    }
+};
+
 const formatUser = async (data) =>
 {
     interestsList = await InterestsService.getInterestsListByUserId(data.id);
     pictures = await UserPictureService.getUserPictures(data.id);
     data.interests = interestsList;
     data.pictures = pictures;
+    data.age = calculateAge(data.birthdate);
     const { password, ...userWithoutPassword } = data;
     return userWithoutPassword;
 }
