@@ -6,13 +6,8 @@ class User {
     static async findAll() {
         try {
             const queryResult = await db.query('SELECT * FROM users');
+            return queryResult.rows;
 
-            const result = queryResult.rows.map(row => {
-                const { password, ...userWithoutPassword } = row;
-                return userWithoutPassword;
-            });
-
-            return result;
         } catch (error) {
             console.log(error);
             throw new Error(error);
@@ -23,9 +18,7 @@ class User {
         try {
             const queryResult = await db.query('SELECT * FROM users WHERE id = $1', [id]);
             if (queryResult.rows.length === 0) return null;
-            const { password, ...userWithoutPassword } = queryResult.rows[0];
-
-            return userWithoutPassword;
+            return queryResult.rows[0];
         } catch (error) {
             console.log(error);
             throw new Error(error);
@@ -65,8 +58,7 @@ class User {
             
             const result = await db.query(query, values);
             if (result.rows.length === 0) return null;
-            const { password, ...userWithoutPassword } = result.rows[0];
-            return userWithoutPassword;
+            return result.rows[0];
         } catch (error) {
             console.log(error);
             return null;
