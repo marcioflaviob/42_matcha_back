@@ -6,6 +6,7 @@ const UserPicturesController = require('./controllers/UserPicturesController');
 const AuthController = require('./controllers/AuthController');
 const upload = require('./utils/Multer');
 const Authenticate = require('./utils/AuthMiddleware'); // Add Authenticate to the routes that need authentication
+const UserInteractionsController = require('./controllers/UserInteractionsController');
 
 const router = express.Router();
 
@@ -29,6 +30,13 @@ router.post('/upload/single/', Authenticate, upload.single('picture'), UserPictu
 router.get('/pictures/:userId', UserPicturesController.getUserPictures);
 router.delete('/pictures/:userId/:pictureId', UserPicturesController.deleteUserPicture);
 router.put('/pictures/:userId/:pictureId/profile', UserPicturesController.setProfilePicture);
+
+// User Interactions
+router.post('/like/:id', Authenticate, UserInteractionsController.likeUser);
+router.post('/seen/:id', Authenticate, UserInteractionsController.seeProfile);
+router.get('/seen/', Authenticate, UserInteractionsController.getProfileViewsByUserId);
+router.get('/matches/', Authenticate, UserInteractionsController.getMatchesByUserId);
+router.post('/block/:id', Authenticate, UserInteractionsController.blockUser);
 
 // Interests
 router.get('/interests', InterestsController.getAllInterests);
