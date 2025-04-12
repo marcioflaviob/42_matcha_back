@@ -13,6 +13,8 @@ const router = express.Router();
 router.post('/auth/login', AuthController.login);
 router.get('/auth/verify', AuthController.verify);
 router.get('/auth/me', Authenticate, AuthController.getCurrentUser);
+router.post('/auth/pusher', Authenticate, AuthController.pusherAuthentication);
+router.post('/auth/test-pusher', Authenticate, AuthController.testPusher);
 
 // User
 router.get('/users', UserController.getAllUsers);
