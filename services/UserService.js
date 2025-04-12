@@ -1,5 +1,6 @@
 const InterestsService = require('./InterestsService');
 const UserPictureService = require('./UserPictureService');
+const UserInteractionsService = require('./UserInteractionsService');
 
 const User = require('../models/User/User');
 
@@ -22,8 +23,9 @@ const formatUser = async (data) =>
 {
     interestsList = await InterestsService.getInterestsListByUserId(data.id);
     pictures = await UserPictureService.getUserPictures(data.id);
-    data.interets = interestsList;
+    data.interests = interestsList;
     data.pictures = pictures;
+    data.likeCount = await UserInteractionsService.getLikeCountByUserId(data.id);
     const { password, ...userWithoutPassword } = data;
     return userWithoutPassword;
 }
