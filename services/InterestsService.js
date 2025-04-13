@@ -26,25 +26,11 @@ const removeAllInterests = async (userId) => {
 }
 
 const updateInterests = async (userId, interests) => {
-	const allInterests = await getAllInterests();
 
-	const interestIds = interests.map(interestName => {
-		const matchingInterest = allInterests.find(
-			dbInterest => dbInterest.name.toLowerCase() === interestName.toLowerCase()
-		);
-		
-		if (matchingInterest) {
-			return matchingInterest.id;
-		} else {
-			console.log(`Interest "${interestName}" not found in database`);
-			throw new Error(`Interest "${interestName}" not found in database`);
-		}
-	}).filter(id => id !== null);
-	
 	await removeAllInterests(userId);
 	
-	for (const interestId of interestIds) {
-		await addInterest(userId, interestId);
+	for (const interest of interests) {
+		await addInterest(userId, interest.id);
 	}
 	
 	return true;

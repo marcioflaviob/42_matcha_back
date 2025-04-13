@@ -69,10 +69,10 @@ class User {
         const result = {};
         const userData = req.body;
         const id = req.user.id;
-        const interests = userData.interests_tags;
+        const interests = userData.interests;
         
         // Remove these fields because they will be handled separately since they are stored in different tables
-        delete userData.interests_tags;
+        delete userData.interests;
         delete userData.id;
         
         try {
