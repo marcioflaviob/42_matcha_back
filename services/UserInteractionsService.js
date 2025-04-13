@@ -1,5 +1,5 @@
 const UserInteractions = require('../models/UserInteractions/UserInteractions');
-const UserService = require('../services/UserService')
+const UserService = require('./UserService')
 
 exports.getLikeCountByUserId = async (userId) => {
 	try {
@@ -82,6 +82,39 @@ exports.getMatchesByUserId = async (userId) => {
     }
 }
 
+exports.getPotentialMatches = async (userId) => {
+	try {
+		const userData = await UserService.getUserById(userId);
+		const validUsers = await UserService.getValidUsers(userId);
+
+		const likedProfiles = await this.getLikedProfilesIdsByUserId(userId);
+		const blockedBySet = await this.getBlockedUsersIdsByUserId(userId);
+        const unwantedMatches = new Set([...blockedBySet, ...likedProfiles]);
+
+		const interested_genders = userData.sexual_interest == 'Any'
+			? ['Female', 'Male', 'Other']
+			: [userData.sexual_interest];
+
+        const filteredMatches = validUsers.filter(match => {
+            const hasCommonInterest = match.interests.some(interest =>
+				userData.interests.some(userInterest => userInterest.id === interest.id)
+			);
+
+			const isInterestedInMyGender = match.sexual_interest == 'Any' ||
+				match.sexual_interest == userData.gender;
+
+            return !unwantedMatches.has(match.id) &&
+			interested_genders.includes(match.gender) &&
+			hasCommonInterest && isInterestedInMyGender;
+		});
+
+        return filteredMatches;
+	} catch (error) {
+		console.error('Error fetching potential matches:', error);
+		throw new Error('Failed to fetch potential matches');
+	}
+}
+
 exports.blockUser = async (userId, user2Id) => {
 	try {
 		const block = await UserInteractions.blockUser(userId, user2Id);
@@ -105,9 +138,23 @@ exports.getBlockedUsersIdsByUserId = async (userId) => {
 	}
 }
 
+exports.getLikedProfilesIdsByUserId = async (userId) => {
+	try {
+		const likes = await UserInteractions.getLikesGivenByUserId(userId);
+
+		const likedUserIds = new Set(
+			likes.flatMap(like => [like.user1, like.user2])
+		);
+
+		return likedUserIds;
+	} catch (error) {
+		throw new Error('Failed to fetch liked users');
+	}
+}
+
 const isUserAlreadyLiked = async (userId, user2Id) => {
 	try {
-		const like = await UserInteractions.getLikesByUserId(userId);
+		const like = await UserInteractions.getLikesReceivedByUserId(userId);
 
 		const isLiked = like.some(like => like.user1 == user2Id);
 

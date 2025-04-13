@@ -1,7 +1,3 @@
-const InterestsService = require('./InterestsService');
-const UserPictureService = require('./UserPictureService');
-const UserInteractionsService = require('./UserInteractionsService');
-
 const User = require('../models/User/User');
 
 const getAllUsers = async () => {
@@ -42,11 +38,15 @@ const calculateAge = (birthdate) => {
 
 const formatUser = async (data) =>
 {
+    const InterestsService = require('./InterestsService');
+    const UserPictureService = require('./UserPictureService');
+    const UserInteractionsService = require('./UserInteractionsService');
+
     interestsList = await InterestsService.getInterestsListByUserId(data.id);
     pictures = await UserPictureService.getUserPictures(data.id);
     data.interests = interestsList;
     data.pictures = pictures;
-    data.likeCount = await UserInteractionsService.getLikeCountByUserId(data.id);
+    data.like_count = await UserInteractionsService.getLikeCountByUserId(data.id);
     data.age = calculateAge(data.birthdate);
     const { password, ...userWithoutPassword } = data;
     return userWithoutPassword;
@@ -69,6 +69,16 @@ const getUserByEmail = async (email) => {
     return formattedUser;
 };
 
+const getValidUsers = async (userId) => {
+    const users = await User.findAllValidUsers(userId);
+    const formattedUsers = await Promise.all(
+        users.map(async (user) => {
+          return await formatUser(user);
+        })
+    );
+    return formattedUsers;
+}
+
 const updateUser = async (req) => {
     const user = await User.update(req);
     return user;
@@ -84,6 +94,7 @@ module.exports = {
     createUser,
     getUserById,
     getUserByEmail,
+    getValidUsers,
     updateUser,
     deleteUser,
     getUserByEmailWithPassword,

@@ -36,6 +36,19 @@ class User {
         }
     }
 
+    static async findAllValidUsers(userId) {
+        try {
+            const result = await db.query(
+                `SELECT * FROM users WHERE id != $1 AND status = 'complete'`,
+                [userId]
+            );
+            return result.rows;
+        } catch (error) {
+            console.error('Error fetching potential matches:', error);
+            throw new Error('Failed to fetch potential matches');
+        }
+    }
+
     static async create(userData) {
         try {
 

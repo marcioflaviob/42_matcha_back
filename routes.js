@@ -36,6 +36,7 @@ router.post('/like/:id', Authenticate, UserInteractionsController.likeUser);
 router.post('/seen/:id', Authenticate, UserInteractionsController.seeProfile);
 router.get('/seen/', Authenticate, UserInteractionsController.getProfileViewsByUserId);
 router.get('/matches/', Authenticate, UserInteractionsController.getMatchesByUserId);
+router.get('/matches/potential', Authenticate, UserInteractionsController.getPotentialMatches);
 router.post('/block/:id', Authenticate, UserInteractionsController.blockUser);
 
 // Interests

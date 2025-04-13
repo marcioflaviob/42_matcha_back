@@ -15,10 +15,23 @@ class UserInteractions {
 		}
 	}
 
-	static async getLikesByUserId(userId) {
+	static async getLikesReceivedByUserId(userId) {
 		try {
 			const result = await db.query(
 				'SELECT * FROM user_interactions WHERE user2 = $1 AND interaction_type = $2',
+				[userId, 'like']
+			);
+			return result.rows;
+		} catch (error) {
+			console.error('Error fetching likes:', error);
+			throw new Error('Failed to fetch likes');
+		}
+	}
+
+	static async getLikesGivenByUserId(userId) {
+		try {
+			const result = await db.query(
+				'SELECT * FROM user_interactions WHERE user1 = $1 AND interaction_type = $2',
 				[userId, 'like']
 			);
 			return result.rows;
