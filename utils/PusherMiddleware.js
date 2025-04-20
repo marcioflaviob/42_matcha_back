@@ -8,21 +8,6 @@ const pusher = new Pusher({
   useTLS: true,
 });
 
-function broadcastUserStatusChange(userId, status) {
-	pusher.trigger('user-status', 'status-change', {
-	  userId,
-	  status,
-	});
-}
-
-function sendPrivateMessage(senderId, receiverId, message) {
-	pusher.trigger(`private-user-${receiverId}`, 'new-message', {
-	  senderId,
-	  message,
-	  timestamp: new Date(),
-	});
-}
-
 function authenticate(userId, socketId, channelName) {
 	const result = pusher.authorizeChannel(socketId, channelName, {
 		user_id: userId,
@@ -32,7 +17,5 @@ function authenticate(userId, socketId, channelName) {
 
 module.exports = {
 	pusher,
-	broadcastUserStatusChange,
-	sendPrivateMessage,
 	authenticate,
   };

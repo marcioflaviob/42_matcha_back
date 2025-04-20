@@ -1,5 +1,6 @@
 const UserInteractions = require('../models/UserInteractions/UserInteractions');
-const UserService = require('./UserService')
+const UserService = require('./UserService');
+const NotificationService = require('./NotificationService');
 
 exports.getLikeCountByUserId = async (userId) => {
 	try {
@@ -20,6 +21,8 @@ exports.likeUser = async (userId, user2Id) => {
 			return match;
 		}
 
+		await NotificationService.newLikeNotification(user2Id, userId);
+
 		return like;
 	} catch (error) {
 		throw new Error('Failed to like user');
@@ -29,6 +32,7 @@ exports.likeUser = async (userId, user2Id) => {
 exports.seeProfile = async (userId, user2Id) => {
 	try {
 		const view = await UserInteractions.seeProfile(userId, user2Id);
+		await NotificationService.newProfileViewNotification(user2Id, userId);
 		return view;
 	} catch (error) {
 		throw new Error('Failed to see profile');
@@ -53,6 +57,7 @@ exports.getProfileViewsByUserId = async (userId) => {
 exports.matchUsers = async (userId, user2Id) => {
 	try {
 		const match = await UserInteractions.matchUsers(userId, user2Id);
+		await NotificationService.newMatchNotification(userId, user2Id);
 		return match;
 	} catch (error) {
 		throw new Error('Failed to match users');
@@ -62,17 +67,10 @@ exports.matchUsers = async (userId, user2Id) => {
 exports.getMatchesByUserId = async (userId) => {
     try {
         const matches = await UserInteractions.getMatchesByUserId(userId);
-        const blockedBySet = await this.getBlockedUsersIdsByUserId(userId);
-
-		// Convert Set to Array
-		const blockedBy = Array.from(blockedBySet);
-
-        const blockedUserIds = new Set(
-            blockedBy.flatMap(blocked => [blocked.user1, blocked.user2])
-        );
+        const blockedUsers = await this.getBlockedUsersIdsByUserId(userId);
 
         const filteredMatches = matches.filter(match => 
-            !blockedUserIds.has(match.user1) && !blockedUserIds.has(match.user2)
+            !blockedUsers.has(match.user1) && !blockedUsers.has(match.user2)
         );
 
         return filteredMatches;
@@ -80,6 +78,36 @@ exports.getMatchesByUserId = async (userId) => {
 		console.error('Error fetching matches:', error);
         throw new Error('Failed to fetch matches');
     }
+}
+
+exports.getMatchesAsUsersByUserId = async (userId) => {
+	try {
+		const matchesIds = await this.getMatchesIdsByUserId(userId);
+
+		const users = await Promise.all(matchesIds.map(async (id) => {
+			return await UserService.getUserById(id);
+		}));
+
+		return users;
+	} catch (error) {
+		console.error('Error fetching matches:', error);
+		throw new Error('Failed to fetch matches');
+	}
+}
+
+exports.getMatchesIdsByUserId = async (userId) => {
+	try {
+		const matches = await this.getMatchesByUserId(userId);
+
+		const userIds = matches.map(match => {
+			return match.user1 == userId ? match.user2 : match.user1;
+		});
+
+		return userIds;
+	} catch (error) {
+		console.error('Error fetching matches:', error);
+		throw new Error('Failed to fetch matches');
+	}
 }
 
 exports.getPotentialMatches = async (userId) => {
@@ -118,6 +146,7 @@ exports.getPotentialMatches = async (userId) => {
 exports.blockUser = async (userId, user2Id) => {
 	try {
 		const block = await UserInteractions.blockUser(userId, user2Id);
+		await NotificationService.newBlockNotification(user2Id, userId);
 		return block;
 	} catch (error) {
 		throw new Error('Failed to block user');
@@ -132,6 +161,7 @@ exports.getBlockedUsersIdsByUserId = async (userId) => {
             blockedUsers.flatMap(blocked => [blocked.user1, blocked.user2])
         );
 
+		blockedUserIds.delete(userId);
 		return blockedUserIds;
 	} catch (error) {
 		throw new Error('Failed to fetch blocked users');
