@@ -64,29 +64,4 @@ const UserService = require("../services/UserService");
       console.error("Token verification error:", error);
       res.status(500).json({ message: "Server error" });
     }
-  },
-
-  exports.pusherAuthentication = async (req, res) => {
-    const userId = req.user.id;
-    const { socket_id, channel_name } = req.body;
-
-    const {authenticate} = require("../utils/PusherMiddleware");
-    const auth = await authenticate(userId, socket_id, channel_name);
-
-    if (!auth) {
-      return res.status(403).json({ message: "Forbidden" });
-    }
-    res.status(200).json(auth);
-  }
-
-  exports.testPusher = async (req, res) => {
-    const userId = req.user.id;
-
-    const {sendPrivateMessage} = require("../utils/PusherMiddleware");
-
-    const message = {
-      userId: userId,
-      message: "Hello from Pusher!",
-    };
-    sendPrivateMessage(userId, userId, message);
   }

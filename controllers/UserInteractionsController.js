@@ -56,7 +56,7 @@ exports.matchUsers = async (req, res) => {
 exports.getMatchesByUserId = async (req, res) => {
 	try {
 		const userId = req.user.id;
-		const matches = await UserInteractionsService.getMatchesByUserId(userId);
+		const matches = await UserInteractionsService.getMatchesAsUsersByUserId(userId);
 		res.status(200).send(matches);
 	} catch (err) {
 		res.status(404).send({ error: err.message });

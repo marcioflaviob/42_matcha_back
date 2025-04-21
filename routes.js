@@ -7,6 +7,9 @@ const AuthController = require('./controllers/AuthController');
 const upload = require('./utils/Multer');
 const Authenticate = require('./utils/AuthMiddleware'); // Add Authenticate to the routes that need authentication
 const UserInteractionsController = require('./controllers/UserInteractionsController');
+const MessagesController = require('./controllers/MessagesController');
+const PusherController = require('./controllers/PusherController');
+const NotificationController = require('./controllers/NotificationController');
 
 const router = express.Router();
 
@@ -14,8 +17,11 @@ const router = express.Router();
 router.post('/auth/login', AuthController.login);
 router.get('/auth/verify', AuthController.verify);
 router.get('/auth/me', Authenticate, AuthController.getCurrentUser);
-router.post('/auth/pusher', Authenticate, AuthController.pusherAuthentication);
-router.post('/auth/test-pusher', Authenticate, AuthController.testPusher);
+
+// Pusher
+router.post('/auth/pusher', Authenticate, PusherController.pusherAuthentication);
+router.post('/status/online', Authenticate, PusherController.broadcastOnlineStatus);
+router.post('/status/offline', Authenticate, PusherController.broadcastOfflineStatus);
 
 // User
 router.get('/users', UserController.getAllUsers);
@@ -42,5 +48,15 @@ router.post('/block/:id', Authenticate, UserInteractionsController.blockUser);
 // Interests
 router.get('/interests', InterestsController.getAllInterests);
 router.get('/interests/:userId', InterestsController.getInterestsByUserId);
+
+// Messages
+router.post('/messages/', Authenticate, MessagesController.createMessage);
+router.get('/messages/:id', Authenticate, MessagesController.getMessagesByUserId);
+router.patch('/messages/read/:id', Authenticate, MessagesController.readAllMessages);
+
+// Notification
+router.get('/notifications', Authenticate, NotificationController.getNotSeenNotificationsByUserId);
+router.patch('/notifications/', Authenticate, NotificationController.markNotificationAsSeen);
+
 
 module.exports = router;
