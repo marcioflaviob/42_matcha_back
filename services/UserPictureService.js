@@ -63,7 +63,6 @@ exports.getUserPictures = async (userId) => {
 async function deleteFile(url) {
     try {
       await del(url);
-      console.log('File deleted successfully');
       return true;
     } catch (error) {
       console.error('Error deleting file:', error);
