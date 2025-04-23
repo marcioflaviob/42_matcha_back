@@ -1,4 +1,4 @@
-const EmailService = require('../services/EmailService');
+const EmailService = require('../services/EmailService.js');
 
 exports.sendForgotPasswordEmail = async (req, res) => {
 	try {

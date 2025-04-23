@@ -1,4 +1,4 @@
-const UserInteractionsService = require('../services/UserInteractionsService');
+const UserInteractionsService = require('../services/UserInteractionsService.js');
 
 exports.getLikeCountByUserId = async (req, res) => {
 	try {

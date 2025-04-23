@@ -1,4 +1,4 @@
-const { getUserById } = require("../services/UserService");
+const { getUserById } = require("../services/UserService.js");
 
 module.exports = function validateUser(req, res, next) {
     const user = req.body;

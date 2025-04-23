@@ -1,6 +1,6 @@
-const Notification = require('../models/Notification/Notification');
-const UserService = require('./UserService');
-const PusherService = require('./PusherService');
+const Notification = require('../models/Notification/Notification.js');
+const UserService = require('./UserService.js');
+const PusherService = require('./PusherService.js');
 
 exports.getNotSeenNotificationsByUserId = async (userId) => {
 	try {

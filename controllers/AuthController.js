@@ -1,5 +1,5 @@
-const AuthService = require("../services/AuthService");
-const UserService = require("../services/UserService");
+const AuthService = require("../services/AuthService.js");
+const UserService = require("../services/UserService.js");
 
   exports.login = async (req, res) => {
     try {

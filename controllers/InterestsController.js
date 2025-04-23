@@ -1,4 +1,4 @@
-const InterestsService = require('../services/InterestsService');
+const InterestsService = require('../services/InterestsService.js');
 
 exports.getAllInterests = async (req, res) => {
 	try {

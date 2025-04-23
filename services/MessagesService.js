@@ -1,6 +1,6 @@
-const Messages = require('../models/Messages/Messages');
-const PusherService = require('./PusherService');
-const NotificationService = require('./NotificationService');
+const Messages = require('../models/Messages/Messages.js');
+const PusherService = require('./PusherService.js');
+const NotificationService = require('./NotificationService.js');
 
 exports.getMessagesByUserId = async (userId, friendId) => {
 	try {

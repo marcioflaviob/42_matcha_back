@@ -1,4 +1,4 @@
-const User = require('../models/User/User');
+const User = require('../models/User/User.js');
 
 const getAllUsers = async () => {
 	const users = await User.findAll();
@@ -38,9 +38,9 @@ const calculateAge = (birthdate) => {
 
 const formatUser = async (data) =>
 {
-    const InterestsService = require('./InterestsService');
-    const UserPictureService = require('./UserPictureService');
-    const UserInteractionsService = require('./UserInteractionsService');
+    const InterestsService = require('./InterestsService.js');
+    const UserPictureService = require('./UserPictureService.js');
+    const UserInteractionsService = require('./UserInteractionsService.js');
 
     interestsList = await InterestsService.getInterestsListByUserId(data.id);
     pictures = await UserPictureService.getUserPictures(data.id);
@@ -91,12 +91,20 @@ const deleteUser = async (userId) => {
 
 const resetPassword = async (userId, password) => {
     const user = await User.resetPassword(userId, password);
-    return user;
+    if (!user) {
+        throw new Error('Failed to reset password');
+    }
+    const formattedUser = await formatUser(user);
+    return formattedUser;
 };
 
 const validateUser = async (userId) => {
     const user = await User.validateUser(userId);
-    return user;
+    if (!user) {
+        throw new Error('Failed to validate user');
+    }
+    const formattedUser = await formatUser(user);
+    return formattedUser;
 };
 
 module.exports = {

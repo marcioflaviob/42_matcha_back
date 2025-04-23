@@ -1,5 +1,5 @@
 const { put } = require('@vercel/blob');
-const UserPictures = require('../models/User/UserPictures');
+const UserPictures = require('../models/User/UserPictures.js');
 
 exports.uploadPicture = async (userId, file) => {
     try {

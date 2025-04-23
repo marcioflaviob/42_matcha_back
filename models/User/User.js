@@ -1,4 +1,4 @@
-const db = require('../../config/db');
+const db = require('../../config/db.js');
 const bcrypt = require('bcrypt');
 
 class User {
@@ -121,7 +121,7 @@ class User {
             
             if (interests !== undefined) {
                 try {
-                    const InterestsService = require('../../services/InterestsService');
+                    const InterestsService = require('../../services/InterestsService.js');
                     
                     if (Array.isArray(interests)) {
                         await InterestsService.updateInterests(id, interests);
@@ -155,7 +155,9 @@ class User {
 
     static async resetPassword(userId, newPassword) {
         try {
+            
             const salt = await bcrypt.genSalt(10);
+            
             const hashedPassword = await bcrypt.hash(newPassword, salt);
 
             const result = await db.query(

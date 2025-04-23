@@ -1,4 +1,4 @@
-const db = require('../../config/db');
+const db = require('../../config/db.js');
 
 class Messages {
 	static async createMessage(senderId, receiverId, content) {
