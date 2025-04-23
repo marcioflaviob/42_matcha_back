@@ -48,6 +48,36 @@ exports.updateUser = async (req, res) => {
     }
 };
 
+exports.resetPassword = async (req, res) => {
+    try {
+        const userId = req.user.id;
+
+        if (!req.body.password || !userId) {
+            return res.status(400).send({ error: 'Missing fields' });
+        }
+
+        const user = await UserService.resetPassword(userId, req.body.password);
+        res.status(200).send(user);
+    } catch (err) {
+        res.status(400).send({ error: err.message });
+    }
+};
+
+exports.validateUser = async (req, res) => {
+    try {
+        const userId = req.user.id;
+
+        if (!userId) {
+            return res.status(400).send({ error: 'Missing fields' });
+        }
+
+        const user = await UserService.validateUser(userId);
+        res.status(200).send(user);
+    } catch (err) {
+        res.status(400).send({ error: err.message });
+    }
+}
+
 exports.deleteUser = async (req, res) => {
     try {
         await UserService.deleteUser(req.params.id);

@@ -89,6 +89,16 @@ const deleteUser = async (userId) => {
     return user;
 };
 
+const resetPassword = async (userId, password) => {
+    const user = await User.resetPassword(userId, password);
+    return user;
+};
+
+const validateUser = async (userId) => {
+    const user = await User.validateUser(userId);
+    return user;
+};
+
 module.exports = {
 	getAllUsers,
     createUser,
@@ -98,4 +108,6 @@ module.exports = {
     updateUser,
     deleteUser,
     getUserByEmailWithPassword,
+    resetPassword,
+    validateUser,
 };

@@ -95,6 +95,10 @@ class User {
                     const salt = await bcrypt.genSalt(10);
                     userData.password = await bcrypt.hash(userData.password, salt);
                 }
+
+                if (userData.email && !userData.status) {
+                    userData.status = 'validation';
+                }
                 
                 const keys = Object.keys(userData);
                 const values = Object.values(userData);
@@ -149,29 +153,35 @@ class User {
         }
     }
 
-    static async changePassword(userId, currentPassword, newPassword) {
+    static async resetPassword(userId, newPassword) {
         try {
-            const user = await this.findById(userId);
-            
-            if (!user) {
-                return { success: false, message: 'User not found' };
-            }
-            
-            // Verify current password
-            const isMatch = await bcrypt.compare(currentPassword, user.password);
-            
-            if (!isMatch) {
-                return { success: false, message: 'Current password is incorrect' };
-            }
-            
-            // Hash new password
             const salt = await bcrypt.genSalt(10);
             const hashedPassword = await bcrypt.hash(newPassword, salt);
-            
-            // Update password in database
-            await db.query('UPDATE users SET password = $1 WHERE id = $2', [hashedPassword, userId]);
-            
-            return { success: true, message: 'Password updated successfully' };
+
+            const result = await db.query(
+                'UPDATE users SET password = $1 WHERE id = $2 RETURNING *',
+                [hashedPassword, userId]
+            );
+
+            if (result.rows.length === 0) return null;
+
+            return result.rows[0];
+        } catch (error) {
+            console.log(error);
+            throw new Error(error);
+        }
+    }
+
+    static async validateUser(userId) {
+        try {
+            const result = await db.query(
+                'UPDATE users SET status = $1 WHERE id = $2 RETURNING *',
+                ['complete', userId]
+            );
+
+            if (result.rows.length === 0) return null;
+
+            return result.rows[0];
         } catch (error) {
             console.log(error);
             throw new Error(error);

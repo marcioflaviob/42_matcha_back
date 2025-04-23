@@ -29,5 +29,9 @@ module.exports = function validateUser(req, res, next) {
         return res.status(400).send('Invalid birthdate');
     }
 
+    if (user.status && user.status == 'complete') {
+        return res.status(401).send('Email validation required');
+    }
+
     next();
 };
