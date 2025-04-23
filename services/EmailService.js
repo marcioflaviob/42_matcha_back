@@ -1,12 +1,12 @@
-import { Resend } from 'resend';
-import { passwordRecoveryTemplate, emailVerificationTemplate } from '../utils/EmailTemplates.js';
-import jwt from 'jsonwebtoken';
-import UserService from './UserService.js';
+const { Resend } = require('resend');
+const { passwordRecoveryTemplate, emailVerificationTemplate } = require('../utils/EmailTemplates.js');
+const jwt = require('jsonwebtoken');
+const UserService = require('./UserService.js');
 
 const JWT_SECRET = process.env.JWT_SECRET;
 const resend = new Resend(process.env.EMAIL_API_KEY);
 
-export const sendEmail = async (to, subject, html) => {
+exports.sendEmail = async (to, subject, html) => {
 	const { data, error } = await resend.emails.send({
 		from: process.env.EMAIL_FROM,
 		to,
@@ -22,7 +22,7 @@ export const sendEmail = async (to, subject, html) => {
 	return data;
 };
 
-export const sendPasswordRecoveryEmail = async (email) => {
+exports.sendPasswordRecoveryEmail = async (email) => {
 	const user = await UserService.getUserByEmail(email);
 	if (!user) {
 		return;
@@ -35,7 +35,7 @@ export const sendPasswordRecoveryEmail = async (email) => {
 	return await sendEmail(user.email, subject, html);
 };
 
-export const sendEmailVerification = async (userId) => {
+exports.sendEmailVerification = async (userId) => {
 	const user = await UserService.getUserById(userId);
 
 	const subject = 'Email Verification';
