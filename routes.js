@@ -31,7 +31,7 @@ router.get('/users/:id', UserController.getUserById);
 router.get('/users/email/:email', UserController.getUserByEmail);
 router.put('/update-user', Authenticate, ValidateUser, UserController.updateUser);
 router.delete('/users/:id', ValidateUser, UserController.deleteUser); // TODO Remove this
-router.patch('/users/reset-password', Authenticate, ValidateUser, UserController.resetPassword);
+router.patch('/users/reset-password', Authenticate, UserController.resetPassword);
 
 // User Pictures
 router.post('/upload/single/', Authenticate, upload.single('picture'), UserPicturesController.uploadPicture);

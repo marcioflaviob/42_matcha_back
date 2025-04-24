@@ -29,9 +29,9 @@ const login = async (email, password) => {
 	};
 };
 
-const verifyToken = (token) => {
+const verifyToken = async (token) => {
 	try {
-		return jwt.verify(token, JWT_SECRET);
+		return await jwt.verify(token, JWT_SECRET);
 	} catch (err) {
 		throw new Error("Invalid token");
 	}

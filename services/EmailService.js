@@ -6,7 +6,7 @@ const UserService = require('./UserService.js');
 const JWT_SECRET = process.env.JWT_SECRET;
 const resend = new Resend(process.env.EMAIL_API_KEY);
 
-exports.sendEmail = async (to, subject, html) => {
+const sendEmail = async (to, subject, html) => {
 	const { data, error } = await resend.emails.send({
 		from: process.env.EMAIL_FROM,
 		to,
