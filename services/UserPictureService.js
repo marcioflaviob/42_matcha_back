@@ -1,4 +1,4 @@
-const { put } = require('@vercel/blob');
+const { put, del } = require('@vercel/blob');
 const UserPictures = require('../models/User/UserPictures.js');
 
 exports.uploadPicture = async (userId, file) => {
@@ -60,8 +60,21 @@ exports.getUserPictures = async (userId) => {
     return pictures;
 };
 
+async function deleteFile(url) {
+    try {
+      await del(url);
+      return true;
+    } catch (error) {
+      console.error('Error deleting file:', error);
+      return false;
+    }
+}
+
 exports.deleteUserPicture = async (userId, pictureId) => {
+    const picture = await UserPictures.findById(pictureId);
     const deleted = await UserPictures.delete(userId, pictureId);
+    const filename = `${process.env.VITE_BLOB_URL}/${picture.url}`;
+    deleteFile(filename);
     
     if (!deleted) {
         throw new Error('Failed to delete picture');
