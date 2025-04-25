@@ -123,7 +123,7 @@ exports.getPotentialMatches = async (userId) => {
 			? ['Female', 'Male', 'Other']
 			: [userData.sexual_interest];
 
-        const filteredMatches = validUsers.filter(match => {
+        const filteredUsers = validUsers.filter(match => {
             const hasCommonInterest = match.interests.some(interest =>
 				userData.interests.some(userInterest => userInterest.id === interest.id)
 			);
@@ -135,6 +135,11 @@ exports.getPotentialMatches = async (userId) => {
 			interested_genders.includes(match.gender) &&
 			hasCommonInterest && isInterestedInMyGender;
 		});
+
+		const filteredMatches = await Promise.all(filteredUsers.map(async (match) => {
+            match.liked_me = await hasLikedMe(userId, match.id);
+            return match;
+        }));
 
         return filteredMatches;
 	} catch (error) {
@@ -191,5 +196,17 @@ const isUserAlreadyLiked = async (userId, user2Id) => {
 		return isLiked ? true : false;
 	} catch (error) {
 		throw new Error('Failed to check if user is already liked');
+	}
+}
+
+const hasLikedMe = async (userId, user2Id) => {
+	try {
+		const like = await UserInteractions.getLikesReceivedByUserId(userId);
+
+		const isLiked = like.some(like => like.user1 == user2Id);
+
+		return isLiked ? true : false;
+	} catch (error) {
+		throw new Error('Failed to check if user has liked me');
 	}
 }
