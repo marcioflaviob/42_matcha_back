@@ -1,6 +1,6 @@
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
-const UserService = require("./UserService");
+const UserService = require("./UserService.js");
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
@@ -29,9 +29,9 @@ const login = async (email, password) => {
 	};
 };
 
-const verifyToken = (token) => {
+const verifyToken = async (token) => {
 	try {
-		return jwt.verify(token, JWT_SECRET);
+		return await jwt.verify(token, JWT_SECRET);
 	} catch (err) {
 		throw new Error("Invalid token");
 	}

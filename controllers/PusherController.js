@@ -1,4 +1,4 @@
-const PusherService = require('../services/PusherService');
+const PusherService = require('../services/PusherService.js');
 
 exports.pusherAuthentication = async (req, res) => {
     const userId = req.user.id;

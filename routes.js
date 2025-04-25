@@ -1,15 +1,16 @@
 const express = require('express');
-const UserController = require('./controllers/UserController');
-const InterestsController = require('./controllers/InterestsController');
-const ValidateUser = require('./utils/ValidateUser');
-const UserPicturesController = require('./controllers/UserPicturesController');
-const AuthController = require('./controllers/AuthController');
-const upload = require('./utils/Multer');
-const Authenticate = require('./utils/AuthMiddleware'); // Add Authenticate to the routes that need authentication
-const UserInteractionsController = require('./controllers/UserInteractionsController');
-const MessagesController = require('./controllers/MessagesController');
-const PusherController = require('./controllers/PusherController');
-const NotificationController = require('./controllers/NotificationController');
+const UserController = require('./controllers/UserController.js');
+const InterestsController = require('./controllers/InterestsController.js');
+const ValidateUser = require('./utils/ValidateUser.js');
+const UserPicturesController = require('./controllers/UserPicturesController.js');
+const AuthController = require('./controllers/AuthController.js');
+const upload = require('./utils/Multer.js');
+const Authenticate = require('./utils/AuthMiddleware.js');
+const UserInteractionsController = require('./controllers/UserInteractionsController.js');
+const MessagesController = require('./controllers/MessagesController.js');
+const PusherController = require('./controllers/PusherController.js');
+const NotificationController = require('./controllers/NotificationController.js');
+const EmailController = require('./controllers/EmailController.js');
 
 const router = express.Router();
 
@@ -29,7 +30,8 @@ router.post('/new-user', ValidateUser, UserController.createUser);
 router.get('/users/:id', UserController.getUserById);
 router.get('/users/email/:email', UserController.getUserByEmail);
 router.put('/update-user', Authenticate, ValidateUser, UserController.updateUser);
-router.delete('/users/:id', ValidateUser, UserController.deleteUser);
+router.delete('/users/:id', ValidateUser, UserController.deleteUser); // TODO Remove this
+router.patch('/users/reset-password', Authenticate, UserController.resetPassword);
 
 // User Pictures
 router.post('/upload/single/', Authenticate, upload.single('picture'), UserPicturesController.uploadPicture);
@@ -58,5 +60,9 @@ router.patch('/messages/read/:id', Authenticate, MessagesController.readAllMessa
 router.get('/notifications', Authenticate, NotificationController.getNotSeenNotificationsByUserId);
 router.patch('/notifications/', Authenticate, NotificationController.markNotificationAsSeen);
 
+// Email
+router.post('/email/forgot-password', EmailController.sendForgotPasswordEmail);
+router.post('/email/validate', Authenticate, EmailController.sendValidationEmail);
+router.patch('/email/validate', Authenticate, UserController.validateUser);
 
 module.exports = router;

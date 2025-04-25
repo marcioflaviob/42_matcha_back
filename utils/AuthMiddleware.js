@@ -2,7 +2,7 @@ const jwt = require('jsonwebtoken');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret_key';
 
-const auth = (req, res, next) => {
+const auth = async (req, res, next) => {
 	const token = req.header('Authorization')?.replace('Bearer ', '');
 
 	if (!token) {
@@ -10,7 +10,7 @@ const auth = (req, res, next) => {
 	}
   
 	try {
-		const decoded = jwt.verify(token, JWT_SECRET);
+		const decoded = await jwt.verify(token, JWT_SECRET);
 
 		// Add user from payload
 		req.user = decoded;

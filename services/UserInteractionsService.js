@@ -1,6 +1,6 @@
-const UserInteractions = require('../models/UserInteractions/UserInteractions');
-const UserService = require('./UserService');
-const NotificationService = require('./NotificationService');
+const UserInteractions = require('../models/UserInteractions/UserInteractions.js');
+const UserService = require('./UserService.js');
+const NotificationService = require('./NotificationService.js');
 
 exports.getLikeCountByUserId = async (userId) => {
 	try {

@@ -1,4 +1,4 @@
-const MessagesService = require('../services/MessagesService');
+const MessagesService = require('../services/MessagesService.js');
 
 exports.getMessagesByUserId = async (req, res) => {
 	try {

@@ -1,4 +1,4 @@
-const db = require('../../config/db');
+const db = require('../../config/db.js');
 
 class UserPictures {
     static async findByUserId(userId) {

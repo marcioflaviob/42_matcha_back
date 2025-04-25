@@ -1,5 +1,5 @@
-const { pusher } = require('../utils/PusherMiddleware');
-const UserInteractionsService = require('../services/UserInteractionsService');
+const { pusher } = require('../utils/PusherMiddleware.js');
+const UserInteractionsService = require('../services/UserInteractionsService.js');
 
 
 exports.broadcastStatusChange = async (userId, status) => {
@@ -76,7 +76,7 @@ exports.requestStatus = async (userId) => {
 
 exports.authenticatePusher = async (userId, socketId, channelName) => {
 	try {
-		const {authenticate} = require("../utils/PusherMiddleware");
+		const { authenticate } = require("../utils/PusherMiddleware.js");
     	const auth = await authenticate(userId, socketId, channelName);
 
 		return auth;

@@ -1,4 +1,4 @@
-const NotificationService = require('../services/NotificationService');
+const NotificationService = require('../services/NotificationService.js');
 
 exports.getNotSeenNotificationsByUserId = async (req, res) => {
 	try {

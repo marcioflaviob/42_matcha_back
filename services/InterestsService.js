@@ -1,4 +1,4 @@
-const Interests = require('../models/Interests/Interests');
+const Interests = require('../models/Interests/Interests.js');
 
 const getAllInterests = async () => {
 	const interests = await Interests.findAll();

@@ -1,4 +1,4 @@
-const { getUserById } = require("../services/UserService");
+const { getUserById } = require("../services/UserService.js");
 
 module.exports = function validateUser(req, res, next) {
     const user = req.body;
@@ -27,6 +27,10 @@ module.exports = function validateUser(req, res, next) {
 
     if (user.birthdate && new Date(user.birthdate) > new Date()) {
         return res.status(400).send('Invalid birthdate');
+    }
+
+    if (user.status && user.status == 'complete') {
+        return res.status(401).send('Email validation required');
     }
 
     next();

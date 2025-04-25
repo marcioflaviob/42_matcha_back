@@ -1,4 +1,4 @@
-const UserPictureService = require('../services/UserPictureService');
+const UserPictureService = require('../services/UserPictureService.js');
 
 exports.uploadPicture = async (req, res) => {
     try {
