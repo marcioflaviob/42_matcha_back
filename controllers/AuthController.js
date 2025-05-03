@@ -53,7 +53,7 @@ const UserService = require("../services/UserService.js");
         return res.status(401).json({ message: "No token, authorization denied" });
       }
 
-      const decoded = AuthService.verifyToken(token);
+      const decoded = await AuthService.verifyToken(token);
 
       if (!decoded) {
         return res.status(401).json({ message: "Token is not valid" });

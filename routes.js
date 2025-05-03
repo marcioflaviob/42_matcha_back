@@ -59,6 +59,9 @@ router.patch('/messages/read/:id', Authenticate, MessagesController.readAllMessa
 // Notification
 router.get('/notifications', Authenticate, NotificationController.getNotSeenNotificationsByUserId);
 router.patch('/notifications/', Authenticate, NotificationController.markNotificationAsSeen);
+router.post('/call/:id', Authenticate, NotificationController.sendNewCallNotification);
+router.post('/refuse-call/:id', Authenticate, NotificationController.sendRefuseCallNotification);
+router.post('/stop-call/:id', Authenticate, NotificationController.sendStopCallNotification);
 
 // Email
 router.post('/email/forgot-password', EmailController.sendForgotPasswordEmail);

@@ -20,11 +20,11 @@ class Notification {
 		}
 	}
 
-	static async createNotification(userId, type, title, message) {
+	static async createNotification(userId, senderId, type, title, message) {
 		try {
 			const queryResult = await db.query(
-				'INSERT INTO notifications (user_id, type, title, message) VALUES ($1, $2, $3, $4) RETURNING *',
-				[userId, type, title, message]
+				'INSERT INTO notifications (user_id, concerned_user_id, type, title, message) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+				[userId, senderId, type, title, message]
 			);
 			return queryResult.rows[0];
 		} catch (error) {

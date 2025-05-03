@@ -50,11 +50,13 @@ CREATE TABLE IF NOT EXISTS user_interactions (
 CREATE TABLE IF NOT EXISTS notifications (
 	id SERIAL PRIMARY KEY,
 	user_id INT NOT NULL,
+	concerned_user_id INT,
 	type VARCHAR(255) NOT NULL,
 	title VARCHAR(255),
 	message VARCHAR(255),
 	seen BOOLEAN DEFAULT FALSE,
-	FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+	FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+	FOREIGN KEY (concerned_user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS messages (

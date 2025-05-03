@@ -37,6 +37,7 @@ exports.sendNotification = async (notificationData) => {
 		await pusher.trigger(`private-user-${notificationData.user_id}`, 'new-notification', {
 			id: notificationData.id,
 			user_id: notificationData.user_id,
+			concerned_user_id: notificationData.concerned_user_id,
 			type: notificationData.type,
 			title: notificationData.title,
 			message: notificationData.message,
