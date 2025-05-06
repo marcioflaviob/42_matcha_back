@@ -28,6 +28,7 @@ class Location {
         } catch (error) {
             console.log(error);
             throw new Error('Failed to find location by user ID');
+            return null;
         }
     }
 

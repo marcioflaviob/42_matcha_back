@@ -49,8 +49,8 @@ const formatUser = async (data) =>
     data.pictures = pictures;
     data.like_count = await UserInteractionsService.getLikeCountByUserId(data.id);
     data.age = calculateAge(data.birthdate);
-    location = await LocationService.getLocationByUserId(data.id);
-    data.location = location;
+    location = await LocationService.getLocationByUserId(data.id).catch(() => null);
+    data.location = location || null;
     const { password, ...userWithoutPassword } = data;
     return userWithoutPassword;
 }
