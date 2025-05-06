@@ -9,7 +9,6 @@ CREATE TABLE IF NOT EXISTS users (
 	gender VARCHAR(255),
 	sexual_interest VARCHAR(255),
 	biography TEXT,
-	location VARCHAR(255),
 	rating INT DEFAULT 10,
 	min_desired_rating INT DEFAULT 0,
 	age_range_min INT DEFAULT 0,
@@ -66,6 +65,15 @@ CREATE TABLE IF NOT EXISTS messages (
 	is_read BOOLEAN DEFAULT FALSE,
 	FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE,
 	FOREIGN KEY (receiver_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS location (
+    user_id INT PRIMARY KEY,
+    longitude DECIMAL(11, 7) NOT NULL,
+    latitude DECIMAL(10, 7) NOT NULL,
+    city VARCHAR(255) NOT NULL,
+    country VARCHAR(255) NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 ALTER TABLE users DISABLE ROW LEVEL SECURITY;
