@@ -11,6 +11,7 @@ const MessagesController = require('./controllers/MessagesController.js');
 const PusherController = require('./controllers/PusherController.js');
 const NotificationController = require('./controllers/NotificationController.js');
 const EmailController = require('./controllers/EmailController.js');
+const LocationController = require('./controllers/LocationController.js');
 
 const router = express.Router();
 
@@ -67,5 +68,8 @@ router.post('/stop-call/:id', Authenticate, NotificationController.sendStopCallN
 router.post('/email/forgot-password', EmailController.sendForgotPasswordEmail);
 router.post('/email/validate', Authenticate, EmailController.sendValidationEmail);
 router.patch('/email/validate', Authenticate, UserController.validateUser);
+
+// Location
+router.post('/location/:userId', Authenticate, LocationController.createLocation);
 
 module.exports = router;

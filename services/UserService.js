@@ -41,6 +41,7 @@ const formatUser = async (data) =>
     const InterestsService = require('./InterestsService.js');
     const UserPictureService = require('./UserPictureService.js');
     const UserInteractionsService = require('./UserInteractionsService.js');
+    const LocationService = require('./LocationService.js');
 
     interestsList = await InterestsService.getInterestsListByUserId(data.id);
     pictures = await UserPictureService.getUserPictures(data.id);
@@ -48,6 +49,8 @@ const formatUser = async (data) =>
     data.pictures = pictures;
     data.like_count = await UserInteractionsService.getLikeCountByUserId(data.id);
     data.age = calculateAge(data.birthdate);
+    location = await LocationService.getLocationByUserId(data.id).catch(() => null);
+    data.location = location || null;
     const { password, ...userWithoutPassword } = data;
     return userWithoutPassword;
 }
