@@ -68,5 +68,5 @@ router.patch('/email/validate', Authenticate, UserController.validateUser);
 
 // Location
 router.post('/location/:userId', Authenticate, LocationController.createLocation);
-router.put('/location/:userId', Authenticate, LocationController.updateLocation);
+
 module.exports = router;

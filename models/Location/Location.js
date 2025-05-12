@@ -28,20 +28,6 @@ class Location {
         } catch (error) {
             console.log(error);
             throw new Error('Failed to find location by user ID');
-            return null;
-        }
-    }
-
-    static async removeLocation(userId) {
-        try {
-            await db.query(
-                'DELETE FROM location WHERE user_id = $1',
-                [userId]
-            );
-            return true;
-        } catch (error) {
-            console.log(error);
-            throw new Error('Failed to remove location');
         }
     }
 }

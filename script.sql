@@ -179,6 +179,41 @@ VALUES
 (30009, 'celeb/olivia_rodrigo-dyg3podOlz36WQuFHtl8O4ChgGouiK.jpg', TRUE),
 (30010, 'celeb/charlie_puth-jCnlXGIeOSOF4WLQcPKFHx0Sws9Rao.jpg', TRUE);
 
+INSERT INTO location (user_id, longitude, latitude, city, country) VALUES
+-- Superheroes and Characters
+(10001, -73.9855, 40.7580, 'New York', 'USA'),                  -- Tony Stark (Stark Tower, NYC)
+(10002, 37.9838, 23.7275, 'Athens', 'Greece'),                  -- Diana Prince (Themyscira connection)
+(10003, -74.0060, 40.7128, 'Gotham', 'USA'),                   -- Bruce Wayne (Gotham City)
+(10004, -0.1276, 51.5072, 'London', 'UK'),                     -- Hermione Granger
+(10006, -87.6298, 41.8781, 'Chicago', 'USA'),                  -- Oprah Winfrey
+(10007, -74.0060, 40.7128, 'New York', 'USA'),                 -- Harley Quinn
+(10008, 35.2137, 31.7683, 'Jerusalem', 'Israel'),              -- Luke Skywalker
+(10009, -0.1276, 51.5072, 'London', 'UK'),                     -- Lara Croft
+(10010, -0.1276, 51.5072, 'London', 'UK'),                     -- David Bowie
+
+-- Simpsons Characters
+(20001, -89.6278, 39.7817, 'Springfield', 'USA'),              -- Homer Simpson
+(20002, -89.6278, 39.7817, 'Springfield', 'USA'),              -- Marge Simpson
+(20003, -89.6278, 39.7817, 'Springfield', 'USA'),              -- Bart Simpson
+(20004, -89.6278, 39.7817, 'Springfield', 'USA'),              -- Lisa Simpson
+(20005, -80.1918, 25.7747, 'Miami', 'USA'),                    -- SpongeBob (underwater city near Miami)
+(20006, -80.1918, 25.7747, 'Miami', 'USA'),                    -- Patrick Star
+(20007, -118.2437, 34.0522, 'Los Angeles', 'USA'),             -- Scooby Doo
+(20008, -118.2437, 34.0522, 'Los Angeles', 'USA'),             -- Velma Dinkley
+(20009, -118.2437, 34.0522, 'Los Angeles', 'USA'),             -- Fred Jones
+(20010, -118.2437, 34.0522, 'Los Angeles', 'USA'),             -- Shaggy Rogers
+
+-- Musicians and Celebrities
+(30001, -86.7816, 36.1627, 'Nashville', 'USA'),                -- Taylor Swift
+(30002, -79.3832, 43.6532, 'Toronto', 'Canada'),               -- Justin Bieber
+(30003, -118.2437, 34.0522, 'Los Angeles', 'USA'),             -- Billie Eilish
+(30004, -79.3832, 43.6532, 'Toronto', 'Canada'),               -- Shawn Mendes
+(30005, -118.2437, 34.0522, 'Los Angeles', 'USA'),             -- Ariana Grande
+(30006, -118.2437, 34.0522, 'Los Angeles', 'USA'),             -- Benny Blanco
+(30007, -0.1276, 51.5072, 'London', 'UK'),                     -- Harry Styles
+(30008, -118.2437, 34.0522, 'Los Angeles', 'USA'),             -- Zendaya Coleman
+(30009, -118.2437, 34.0522, 'Los Angeles', 'USA'),             -- Olivia Rodrigo
+(30010, -118.2437, 34.0522, 'Los Angeles', 'USA');             -- Charlie Puth
 
 -- Insert mock user interests
 INSERT INTO user_interests (user_id, interest_id)
