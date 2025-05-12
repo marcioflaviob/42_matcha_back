@@ -181,39 +181,39 @@ VALUES
 
 INSERT INTO location (user_id, longitude, latitude, city, country) VALUES
 -- Superheroes and Characters
-(10001, -73.9855, 40.7580, 'New York', 'USA'),                  -- Tony Stark (Stark Tower, NYC)
-(10002, 37.9838, 23.7275, 'Athens', 'Greece'),                  -- Diana Prince (Themyscira connection)
-(10003, -74.0060, 40.7128, 'Gotham', 'USA'),                   -- Bruce Wayne (Gotham City)
-(10004, -0.1276, 51.5072, 'London', 'UK'),                     -- Hermione Granger
-(10006, -87.6298, 41.8781, 'Chicago', 'USA'),                  -- Oprah Winfrey
-(10007, -74.0060, 40.7128, 'New York', 'USA'),                 -- Harley Quinn
-(10008, 35.2137, 31.7683, 'Jerusalem', 'Israel'),              -- Luke Skywalker
-(10009, -0.1276, 51.5072, 'London', 'UK'),                     -- Lara Croft
-(10010, -0.1276, 51.5072, 'London', 'UK'),                     -- David Bowie
+(10001, 2.3522, 48.8566, 'Paris', 'France'),                    -- Tony Stark (8th arrondissement)
+(10002, 2.2945, 48.8584, 'Paris', 'France'),                    -- Diana Prince (16th arrondissement)
+(10003, 2.3488, 48.8534, 'Paris', 'France'),                    -- Bruce Wayne (5th arrondissement)
+(10004, 2.3912, 48.8649, 'Paris', 'France'),                    -- Hermione Granger (19th arrondissement)
+(10006, 2.3654, 48.8744, 'Paris', 'France'),                    -- Oprah Winfrey (20th arrondissement)
+(10007, 2.2945, 48.8737, 'Paris', 'France'),                    -- Harley Quinn (17th arrondissement)
+(10008, 2.3585, 48.8699, 'Paris', 'France'),                    -- Luke Skywalker (10th arrondissement)
+(10009, 2.3333, 48.8667, 'Paris', 'France'),                    -- Lara Croft (9th arrondissement)
+(10010, 2.3470, 48.8597, 'Paris', 'France'),                    -- David Bowie (4th arrondissement)
 
 -- Simpsons Characters
-(20001, -89.6278, 39.7817, 'Springfield', 'USA'),              -- Homer Simpson
-(20002, -89.6278, 39.7817, 'Springfield', 'USA'),              -- Marge Simpson
-(20003, -89.6278, 39.7817, 'Springfield', 'USA'),              -- Bart Simpson
-(20004, -89.6278, 39.7817, 'Springfield', 'USA'),              -- Lisa Simpson
-(20005, -80.1918, 25.7747, 'Miami', 'USA'),                    -- SpongeBob (underwater city near Miami)
-(20006, -80.1918, 25.7747, 'Miami', 'USA'),                    -- Patrick Star
-(20007, -118.2437, 34.0522, 'Los Angeles', 'USA'),             -- Scooby Doo
-(20008, -118.2437, 34.0522, 'Los Angeles', 'USA'),             -- Velma Dinkley
-(20009, -118.2437, 34.0522, 'Los Angeles', 'USA'),             -- Fred Jones
-(20010, -118.2437, 34.0522, 'Los Angeles', 'USA'),             -- Shaggy Rogers
+(20001, 2.2399, 48.8965, 'Neuilly-sur-Seine', 'France'),        -- Homer Simpson
+(20002, 2.2855, 48.9097, 'Levallois-Perret', 'France'),         -- Marge Simpson
+(20003, 2.2769, 48.8937, 'Clichy', 'France'),                   -- Bart Simpson
+(20004, 2.4264, 48.9134, 'Bobigny', 'France'),                  -- Lisa Simpson
+(20005, 2.4680, 48.8938, 'Montreuil', 'France'),                -- SpongeBob
+(20006, 2.4449, 48.8815, 'Bagnolet', 'France'),                 -- Patrick Star
+(20007, 2.2529, 48.8937, 'Courbevoie', 'France'),               -- Scooby Doo
+(20008, 2.3047, 48.9177, 'Saint-Denis', 'France'),              -- Velma Dinkley
+(20009, 2.2195, 48.8915, 'Puteaux', 'France'),                  -- Fred Jones
+(20010, 2.2870, 48.9234, 'Saint-Ouen', 'France'),               -- Shaggy Rogers
 
 -- Musicians and Celebrities
-(30001, -86.7816, 36.1627, 'Nashville', 'USA'),                -- Taylor Swift
-(30002, -79.3832, 43.6532, 'Toronto', 'Canada'),               -- Justin Bieber
-(30003, -118.2437, 34.0522, 'Los Angeles', 'USA'),             -- Billie Eilish
-(30004, -79.3832, 43.6532, 'Toronto', 'Canada'),               -- Shawn Mendes
-(30005, -118.2437, 34.0522, 'Los Angeles', 'USA'),             -- Ariana Grande
-(30006, -118.2437, 34.0522, 'Los Angeles', 'USA'),             -- Benny Blanco
-(30007, -0.1276, 51.5072, 'London', 'UK'),                     -- Harry Styles
-(30008, -118.2437, 34.0522, 'Los Angeles', 'USA'),             -- Zendaya Coleman
-(30009, -118.2437, 34.0522, 'Los Angeles', 'USA'),             -- Olivia Rodrigo
-(30010, -118.2437, 34.0522, 'Los Angeles', 'USA');             -- Charlie Puth
+(30001, 2.2974, 48.8331, 'Issy-les-Moulineaux', 'France'),      -- Taylor Swift
+(30002, 2.3265, 48.8131, 'Montrouge', 'France'),                -- Justin Bieber
+(30003, 2.2922, 48.8228, 'Vanves', 'France'),                   -- Billie Eilish
+(30004, 2.2793, 48.7955, 'Clamart', 'France'),                  -- Shawn Mendes
+(30005, 2.4635, 48.8404, 'Vincennes', 'France'),                -- Ariana Grande
+(30006, 2.4163, 48.8144, 'Charenton-le-Pont', 'France'),        -- Benny Blanco
+(30007, 2.4079, 48.8302, 'Saint-Mandé', 'France'),              -- Harry Styles
+(30008, 2.3071, 48.9001, 'Saint-Ouen', 'France'),               -- Zendaya Coleman
+(30009, 2.3654, 48.9162, 'Aubervilliers', 'France'),            -- Olivia Rodrigo
+(30010, 2.4243, 48.9358, 'Le Bourget', 'France');               -- Charlie Puth
 
 -- Insert mock user interests
 INSERT INTO user_interests (user_id, interest_id)
