@@ -39,12 +39,10 @@ const getCityAndCountry = async (latitude, longitude) => {
 
 const getLocationFromIP = async () => {
     try {
-        // We'll always use a public IP service since local IPs aren't useful for geolocation
         const publicIpResponse = await fetch('https://api.ipify.org?format=json');
         const publicIpData = await publicIpResponse.json();
         const publicIp = publicIpData.ip;
 
-        // Try ip-api.com first since it's more reliable and has better rate limits
         try {
             const response = await fetch(`http://ip-api.com/json/${publicIp}`);
             const data = await response.json();
