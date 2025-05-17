@@ -87,7 +87,6 @@ class User {
         // Remove these fields because they will be handled separately since they are stored in different tables
         delete userData.interests;
         delete userData.id;
-        console.log('Interests:', interests);
         try {
             if (Object.keys(userData).length > 0) {
 

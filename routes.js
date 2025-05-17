@@ -71,5 +71,7 @@ router.patch('/email/validate', Authenticate, UserController.validateUser);
 
 // Location
 router.post('/location/:userId', Authenticate, LocationController.createLocation);
+router.get('/location/ip', Authenticate, LocationController.getUserLocation);
+router.get('/location/city', Authenticate, LocationController.getCityAndCountry);
 
 module.exports = router;
