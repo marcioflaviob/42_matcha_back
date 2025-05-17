@@ -4,6 +4,9 @@ const routes = require('../routes.js');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Enable trust proxy to get real client IP
+app.set('trust proxy', true);
+
 const corsOptions = {
     origin: true,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',

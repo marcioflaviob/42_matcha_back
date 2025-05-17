@@ -14,7 +14,7 @@ exports.getUserLocation = async (req, res) => {
         const location = await LocationService.getLocationFromIP(req);
         res.status(200).json(location);
     } catch (err) {
-        console.error('Error:', err);
+        console.error('Error in getUserLocation:', err);
         res.status(500).json({ error: 'Failed to get location' });
     }
 };
