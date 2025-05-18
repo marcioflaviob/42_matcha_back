@@ -37,6 +37,19 @@ exports.sendStopCallNotification = async (req, res) => {
 	}
 }
 
+exports.sendSeenNotification = async (req, res) => {
+	try {
+		const senderId = req.user.id;
+		const receiverId = req.params.id;
+
+		const notification = await NotificationService.newSeenNotification(receiverId, senderId);
+
+		res.status(200).send(notification);
+	} catch (err) {
+		res.status(404).send({ error: err.message });
+	}
+}
+
 exports.sendRefuseCallNotification = async (req, res) => {
 	try {
 		const senderId = req.user.id;

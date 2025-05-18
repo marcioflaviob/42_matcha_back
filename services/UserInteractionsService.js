@@ -29,16 +29,6 @@ exports.likeUser = async (userId, user2Id) => {
 	}
 }
 
-exports.seeProfile = async (userId, user2Id) => {
-	try {
-		const view = await UserInteractions.seeProfile(userId, user2Id);
-		await NotificationService.newProfileViewNotification(user2Id, userId);
-		return view;
-	} catch (error) {
-		throw new Error('Failed to see profile');
-	}
-}
-
 exports.getProfileViewsByUserId = async (userId) => {
 	try {
 		const views = await UserInteractions.getProfileViewsByUserId(userId);

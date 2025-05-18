@@ -54,19 +54,6 @@ class UserInteractions {
 		}
 	}
 
-	static async seeProfile(userId, user2Id) {
-		try {
-			const result = await db.query(
-				'INSERT INTO user_interactions (user1, user2, interaction_type) VALUES ($1, $2, $3) RETURNING *',
-				[userId, user2Id, 'view']
-			);
-			return result.rows[0];
-		} catch (error) {
-			console.error('Error viewing profile:', error);
-			throw new Error('Failed to view profile');
-		}
-	}
-
 	static async getProfileViewsByUserId(userId) {
 		try {
 			const result = await db.query(
