@@ -83,11 +83,11 @@ class User {
         const userData = req.body;
         const id = req.user.id;
         const interests = userData.interests;
+        const location = userData.location;
         
         // Remove these fields because they will be handled separately since they are stored in different tables
         delete userData.interests;
         delete userData.id;
-        console.log('Interests:', interests);
         try {
             if (Object.keys(userData).length > 0) {
 
@@ -131,6 +131,20 @@ class User {
                     result.interestError = interestError.message;
                     console.log('Interest update error:', interestError);
                     throw new Error(interestError);
+                }
+            }
+            if (location !== undefined) {
+                try {
+                    const LocationService = require('../../services/LocationService.js');
+                    
+                    if (location) {
+                        await LocationService.updateLocation(id, location);
+                        result.userData.location = await LocationService.getLocationByUserId(id);
+                    }
+                } catch (locationError) {
+                    result.locationError = locationError.message;
+                    console.log('Location update error:', locationError);
+                    throw new Error(locationError);
                 }
             }
             
