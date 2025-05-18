@@ -42,7 +42,6 @@ router.put('/pictures/:userId/:pictureId/profile', UserPicturesController.setPro
 
 // User Interactions
 router.post('/like/:id', Authenticate, UserInteractionsController.likeUser);
-router.post('/seen/:id', Authenticate, UserInteractionsController.seeProfile);
 router.get('/seen/', Authenticate, UserInteractionsController.getProfileViewsByUserId);
 router.get('/matches/', Authenticate, UserInteractionsController.getMatchesByUserId);
 router.get('/matches/potential', Authenticate, UserInteractionsController.getPotentialMatches);
@@ -61,6 +60,7 @@ router.patch('/messages/read/:id', Authenticate, MessagesController.readAllMessa
 router.get('/notifications', Authenticate, NotificationController.getNotSeenNotificationsByUserId);
 router.patch('/notifications/', Authenticate, NotificationController.markNotificationAsSeen);
 router.post('/call/:id', Authenticate, NotificationController.sendNewCallNotification);
+router.post('/seen/:id', Authenticate, NotificationController.sendSeenNotification);
 router.post('/refuse-call/:id', Authenticate, NotificationController.sendRefuseCallNotification);
 router.post('/stop-call/:id', Authenticate, NotificationController.sendStopCallNotification);
 

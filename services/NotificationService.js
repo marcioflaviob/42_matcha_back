@@ -174,6 +174,21 @@ exports.newProfileViewNotification = async (userId, senderId) => {
 	}
 }
 
+exports.newSeenNotification = async (userId, senderId) => {
+	try {
+		const user = await UserService.getUserById(senderId);
+		if (!user) {
+			throw new Error('User not found');
+		}
+		
+		const notification = await this.createNotification(userId, senderId, 'new-seen', 'Your profile was viewed', `${user.first_name} has seen your profile`);
+		return notification;
+	} catch (error) {
+		console.error(error);
+		throw new Error('Failed to create seen notification');
+	}
+}
+
 exports.newBlockNotification = async (userId, senderId) => {
 	try {
 		const user = await UserService.getUserById(senderId);
