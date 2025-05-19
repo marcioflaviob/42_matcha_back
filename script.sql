@@ -9,7 +9,6 @@ CREATE TABLE IF NOT EXISTS users (
 	gender VARCHAR(255),
 	sexual_interest VARCHAR(255),
 	biography TEXT,
-	location VARCHAR(255),
 	rating INT DEFAULT 10,
 	min_desired_rating INT DEFAULT 0,
 	age_range_min INT DEFAULT 0,
@@ -68,6 +67,15 @@ CREATE TABLE IF NOT EXISTS messages (
 	is_read BOOLEAN DEFAULT FALSE,
 	FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE,
 	FOREIGN KEY (receiver_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS location (
+    user_id INT PRIMARY KEY,
+    longitude DECIMAL(11, 7) NOT NULL,
+    latitude DECIMAL(10, 7) NOT NULL,
+    city VARCHAR(255) NOT NULL,
+    country VARCHAR(255) NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 ALTER TABLE users DISABLE ROW LEVEL SECURITY;
@@ -173,6 +181,41 @@ VALUES
 (30009, 'celeb/olivia_rodrigo-dyg3podOlz36WQuFHtl8O4ChgGouiK.jpg', TRUE),
 (30010, 'celeb/charlie_puth-jCnlXGIeOSOF4WLQcPKFHx0Sws9Rao.jpg', TRUE);
 
+INSERT INTO location (user_id, longitude, latitude, city, country) VALUES
+-- Superheroes and Characters
+(10001, 2.3522, 48.8566, 'Paris', 'France'),                    -- Tony Stark (8th arrondissement)
+(10002, 2.2945, 48.8584, 'Paris', 'France'),                    -- Diana Prince (16th arrondissement)
+(10003, 2.3488, 48.8534, 'Paris', 'France'),                    -- Bruce Wayne (5th arrondissement)
+(10004, 2.3912, 48.8649, 'Paris', 'France'),                    -- Hermione Granger (19th arrondissement)
+(10006, 2.3654, 48.8744, 'Paris', 'France'),                    -- Oprah Winfrey (20th arrondissement)
+(10007, 2.2945, 48.8737, 'Paris', 'France'),                    -- Harley Quinn (17th arrondissement)
+(10008, 2.3585, 48.8699, 'Paris', 'France'),                    -- Luke Skywalker (10th arrondissement)
+(10009, 2.3333, 48.8667, 'Paris', 'France'),                    -- Lara Croft (9th arrondissement)
+(10010, 2.3470, 48.8597, 'Paris', 'France'),                    -- David Bowie (4th arrondissement)
+
+-- Simpsons Characters
+(20001, 2.2399, 48.8965, 'Neuilly-sur-Seine', 'France'),        -- Homer Simpson
+(20002, 2.2855, 48.9097, 'Levallois-Perret', 'France'),         -- Marge Simpson
+(20003, 2.2769, 48.8937, 'Clichy', 'France'),                   -- Bart Simpson
+(20004, 2.4264, 48.9134, 'Bobigny', 'France'),                  -- Lisa Simpson
+(20005, 2.4680, 48.8938, 'Montreuil', 'France'),                -- SpongeBob
+(20006, 2.4449, 48.8815, 'Bagnolet', 'France'),                 -- Patrick Star
+(20007, 2.2529, 48.8937, 'Courbevoie', 'France'),               -- Scooby Doo
+(20008, 2.3047, 48.9177, 'Saint-Denis', 'France'),              -- Velma Dinkley
+(20009, 2.2195, 48.8915, 'Puteaux', 'France'),                  -- Fred Jones
+(20010, 2.2870, 48.9234, 'Saint-Ouen', 'France'),               -- Shaggy Rogers
+
+-- Musicians and Celebrities
+(30001, 2.2974, 48.8331, 'Issy-les-Moulineaux', 'France'),      -- Taylor Swift
+(30002, 2.3265, 48.8131, 'Montrouge', 'France'),                -- Justin Bieber
+(30003, 2.2922, 48.8228, 'Vanves', 'France'),                   -- Billie Eilish
+(30004, 2.2793, 48.7955, 'Clamart', 'France'),                  -- Shawn Mendes
+(30005, 2.4635, 48.8404, 'Vincennes', 'France'),                -- Ariana Grande
+(30006, 2.4163, 48.8144, 'Charenton-le-Pont', 'France'),        -- Benny Blanco
+(30007, 2.4079, 48.8302, 'Saint-Mandé', 'France'),              -- Harry Styles
+(30008, 2.3071, 48.9001, 'Saint-Ouen', 'France'),               -- Zendaya Coleman
+(30009, 2.3654, 48.9162, 'Aubervilliers', 'France'),            -- Olivia Rodrigo
+(30010, 2.4243, 48.9358, 'Le Bourget', 'France');               -- Charlie Puth
 
 -- Insert mock user interests
 INSERT INTO user_interests (user_id, interest_id)

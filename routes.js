@@ -11,6 +11,7 @@ const MessagesController = require('./controllers/MessagesController.js');
 const PusherController = require('./controllers/PusherController.js');
 const NotificationController = require('./controllers/NotificationController.js');
 const EmailController = require('./controllers/EmailController.js');
+const LocationController = require('./controllers/LocationController.js');
 
 const router = express.Router();
 
@@ -43,7 +44,6 @@ router.put('/pictures/:userId/:pictureId/profile', UserPicturesController.setPro
 
 // User Interactions
 router.post('/like/:id', Authenticate, UserInteractionsController.likeUser);
-router.post('/seen/:id', Authenticate, UserInteractionsController.seeProfile);
 router.get('/seen/', Authenticate, UserInteractionsController.getProfileViewsByUserId);
 router.get('/matches/', Authenticate, UserInteractionsController.getMatchesByUserId);
 router.get('/matches/potential', Authenticate, UserInteractionsController.getPotentialMatches);
@@ -62,6 +62,7 @@ router.patch('/messages/read/:id', Authenticate, MessagesController.readAllMessa
 router.get('/notifications', Authenticate, NotificationController.getNotSeenNotificationsByUserId);
 router.patch('/notifications/', Authenticate, NotificationController.markNotificationAsSeen);
 router.post('/call/:id', Authenticate, NotificationController.sendNewCallNotification);
+router.post('/seen/:id', Authenticate, NotificationController.sendSeenNotification);
 router.post('/refuse-call/:id', Authenticate, NotificationController.sendRefuseCallNotification);
 router.post('/stop-call/:id', Authenticate, NotificationController.sendStopCallNotification);
 
@@ -69,5 +70,10 @@ router.post('/stop-call/:id', Authenticate, NotificationController.sendStopCallN
 router.post('/email/forgot-password', EmailController.sendForgotPasswordEmail);
 router.post('/email/validate', Authenticate, EmailController.sendValidationEmail);
 router.patch('/email/validate', Authenticate, UserController.validateUser);
+
+// Location
+router.post('/location/:userId', Authenticate, LocationController.createLocation);
+router.get('/location/ip', Authenticate, LocationController.getUserLocation);
+router.get('/location/city', Authenticate, LocationController.getCityAndCountry);
 
 module.exports = router;

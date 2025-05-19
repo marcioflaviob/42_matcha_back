@@ -21,17 +21,6 @@ exports.likeUser = async (req, res) => {
 	}
 }
 
-exports.seeProfile = async (req, res) => {
-	try {
-		const userId = req.user.id;
-		const profileUserId = req.params.id;
-		const seeProfileResult = await UserInteractionsService.seeProfile(userId, profileUserId);
-		res.status(200).send(seeProfileResult);
-	} catch (err) {
-		res.status(404).send({ error: err.message });
-	}
-}
-
 exports.getProfileViewsByUserId = async (req, res) => {
 	try {
 		const userId = req.user.id;

@@ -5,6 +5,9 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const passport = require('../utils/PassportSetup.js');
 
+// Enable trust proxy to get real client IP
+app.set('trust proxy', true);
+
 const corsOptions = {
     origin: true,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
