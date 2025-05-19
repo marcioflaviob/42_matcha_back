@@ -18,6 +18,8 @@ const router = express.Router();
 router.post('/auth/login', AuthController.login);
 router.get('/auth/verify', AuthController.verify);
 router.get('/auth/me', Authenticate, AuthController.getCurrentUser);
+router.get('/auth/google', AuthController.googleAuth);
+router.get('/auth/google/callback', AuthController.googleCallback);
 
 // Pusher
 router.post('/auth/pusher', Authenticate, PusherController.pusherAuthentication);
