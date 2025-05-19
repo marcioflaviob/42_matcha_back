@@ -29,23 +29,6 @@ const login = async (email, password) => {
 	};
 };
 
-// const loginWithOAuth = async (userId) => {
-// 	const user = await UserService.getUserById(userId);
-  
-// 	if (!user) {
-// 	  throw new Error("User not found");
-// 	}
-  
-// 	const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, {
-// 	  expiresIn: "24h",
-// 	});
-  
-// 	return {
-// 	  token,
-// 	  user,
-// 	};
-//   };
-
 const verifyToken = async (token) => {
 	try {
 		return await jwt.verify(token, JWT_SECRET);
@@ -56,7 +39,6 @@ const verifyToken = async (token) => {
 
 module.exports = {
 	login,
-	// loginWithOAuth,
 	verifyToken
 };
 

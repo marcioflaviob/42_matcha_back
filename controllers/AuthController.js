@@ -70,7 +70,7 @@ const jwt = require('jsonwebtoken');
 
   exports.googleAuth = passport.authenticate('google', {
     scope: ['profile', 'email']
-  }),
+  })
   
   exports.googleCallback = (req, res, next) => {
     passport.authenticate('google', { session: false }, (err, user) => {
