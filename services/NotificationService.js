@@ -1,5 +1,6 @@
 const Notification = require('../models/Notification/Notification.js');
 const UserService = require('./UserService.js');
+const Dates = require('../models/Dates/Dates.js');
 const PusherService = require('./PusherService.js');
 
 exports.getNotSeenNotificationsByUserId = async (userId) => {
@@ -209,4 +210,25 @@ const alreadyHaveNotification = async (userId, message) => {
 	const notification = unreadNotifications.find(notification => notification.message == message);
 	
 	return notification !== undefined;
+}
+
+exports.newDateNotification = async (senderId, receiverId, date_data) => {
+	try {
+		const dateExists = await Dates.getDateById(senderId, receiverId, date_data);
+		if (!dateExists) {
+			const senderData = await UserService.getUserById(senderId);
+			const date = await Dates.createDate(senderId, receiverId, date_data);
+			const notification = await this.createNotification(receiverId, senderId, 'new-date', 'Date request', `${senderData.first_name} has sent you a date request`);
+			return {notification, date, date_data};
+		}
+		else
+		{
+			const senderData = await UserService.getUserById(senderId);
+			const notification = await this.createNotification(receiverId, senderId, 'new-date', 'Date request', `${senderData.first_name} has sent you a date request`);
+			return {notification, date: dateExists, date_data};
+		}
+	} catch (error) {
+		console.error(error);
+		throw new Error('Failed to create date notification');
+	}
 }

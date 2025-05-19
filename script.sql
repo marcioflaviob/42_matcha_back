@@ -79,12 +79,13 @@ CREATE TABLE IF NOT EXISTS location (
 );
 
 CREATE TABLE IF NOT EXISTS date (
-	user1 INT NOT NULL,
-	user2 INT NOT NULL,
+	sender_id INT NOT NULL,
+	receiver_id INT NOT NULL,
 	date_data VARCHAR(255) NOT NULL,
-	PRIMARY KEY (user1, user2, interaction_type),
-	FOREIGN KEY (user1) REFERENCES users(id) ON DELETE CASCADE,
-	FOREIGN KEY (user2) REFERENCES users(id) ON DELETE CASCADE
+	accepted BOOLEAN DEFAULT FALSE,
+	PRIMARY KEY (sender_id, receiver_id, date_data),
+	FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE,
+	FOREIGN KEY (receiver_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 ALTER TABLE users DISABLE ROW LEVEL SECURITY;

@@ -12,6 +12,7 @@ const PusherController = require('./controllers/PusherController.js');
 const NotificationController = require('./controllers/NotificationController.js');
 const EmailController = require('./controllers/EmailController.js');
 const LocationController = require('./controllers/LocationController.js');
+const DatesController = require('./controllers/DatesController.js');
 
 const router = express.Router();
 
@@ -63,6 +64,7 @@ router.post('/call/:id', Authenticate, NotificationController.sendNewCallNotific
 router.post('/seen/:id', Authenticate, NotificationController.sendSeenNotification);
 router.post('/refuse-call/:id', Authenticate, NotificationController.sendRefuseCallNotification);
 router.post('/stop-call/:id', Authenticate, NotificationController.sendStopCallNotification);
+router.post('/notification/date', Authenticate, NotificationController.sendDateNotification);
 
 // Email
 router.post('/email/forgot-password', EmailController.sendForgotPasswordEmail);
@@ -73,5 +75,10 @@ router.patch('/email/validate', Authenticate, UserController.validateUser);
 router.post('/location/:userId', Authenticate, LocationController.createLocation);
 router.get('/location/ip', Authenticate, LocationController.getUserLocation);
 router.get('/location/city', Authenticate, LocationController.getCityAndCountry);
+
+//Dates
+router.get('/dates', Authenticate, DatesController.getDatesByUserId);
+router.get('/dates/unanswered', Authenticate, DatesController.getUnansweredDatesByReceiverId);
+router.delete('/dates', Authenticate, DatesController.removeDate);
 
 module.exports = router;

@@ -63,6 +63,18 @@ exports.sendRefuseCallNotification = async (req, res) => {
 	}
 }
 
+exports.sendDateNotification= async (req, res) => {
+    try {
+		const sender_id = req.body.senderId;
+		const receiver_id = req.body.receiverId;
+		const date_data = req.body.dateData;
+        const {notification, date} = await NotificationService.newDateNotification(sender_id, receiver_id, date_data);
+        res.status(200).send({notification, date});
+    } catch (error) {
+		res.status(500).send({ error: 'Failed to send date notification' });
+	}
+}
+
 exports.markNotificationAsSeen = async (req, res) => {
 	try {
 		const userId = req.user.id;
