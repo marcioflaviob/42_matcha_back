@@ -32,3 +32,16 @@ exports.removeDate = async (req, res) => {
         res.status(404).send({ error: err.message });
     }
 }
+
+exports.acceptDate = async (req, res) => {
+    try {
+        const receiver_id = req.user.id;
+        const sender_id = req.body.senderId;
+        const date_data = req.body.dateData;
+
+        const date = await DatesService.acceptDate(sender_id, receiver_id, date_data);
+        res.status(200).send(date);
+    } catch (err) {
+        res.status(404).send({ error: err.message });
+    }
+}

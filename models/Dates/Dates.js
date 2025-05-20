@@ -27,9 +27,9 @@ class Dates {
         }
     }
 
-    static async createDate(sender_id, receiver_id, date_data) {
+    static async createDate(sender_id, receiver_id, date_data, address) {
         try {
-            const result = await db.query('INSERT INTO date (sender_id, receiver_id, date_data) VALUES ($1, $2, $3) RETURNING *',
+            const result = await db.query('INSERT INTO date (sender_id, receiver_id, date_data, address) VALUES ($1, $2, $3, $4) RETURNING *',
             [sender_id, receiver_id, date_data]);
             return result.rows[0];
         } catch (error) {
@@ -59,6 +59,17 @@ class Dates {
         } catch (error) {
             console.error('Error fetching date by composite key:', error);
             throw new Error('Failed to fetch date');
+        }
+    }
+
+    static async acceptDate(sender_id, receiver_id, date_data) {
+        try {
+            const result = await db.query('UPDATE date SET accepted = true WHERE sender_id = $1 AND receiver_id = $2 AND date_data = $3 RETURNING *',
+            [sender_id, receiver_id, date_data]);
+            return result.rows[0];
+        } catch (error) {
+            console.error('Error accepting date:', error);
+            throw new Error('Failed to accept date');
         }
     }
 }

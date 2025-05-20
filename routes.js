@@ -80,5 +80,6 @@ router.get('/location/city', Authenticate, LocationController.getCityAndCountry)
 router.get('/dates', Authenticate, DatesController.getDatesByUserId);
 router.get('/dates/unanswered', Authenticate, DatesController.getUnansweredDatesByReceiverId);
 router.delete('/dates', Authenticate, DatesController.removeDate);
+router.patch('/dates/accept', Authenticate, DatesController.acceptDate);
 
 module.exports = router;

@@ -82,6 +82,7 @@ CREATE TABLE IF NOT EXISTS date (
 	sender_id INT NOT NULL,
 	receiver_id INT NOT NULL,
 	date_data VARCHAR(255) NOT NULL,
+	address VARCHAR(255) NOT NULL,
 	accepted BOOLEAN DEFAULT FALSE,
 	PRIMARY KEY (sender_id, receiver_id, date_data),
 	FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE,

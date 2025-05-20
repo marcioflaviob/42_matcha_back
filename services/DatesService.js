@@ -26,3 +26,12 @@ exports.removeDate = async (sender_id, receiver_id, date_data) => {
         throw new Error('Failed to remove date');
     }
 }
+
+exports.acceptDate = async (sender_id, receiver_id, date_data) => {
+    try {
+        const date = await Dates.acceptDate(sender_id, receiver_id, date_data);
+        return date;
+    } catch (error) {
+        throw new Error('Failed to accept date');
+    }
+}
