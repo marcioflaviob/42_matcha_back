@@ -19,18 +19,9 @@ const updateLocation = async (userId, locationData) => {
 const getCityAndCountry = async (latitude, longitude) => {
     try {
         const response = await fetch(
-            `https://api.opencagedata.com/geocode/v1/json?q=${latitude}+${longitude}&key=${process.env.GEOCODE_API_KEY}`
+            `https://api.opencagedata.com/geocode/v1/json?q=${latitude}+${longitude}&key=${process.env.VITE_GEOCODE_API_KEY}`
         );
-        const data = await response.json();
-        if (data.results) {
-            const components = data.results[0].components;
-            return {
-                city: components.city || components.town || components.village || 'Unknown',
-                country: components.country || 'Unknown',
-            };
-        } else {
-            throw new Error('Unable to fetch city and country.');
-        }
+        return await response.json();
     } catch (err) {
         console.error('Error fetching city and country:', err);
         return { city: 'Unknown', country: 'Unknown' };
