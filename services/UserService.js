@@ -68,6 +68,11 @@ const getUserByEmailWithPassword = async (email) => {
 
 const getUserByEmail = async (email) => {
     const user = await User.findByEmail(email);
+
+    if (!user) {
+        return null;
+    }
+
     const formattedUser = await formatUser(user);
     return formattedUser;
 };
