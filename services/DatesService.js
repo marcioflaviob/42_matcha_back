@@ -18,18 +18,18 @@ exports.getUnansweredDatesByReceiverId = async (userId) => {
     }
 }
 
-exports.removeDate = async (sender_id, receiver_id, date_data) => {
+exports.removeDate = async (date_id) => {
     try {
-        const date = await Dates.removeDate(sender_id, receiver_id, date_data);
+        const date = await Dates.removeDate(date_id);
         return date;
     } catch (error) {
         throw new Error('Failed to remove date');
     }
 }
 
-exports.acceptDate = async (sender_id, receiver_id, date_data) => {
+exports.acceptDate = async (date_id) => {
     try {
-        const date = await Dates.acceptDate(sender_id, receiver_id, date_data);
+        const date = await Dates.acceptDate(date_id);
         return date;
     } catch (error) {
         throw new Error('Failed to accept date');

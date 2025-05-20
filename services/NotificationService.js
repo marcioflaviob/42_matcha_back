@@ -212,20 +212,20 @@ const alreadyHaveNotification = async (userId, message) => {
 	return notification !== undefined;
 }
 
-exports.newDateNotification = async (senderId, receiverId, date_data, address) => {
+exports.newDateNotification = async (senderId, receiverId, scheduled_date, address, date_id) => {
 	try {
-		const dateExists = await Dates.getDateById(senderId, receiverId, date_data);
+		const dateExists = await Dates.getDateById(date_id);
 		if (!dateExists) {
 			const senderData = await UserService.getUserById(senderId);
-			const date = await Dates.createDate(senderId, receiverId, date_data, address);
+			const date = await Dates.createDate(senderId, receiverId, scheduled_date, address);
 			const notification = await this.createNotification(receiverId, senderId, 'new-date', 'New date', `${senderData.first_name} scheduled a date with you`);
-			return {notification, date, date_data};
+			return {notification, date, scheduled_date};
 		}
 		else
 		{
 			const senderData = await UserService.getUserById(senderId);
 			const notification = await this.createNotification(receiverId, senderId, 'new-date', 'New date', `${senderData.first_name} scheduled a date with you`);
-			return {notification, date: dateExists, date_data};
+			return {notification, date: dateExists, scheduled_date};
 		}
 	} catch (error) {
 		console.error(error);

@@ -27,10 +27,10 @@ class Dates {
         }
     }
 
-    static async createDate(sender_id, receiver_id, date_data, address) {
+    static async createDate(sender_id, receiver_id, scheduled_date, address) {
         try {
-            const result = await db.query('INSERT INTO date (sender_id, receiver_id, date_data, address) VALUES ($1, $2, $3, $4) RETURNING *',
-            [sender_id, receiver_id, date_data]);
+            const result = await db.query('INSERT INTO date (sender_id, receiver_id, scheduled_date, address) VALUES ($1, $2, $3, $4) RETURNING *',
+            [sender_id, receiver_id, scheduled_date, address]);
             return result.rows[0];
         } catch (error) {
             console.error('Error creating date:', error);
@@ -38,11 +38,11 @@ class Dates {
         }
     }
 
-    static async removeDate(sender_id, receiver_id, date_data)
+    static async removeDate(id)
     {
         try {
-            const result = await db.query('DELETE FROM date WHERE sender_id = $1 AND receiver_id = $2 AND date_data = $3 RETURNING *',
-            [sender_id, receiver_id, date_data]);
+            const result = await db.query('DELETE FROM date WHERE id = $1 RETURNING *',
+            [id]);
             return result.rows[0];
         }
         catch (error) {
@@ -51,10 +51,10 @@ class Dates {
         }
     }
 
-    static async getDateById(sender_id, receiver_id, date_data) {
+    static async getDateById(id) {
         try {
-            const result = await db.query('SELECT * FROM date WHERE sender_id = $1 AND receiver_id = $2 AND date_data = $3',
-            [sender_id, receiver_id, date_data]);
+            const result = await db.query('SELECT * FROM date WHERE id = $1',
+            [id]);
             return result.rows[0];
         } catch (error) {
             console.error('Error fetching date by composite key:', error);
@@ -62,10 +62,10 @@ class Dates {
         }
     }
 
-    static async acceptDate(sender_id, receiver_id, date_data) {
+    static async acceptDate(id) {
         try {
-            const result = await db.query('UPDATE date SET accepted = true WHERE sender_id = $1 AND receiver_id = $2 AND date_data = $3 RETURNING *',
-            [sender_id, receiver_id, date_data]);
+            const result = await db.query('UPDATE date SET accepted = true WHERE id = $1 RETURNING *',
+            [id]);
             return result.rows[0];
         } catch (error) {
             console.error('Error accepting date:', error);

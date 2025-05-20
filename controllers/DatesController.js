@@ -22,11 +22,8 @@ exports.getUnansweredDatesByReceiverId = async (req, res) => {
 
 exports.removeDate = async (req, res) => {
     try {
-        const receiver_id = req.user.id;
-        const sender_id = req.body.senderId;
-        const date_data = req.body.dateData;
-
-        const date = await DatesService.removeDate(sender_id, receiver_id, date_data);
+        const date_id = req.params.id;
+        const date = await DatesService.removeDate(date_id);
         res.status(200).send(date);
     } catch (err) {
         res.status(404).send({ error: err.message });
@@ -35,11 +32,8 @@ exports.removeDate = async (req, res) => {
 
 exports.acceptDate = async (req, res) => {
     try {
-        const receiver_id = req.user.id;
-        const sender_id = req.body.senderId;
-        const date_data = req.body.dateData;
-
-        const date = await DatesService.acceptDate(sender_id, receiver_id, date_data);
+        const date_id = req.params.id;
+        const date = await DatesService.acceptDate(date_id);
         res.status(200).send(date);
     } catch (err) {
         res.status(404).send({ error: err.message });

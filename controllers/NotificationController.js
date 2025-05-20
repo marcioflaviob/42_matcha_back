@@ -67,8 +67,8 @@ exports.sendDateNotification= async (req, res) => {
     try {
 		const sender_id = req.body.senderId;
 		const receiver_id = req.body.receiverId;
-		const date_data = req.body.dateData;
-        const {notification, date} = await NotificationService.newDateNotification(sender_id, receiver_id, date_data);
+		const scheduled_date = req.body.dateData;
+        const {notification, date} = await NotificationService.newDateNotification(sender_id, receiver_id, scheduled_date);
         res.status(200).send({notification, date});
     } catch (error) {
 		res.status(500).send({ error: 'Failed to send date notification' });
