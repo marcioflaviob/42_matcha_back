@@ -1,6 +1,5 @@
 const Notification = require('../models/Notification/Notification.js');
 const UserService = require('./UserService.js');
-const Dates = require('../models/Dates/Dates.js');
 const PusherService = require('./PusherService.js');
 
 exports.getNotSeenNotificationsByUserId = async (userId) => {
@@ -25,7 +24,7 @@ exports.markAllAsSeen = async (userId) => {
 
 exports.createNotification = async (userId, senderId, type, title, message) => {
 	try {
-		if (await alreadyHaveNotification(userId, message) && type != "new-date") {
+		if (await alreadyHaveNotification(userId, message)) {
 			return;
 		}
 		
@@ -212,32 +211,15 @@ const alreadyHaveNotification = async (userId, message) => {
 	return notification !== undefined;
 }
 
-exports.newDateNotification = async (senderId, receiverId, scheduled_date, address, latitude, longitude) => {
+exports.newDateNotification = async (senderId, receiverId) => {
 	try {
-		const dateExists = await Dates.getDatesByData(receiverId, senderId, scheduled_date, address);
-		if (!Array.isArray(dateExists) || dateExists.length === 0) {
-			const senderData = await UserService.getUserById(senderId);
-			const date = await Dates.createDate(senderId, receiverId, scheduled_date, address, latitude, longitude);
-			const notification = await this.createNotification(receiverId, senderId, 'new-date', 'New date', `${senderData.first_name} scheduled a date with you`);
-			return {notification, date};
-		} else {
-			const notification = null;
-			return {notification, date: dateExists};
+		const user = await UserService.getUserById(senderId);
+		if (!user) {
+			throw new Error('User not found');
 		}
-	} catch (error) {
-		console.error(error);
-		throw new Error('Failed to create date notification');
-	}
-}
 
-exports.newUnansweredDate = async (dateId) => {
-	try {
-		const date = await Dates.getDateById(dateId);
-		const senderData = await UserService.getUserById(date.sender_id);
-		const notification = await this.createNotification(date.receiver_id, date.sender_id, 'new-date', 'New date', `${senderData.first_name} scheduled a date with you`);
-		if (!notification)
-			return {notification: null, date}
-		return {notification, date};
+		const notification = await this.createNotification(receiverId, senderId, 'new-date', 'New date', `${user.first_name} scheduled a date with you`);
+		return notification
 	} catch (error) {
 		console.error(error);
 		throw new Error('Failed to create date notification');

@@ -73,7 +73,7 @@ async function deleteFile(url) {
 exports.deleteUserPicture = async (userId, pictureId) => {
     const picture = await UserPictures.findById(pictureId);
     const deleted = await UserPictures.delete(userId, pictureId);
-    const filename = `${process.env.VITE_BLOB_URL}/${picture.url}`;
+    const filename = `${process.env.BLOB_URL}/${picture.url}`;
     deleteFile(filename);
     
     if (!deleted) {

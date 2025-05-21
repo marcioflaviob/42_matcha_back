@@ -30,8 +30,8 @@ class Dates {
     static async getUnansweredDatesByReceiverId(userId) {
         try {
             const result = await db.query(
-                'SELECT * FROM dates WHERE receiver_id = $1 AND accepted = false',
-                [userId]
+                'SELECT * FROM dates WHERE receiver_id = $1 AND status = $2',
+                [userId, 'pending']
             );
             return result.rows;
         } catch (error) {
@@ -42,8 +42,8 @@ class Dates {
 
     static async createDate(sender_id, receiver_id, scheduled_date, address, latitude, longitude) {
         try {
-            const result = await db.query('INSERT INTO dates (sender_id, receiver_id, scheduled_date, address, latitude, longitude) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
-            [sender_id, receiver_id, scheduled_date, address, latitude, longitude]);
+            const result = await db.query('INSERT INTO dates (sender_id, receiver_id, scheduled_date, address, latitude, longitude, status) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *',
+            [sender_id, receiver_id, scheduled_date, address, latitude, longitude, 'pending']);
             return result.rows[0];
         } catch (error) {
             console.error('Error creating date:', error);
@@ -51,18 +51,18 @@ class Dates {
         }
     }
 
-    static async removeDate(id)
-    {
-        try {
-            const result = await db.query('DELETE FROM dates WHERE id = $1 RETURNING *',
-            [id]);
-            return result.rows[0];
-        }
-        catch (error) {
-            console.error('Error removing date:', error);
-            throw new Error('Failed to remove date');
-        }
-    }
+    // static async removeDate(id)
+    // {
+    //     try {
+    //         const result = await db.query('DELETE FROM dates WHERE id = $1 RETURNING *',
+    //         [id]);
+    //         return result.rows[0];
+    //     }
+    //     catch (error) {
+    //         console.error('Error removing date:', error);
+    //         throw new Error('Failed to remove date');
+    //     }
+    // }
 
     static async getDateById(id) {
         try {
@@ -75,10 +75,10 @@ class Dates {
         }
     }
 
-    static async acceptDate(id) {
+    static async updateDate(id, status) {
         try {
-            const result = await db.query('UPDATE dates SET accepted = true WHERE id = $1 RETURNING *',
-            [id]);
+            const result = await db.query('UPDATE dates SET status = $1 WHERE id = $2 RETURNING *',
+            [status, id]);
             return result.rows[0];
         } catch (error) {
             console.error('Error accepting date:', error);

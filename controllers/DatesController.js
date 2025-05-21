@@ -1,5 +1,15 @@
 const DatesService = require('../services/DatesService');
 
+exports.createDate = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const date = await DatesService.createDate(userId, req.body);
+        res.status(201).send(date);
+    } catch (err) {
+        res.status(400).send({ error: err.message });
+    }
+}
+
 exports.getDatesByUserId = async (req, res) => {
     try {
         const userId = req.user.id;
@@ -20,20 +30,11 @@ exports.getUnansweredDatesByReceiverId = async (req, res) => {
     }
 }
 
-exports.removeDate = async (req, res) => {
+exports.updateDate = async (req, res) => {
     try {
-        const date_id = req.params.id;
-        const date = await DatesService.removeDate(date_id);
-        res.status(200).send(date);
-    } catch (err) {
-        res.status(404).send({ error: err.message });
-    }
-}
-
-exports.acceptDate = async (req, res) => {
-    try {
-        const date_id = req.params.id;
-        const date = await DatesService.acceptDate(date_id);
+        const dateId = req.body.id;
+        const status = req.body.status;
+        const date = await DatesService.acceptDate(dateId, status);
         res.status(200).send(date);
     } catch (err) {
         res.status(404).send({ error: err.message });
@@ -42,8 +43,8 @@ exports.acceptDate = async (req, res) => {
 
 exports.getDateById = async (req, res) => {
     try {
-        const date_id = req.params.id;
-        const date = await DatesService.getDateById(date_id);
+        const dateId = req.params.id;
+        const date = await DatesService.getDateById(dateId);
         res.status(200).send(date);
     } catch (err) {
         res.status(404).send({ error: err.message });
