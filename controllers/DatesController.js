@@ -39,3 +39,13 @@ exports.acceptDate = async (req, res) => {
         res.status(404).send({ error: err.message });
     }
 }
+
+exports.getDateById = async (req, res) => {
+    try {
+        const date_id = req.params.id;
+        const date = await DatesService.getDateById(date_id);
+        res.status(200).send(date);
+    } catch (err) {
+        res.status(404).send({ error: err.message });
+    }
+}

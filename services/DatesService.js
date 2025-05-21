@@ -9,6 +9,15 @@ exports.getDatesByUserId = async (userId) => {
     }
 }
 
+exports.getDateById = async (id) => {
+    try {
+        const date = await Dates.getDateById(id);
+        return date;
+    } catch (error) {
+        throw new Error('Failed to fetch dates');
+    }
+}
+
 exports.getUnansweredDatesByReceiverId = async (userId) => {
     try {
         const dates = await Dates.getUnansweredDatesByReceiverId(userId);

@@ -4,8 +4,21 @@ class Dates {
     static async getDatesByUserId(userId) {
         try {
             const result = await db.query(
-                'SELECT * FROM date WHERE receiver_id = $1 OR sender_id = $1',
+                'SELECT * FROM dates WHERE receiver_id = $1 OR sender_id = $1',
                 [userId]
+            );
+            return result.rows;
+        } catch (error) {
+            console.error('Error fetching dates:', error);
+            throw new Error('Failed to fetch dates');
+        }
+    }
+
+    static async getDatesByData(receiverId, senderId, scheduledDate, address) {
+        try {
+            const result = await db.query(
+                'SELECT * FROM dates WHERE receiver_id = $1 AND sender_id = $2 AND scheduled_date = $3 AND address = $4',
+                [receiverId, senderId, scheduledDate, address]
             );
             return result.rows;
         } catch (error) {
@@ -17,7 +30,7 @@ class Dates {
     static async getUnansweredDatesByReceiverId(userId) {
         try {
             const result = await db.query(
-                'SELECT * FROM date WHERE receiver_id = $1 AND accepted = false',
+                'SELECT * FROM dates WHERE receiver_id = $1 AND accepted = false',
                 [userId]
             );
             return result.rows;
@@ -27,10 +40,10 @@ class Dates {
         }
     }
 
-    static async createDate(sender_id, receiver_id, scheduled_date, address) {
+    static async createDate(sender_id, receiver_id, scheduled_date, address, latitude, longitude) {
         try {
-            const result = await db.query('INSERT INTO date (sender_id, receiver_id, scheduled_date, address) VALUES ($1, $2, $3, $4) RETURNING *',
-            [sender_id, receiver_id, scheduled_date, address]);
+            const result = await db.query('INSERT INTO dates (sender_id, receiver_id, scheduled_date, address, latitude, longitude) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
+            [sender_id, receiver_id, scheduled_date, address, latitude, longitude]);
             return result.rows[0];
         } catch (error) {
             console.error('Error creating date:', error);
@@ -41,7 +54,7 @@ class Dates {
     static async removeDate(id)
     {
         try {
-            const result = await db.query('DELETE FROM date WHERE id = $1 RETURNING *',
+            const result = await db.query('DELETE FROM dates WHERE id = $1 RETURNING *',
             [id]);
             return result.rows[0];
         }
@@ -53,7 +66,7 @@ class Dates {
 
     static async getDateById(id) {
         try {
-            const result = await db.query('SELECT * FROM date WHERE id = $1',
+            const result = await db.query('SELECT * FROM dates WHERE id = $1',
             [id]);
             return result.rows[0];
         } catch (error) {
@@ -64,7 +77,7 @@ class Dates {
 
     static async acceptDate(id) {
         try {
-            const result = await db.query('UPDATE date SET accepted = true WHERE id = $1 RETURNING *',
+            const result = await db.query('UPDATE dates SET accepted = true WHERE id = $1 RETURNING *',
             [id]);
             return result.rows[0];
         } catch (error) {
