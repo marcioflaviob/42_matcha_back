@@ -76,8 +76,8 @@ exports.sendDateNotification = async (req, res) => {
         	res.status(200).send({notification, date});
 		else
 			res.status(200).send({notification: null, date: null});
-    } catch (error) {
-		res.status(500).send({ error: 'Failed to send date notification' });
+    } catch (err) {
+		res.status(500).send({ error: err.message });
 	}
 }
 
@@ -86,8 +86,8 @@ exports.newUnansweredDate = async (req, res) => {
 		const dateId = req.params.id;
 		const {notification, date} = await NotificationService.newUnansweredDate(dateId);
 		res.status(200).send({notification, date});
-	} catch (error) {
-		res.status(500).send({ error: 'Failed to send date notification' });
+	} catch (err) {
+		res.status(500).send({ error: err.message });
 	}
 }
 

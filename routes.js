@@ -64,8 +64,6 @@ router.post('/call/:id', Authenticate, NotificationController.sendNewCallNotific
 router.post('/seen/:id', Authenticate, NotificationController.sendSeenNotification);
 router.post('/refuse-call/:id', Authenticate, NotificationController.sendRefuseCallNotification);
 router.post('/stop-call/:id', Authenticate, NotificationController.sendStopCallNotification);
-// router.post('/notifications/date', Authenticate, NotificationController.sendDateNotification);
-// router.post('/notifications/dates/unanswered/:id', Authenticate, NotificationController.newUnansweredDate);
 
 // Email
 router.post('/email/forgot-password', EmailController.sendForgotPasswordEmail);
@@ -80,7 +78,6 @@ router.get('/location/city', Authenticate, LocationController.getCityAndCountry)
 //Dates
 router.post('/dates', Authenticate, DatesController.createDate);
 router.get('/dates', Authenticate, DatesController.getDatesByUserId);
-// router.get('/dates/unanswered', Authenticate, DatesController.getUnansweredDatesByReceiverId);
 router.patch('/dates', Authenticate, DatesController.updateDate);
 router.get('/date/:id', Authenticate, DatesController.getDateById);
 
