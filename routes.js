@@ -73,9 +73,9 @@ router.post('/email/validate', Authenticate, EmailController.sendValidationEmail
 router.patch('/email/validate', Authenticate, UserController.validateUser);
 
 // Location
-router.post('/location/:userId', Authenticate, LocationController.createLocation);
-router.get('/location/ip', Authenticate, LocationController.getUserLocation);
-router.get('/location/city', Authenticate, LocationController.getCityAndCountry);
+router.post('/location/ip/:id', Authenticate, LocationController.setUserLocation);
+router.post('/location/city', Authenticate, LocationController.setCityAndCountry);
+router.get('/location/adress', Authenticate, LocationController.getAdress)
 
 //Dates
 router.post('/dates', Authenticate, DatesController.createDate);

@@ -25,7 +25,6 @@ passport.use(
     },
     async (accessToken, refreshToken, profile, done) => {
       try {
-        console.log('Google profile:', profile);
         let user = await UserService.getUserByEmail(profile.emails[0].value);
         
         // If user doesn't exist, create a new one
