@@ -2,7 +2,12 @@ const LocationService = require('../services/LocationService.js');
 
 exports.createLocation = async (req, res) => {
     try {
-        const location = await LocationService.createLocation(req.params.userId, req.body);
+        let location;
+        const user = await LocationService.getLocationByUserId(req.params.id);
+        if (user)
+            location = await LocationService.updateLocation(req.params.id, req.body);
+        else
+            location = await LocationService.createLocation(req.params.id, req.body);
         return res.status(201).send(location);
     } catch (err) {
         return res.status(400).send({ error: err.message });

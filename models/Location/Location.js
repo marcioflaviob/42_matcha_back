@@ -22,7 +22,7 @@ class Location {
                 [userId]
             );
             if (result.rows.length === 0) {
-                throw new Error('Location not found for the given user ID');
+                return null;
             }
             return result.rows[0];
         } catch (error) {

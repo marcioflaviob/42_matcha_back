@@ -6,7 +6,7 @@ const getLocationByUserId = async (userId) => {
 	return location;
 }
 
-const createLocation = async (userId, locationData) => {
+const createLocation = async (locationData) => {
     const locationId = await Location.createLocation(locationData);
     return locationId;
 };
