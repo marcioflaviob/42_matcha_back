@@ -12,6 +12,7 @@ const PusherController = require('./controllers/PusherController.js');
 const NotificationController = require('./controllers/NotificationController.js');
 const EmailController = require('./controllers/EmailController.js');
 const LocationController = require('./controllers/LocationController.js');
+const DatesController = require('./controllers/DatesController.js');
 
 const router = express.Router();
 
@@ -75,5 +76,11 @@ router.patch('/email/validate', Authenticate, UserController.validateUser);
 router.post('/location/:userId', Authenticate, LocationController.createLocation);
 router.get('/location/ip', Authenticate, LocationController.getUserLocation);
 router.get('/location/city', Authenticate, LocationController.getCityAndCountry);
+
+//Dates
+router.post('/dates', Authenticate, DatesController.createDate);
+router.get('/dates', Authenticate, DatesController.getDatesByUserId);
+router.patch('/dates', Authenticate, DatesController.updateDate);
+router.get('/date/:id', Authenticate, DatesController.getDateById);
 
 module.exports = router;

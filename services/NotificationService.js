@@ -210,3 +210,18 @@ const alreadyHaveNotification = async (userId, message) => {
 	
 	return notification !== undefined;
 }
+
+exports.newDateNotification = async (senderId, receiverId) => {
+	try {
+		const user = await UserService.getUserById(senderId);
+		if (!user) {
+			throw new Error('User not found');
+		}
+
+		const notification = await this.createNotification(receiverId, senderId, 'new-date', 'New date', `${user.first_name} scheduled a date with you`);
+		return notification
+	} catch (error) {
+		console.error(error);
+		throw new Error('Failed to create date notification');
+	}
+}

@@ -19,7 +19,7 @@ const updateLocation = async (userId, locationData) => {
 const getCityAndCountry = async (latitude, longitude) => {
     try {
         const response = await fetch(
-            `https://api.opencagedata.com/geocode/v1/json?q=${latitude}+${longitude}&key=${process.env.VITE_GEOCODE_API_KEY}`
+            `https://api.opencagedata.com/geocode/v1/json?q=${latitude}+${longitude}&key=${process.env.GEOCODE_API_KEY}`
         );
         return await response.json();
     } catch (err) {
