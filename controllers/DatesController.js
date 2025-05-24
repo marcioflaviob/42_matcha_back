@@ -34,7 +34,7 @@ exports.updateDate = async (req, res) => {
     try {
         const dateId = req.body.id;
         const status = req.body.status;
-        const date = await DatesService.acceptDate(dateId, status);
+        const date = await DatesService.updateDate(dateId, status);
         res.status(200).send(date);
     } catch (err) {
         res.status(404).send({ error: err.message });

@@ -40,10 +40,10 @@ class Dates {
         }
     }
 
-    static async createDate(sender_id, receiver_id, scheduled_date, address, latitude, longitude) {
+    static async createDate(date) {
         try {
             const result = await db.query('INSERT INTO dates (sender_id, receiver_id, scheduled_date, address, latitude, longitude, status) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *',
-            [sender_id, receiver_id, scheduled_date, address, latitude, longitude, 'pending']);
+            [date.senderId, date.receiverId, date.scheduledDate, date.address, date.latitude, date.longitude, 'pending']);
             return result.rows[0];
         } catch (error) {
             console.error('Error creating date:', error);

@@ -15,9 +15,18 @@ exports.getMessagesByUserId = async (userId, friendId) => {
 
 exports.createMessage = async (senderId, receiverId, content) => {
 	try {
-		const message = await Messages.createMessage(senderId, receiverId, content);
+		const message = await Messages.createMessage(senderId, receiverId, content, null);
 		await PusherService.sendMessage(message);
 		await NotificationService.newMessageNotification(receiverId, senderId);
+		return message;
+	} catch (error) {
+		throw new Error('Failed to create message');
+	}
+}
+
+exports.createDateMessage = async (senderId, receiverId, content, dateId) => {
+	try {
+		const message = await Messages.createMessage(senderId, receiverId, content, dateId);
 		return message;
 	} catch (error) {
 		throw new Error('Failed to create message');

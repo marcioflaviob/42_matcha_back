@@ -1,13 +1,13 @@
 const db = require('../../config/db.js');
 
 class Messages {
-	static async createMessage(senderId, receiverId, content) {
+	static async createMessage(senderId, receiverId, content, dateId) {
 		try {
 			const result = await db.query(`
-				INSERT INTO messages (sender_id, receiver_id, content)
-				VALUES ($1, $2, $3)
+				INSERT INTO messages (sender_id, receiver_id, content, date_id)
+				VALUES ($1, $2, $3, $4)
 				RETURNING *;
-			`, [senderId, receiverId, content]);
+			`, [senderId, receiverId, content, dateId]);
 			return result.rows[0];
 		} catch (error) {
 			console.error('Error creating message:', error);
