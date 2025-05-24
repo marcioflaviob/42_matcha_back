@@ -36,11 +36,24 @@ const getCityAndCountry = async (latitude, longitude, userId) => {
                 city: components.city || components.town || components.village || 'Unknown',
                 country: components.country || 'Unknown',
             }
-            const response = await createLocation(locationData);
-            return response;
+            await createLocation(locationData);
+            return data;
         } else {
             throw new Error('Unable to fetch city and country.');
     }
+    } catch (err) {
+        console.error('Error fetching city and country:', err);
+        return { city: 'Unknown', country: 'Unknown' };
+    }
+}
+
+const getAdress = async (latitude, longitude) => {
+    try {
+        const response = await fetch(
+            `https://api.opencagedata.com/geocode/v1/json?q=${latitude}+${longitude}&key=${process.env.GEOCODE_API_KEY}`
+        );
+        const data = await response.json();
+        return data;
     } catch (err) {
         console.error('Error fetching city and country:', err);
         return { city: 'Unknown', country: 'Unknown' };
@@ -108,5 +121,6 @@ module.exports = {
     createLocation,
     getCityAndCountry,
     getLocationFromIP,
-    updateLocation
+    updateLocation,
+    getAdress
 };
