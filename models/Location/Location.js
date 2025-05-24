@@ -31,11 +31,11 @@ class Location {
         }
     }
 
-    static async updateLocation(userId, locationData) {
+    static async updateLocation(locationData) {
         try {
             const result = await db.query(
                 'UPDATE location SET longitude = $1, latitude = $2, city = $3, country = $4 WHERE user_id = $5 RETURNING *',
-                [locationData.longitude, locationData.latitude, locationData.city, locationData.country, userId]
+                [locationData.longitude, locationData.latitude, locationData.city, locationData.country, locationData.userId]
             );
             if (result.rows.length === 0) {
                 throw new Error('Location not found for the given user ID');

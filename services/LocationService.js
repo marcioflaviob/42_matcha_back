@@ -7,7 +7,12 @@ const getLocationByUserId = async (userId) => {
 }
 
 const createLocation = async (locationData) => {
-    const locationId = await Location.createLocation(locationData);
+    let locationId;
+    const location = await getLocationByUserId(locationData.userId);
+    if (location)
+        locationId = await Location.updateLocation(locationData)
+    else
+        locationId = await Location.createLocation(locationData);
     return locationId;
 };
 
@@ -16,19 +21,33 @@ const updateLocation = async (userId, locationData) => {
     return location;
 };
 
-const getCityAndCountry = async (latitude, longitude) => {
+const getCityAndCountry = async (latitude, longitude, userId) => {
     try {
         const response = await fetch(
             `https://api.opencagedata.com/geocode/v1/json?q=${latitude}+${longitude}&key=${process.env.GEOCODE_API_KEY}`
         );
-        return await response.json();
+        const data = await response.json();
+        if (data.results) {
+            const components = data.results[0].components;
+            const locationData = {
+                userId: userId,
+                latitude: latitude,
+                longitude: longitude,
+                city: components.city || components.town || components.village || 'Unknown',
+                country: components.country || 'Unknown',
+            }
+            const response = await createLocation(locationData);
+            return response;
+        } else {
+            throw new Error('Unable to fetch city and country.');
+    }
     } catch (err) {
         console.error('Error fetching city and country:', err);
         return { city: 'Unknown', country: 'Unknown' };
     }
 }
 
-const getLocationFromIP = async () => {
+const getLocationFromIP = async (userId) => {
     try {
         const publicIpResponse = await fetch('https://api.ipify.org?format=json');
         const publicIpData = await publicIpResponse.json();
@@ -39,40 +58,46 @@ const getLocationFromIP = async () => {
             const data = await response.json();
             
             if (data.status === 'success') {
-                return {
+                const locationData = {
+                    userId: userId,
                     city: data.city || 'Unknown',
                     country: data.country || 'Unknown',
                     latitude: data.lat,
                     longitude: data.lon
-                };
+                }
+                const locate = await createLocation(locationData);
+                return locate;
             }
         } catch (ipApiError) {
             console.log('ip-api.com failed:', ipApiError.message);
         }
-
         try {
             const fallbackResponse = await fetch(`https://ipapi.co/${publicIp}/json/`);
             const fallbackData = await fallbackResponse.json();
             
             if (!fallbackData.error && fallbackData.latitude && fallbackData.longitude) {
-                return {
+                const locationData = {
+                    userId: userId,
                     city: fallbackData.city || 'Unknown',
                     country: fallbackData.country || 'Unknown',
                     latitude: fallbackData.latitude,
                     longitude: fallbackData.longitude
-                };
+                }
+                const locate = await createLocation(locationData);
+                return locate;    
             }
         } catch (ipapiError) {
             console.log('ipapi.co failed:', ipapiError.message);
         }
-
-        console.log('All geolocation services failed, using default location');
-        return {
+        const locationData = {
+            userId: userId,
             city: 'Paris',
             country: 'France',
             latitude: 48.8566,
             longitude: 2.3522
-        };
+        }
+        const locate = await createLocation(locationData);
+        return locate;
     } catch (err) {
         console.error('Error getting location from IP:', err);
     }
