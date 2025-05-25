@@ -1,202 +1,152 @@
 const UserInteractions = require('../models/UserInteractions/UserInteractions.js');
 const UserService = require('./UserService.js');
 const NotificationService = require('./NotificationService.js');
+const ApiException = require('../exceptions/ApiException.js');
 
 exports.getLikeCountByUserId = async (userId) => {
-	try {
-		const likeCount = await UserInteractions.getLikeCountByUserId(userId);
-		return likeCount;
-	} catch (error) {
-		throw new Error('Failed to fetch like count');
-	}
+	const likeCount = await UserInteractions.getLikeCountByUserId(userId);
+	return likeCount;
 }
 
 exports.likeUser = async (userId, user2Id) => {
-	try {
-		const like = await UserInteractions.likeUser(userId, user2Id);
+	if (!userId || !user2Id) throw new ApiException(400, 'User IDs are required');
 
-		if (await isUserAlreadyLiked(userId, user2Id)) {
-			const match = await this.matchUsers(userId, user2Id);
-			// TODO Trigger match notification
-			return match;
-		}
+	if (userId == user2Id) throw new ApiException(400, 'You cannot like yourself');
 
-		await NotificationService.newLikeNotification(user2Id, userId);
+	const like = await UserInteractions.likeUser(userId, user2Id);
 
-		return like;
-	} catch (error) {
-		throw new Error('Failed to like user');
+	if (await isUserAlreadyLiked(userId, user2Id)) {
+		return await this.matchUsers(userId, user2Id);
 	}
+
+	await NotificationService.newLikeNotification(user2Id, userId);
+
+	return like;
 }
 
 exports.getProfileViewsByUserId = async (userId) => {
-	try {
-		const views = await UserInteractions.getProfileViewsByUserId(userId);
+	if (!userId) throw new ApiException(400, 'User ID is required');
 
-		// Fetch users' details based on their IDs
-		const users = views.map(async (view) => {
-			return await UserService.getUserById(view.user1);
-		});
+	const views = await UserInteractions.getProfileViewsByUserId(userId);
 
-		return users;
-	} catch (error) {
-		throw new Error('Failed to fetch profile views');
-	}
+	// Fetch users' details based on their IDs
+	const users = views.map(async (view) => {
+		return await UserService.getUserById(view.user1);
+	});
+
+	return users;
 }
 
 exports.matchUsers = async (userId, user2Id) => {
-	try {
-		const match = await UserInteractions.matchUsers(userId, user2Id);
-		await NotificationService.newMatchNotification(userId, user2Id);
-		return match;
-	} catch (error) {
-		throw new Error('Failed to match users');
-	}
+	const match = await UserInteractions.matchUsers(userId, user2Id);
+	await NotificationService.newMatchNotification(userId, user2Id);
+	return match;
 }
 
 exports.getMatchesByUserId = async (userId) => {
-    try {
-        const matches = await UserInteractions.getMatchesByUserId(userId);
-        const blockedUsers = await this.getBlockedUsersIdsByUserId(userId);
+	if (!userId) throw new ApiException(400, 'User ID is required');
+	const matches = await UserInteractions.getMatchesByUserId(userId);
+	const blockedUsers = await this.getBlockedUsersIdsByUserId(userId);
 
-        const filteredMatches = matches.filter(match => 
-            !blockedUsers.has(match.user1) && !blockedUsers.has(match.user2)
-        );
+	const filteredMatches = matches.filter(match => 
+		!blockedUsers.has(match.user1) && !blockedUsers.has(match.user2)
+	);
 
-        return filteredMatches;
-    } catch (error) {
-		console.error('Error fetching matches:', error);
-        throw new Error('Failed to fetch matches');
-    }
+	return filteredMatches;
 }
 
 exports.getMatchesAsUsersByUserId = async (userId) => {
-	try {
-		const matchesIds = await this.getMatchesIdsByUserId(userId);
+	const matchesIds = await this.getMatchesIdsByUserId(userId);
 
-		const users = await Promise.all(matchesIds.map(async (id) => {
-			return await UserService.getUserById(id);
-		}));
+	const users = await Promise.all(matchesIds.map(async (id) => {
+		return await UserService.getUserById(id);
+	}));
 
-		return users;
-	} catch (error) {
-		console.error('Error fetching matches:', error);
-		throw new Error('Failed to fetch matches');
-	}
+	return users;
 }
 
 exports.getMatchesIdsByUserId = async (userId) => {
-	try {
-		const matches = await this.getMatchesByUserId(userId);
+	const matches = await this.getMatchesByUserId(userId);
 
-		const userIds = matches.map(match => {
-			return match.user1 == userId ? match.user2 : match.user1;
-		});
+	const userIds = matches.map(match => {
+		return match.user1 == userId ? match.user2 : match.user1;
+	});
 
-		return userIds;
-	} catch (error) {
-		console.error('Error fetching matches:', error);
-		throw new Error('Failed to fetch matches');
-	}
+	return userIds;
 }
 
 exports.getPotentialMatches = async (userId) => {
-	try {
-		const userData = await UserService.getUserById(userId);
-		const validUsers = await UserService.getValidUsers(userId);
+	const userData = await UserService.getUserById(userId);
+	const validUsers = await UserService.getValidUsers(userId);
 
-		const likedProfiles = await this.getLikedProfilesIdsByUserId(userId);
-		const blockedBySet = await this.getBlockedUsersIdsByUserId(userId);
-        const unwantedMatches = new Set([...blockedBySet, ...likedProfiles]);
+	const likedProfiles = await this.getLikedProfilesIdsByUserId(userId);
+	const blockedBySet = await this.getBlockedUsersIdsByUserId(userId);
+	const unwantedMatches = new Set([...blockedBySet, ...likedProfiles]);
 
-		const interested_genders = userData.sexual_interest == 'Any'
-			? ['Female', 'Male', 'Other']
-			: [userData.sexual_interest];
+	const interested_genders = userData.sexual_interest == 'Any'
+		? ['Female', 'Male', 'Other']
+		: [userData.sexual_interest];
 
-        const filteredUsers = validUsers.filter(match => {
-            const hasCommonInterest = match.interests.some(interest =>
-				userData.interests.some(userInterest => userInterest.id === interest.id)
-			);
+	const filteredUsers = validUsers.filter(match => {
+		const hasCommonInterest = match.interests.some(interest =>
+			userData.interests.some(userInterest => userInterest.id === interest.id)
+		);
 
-			const isInterestedInMyGender = match.sexual_interest == 'Any' ||
-				match.sexual_interest == userData.gender;
+		const isInterestedInMyGender = match.sexual_interest == 'Any' ||
+			match.sexual_interest == userData.gender;
 
-            return !unwantedMatches.has(match.id) &&
-			interested_genders.includes(match.gender) &&
-			hasCommonInterest && isInterestedInMyGender;
-		});
+		return !unwantedMatches.has(match.id) &&
+		interested_genders.includes(match.gender) &&
+		hasCommonInterest && isInterestedInMyGender;
+	});
 
-		const filteredMatches = await Promise.all(filteredUsers.map(async (match) => {
-            match.liked_me = await hasLikedMe(userId, match.id);
-            return match;
-        }));
+	const filteredMatches = await Promise.all(filteredUsers.map(async (match) => {
+		match.liked_me = await isUserAlreadyLiked(userId, match.id);
+		return match;
+	}));
 
-        return filteredMatches;
-	} catch (error) {
-		console.error('Error fetching potential matches:', error);
-		throw new Error('Failed to fetch potential matches');
-	}
+	return filteredMatches;
 }
 
 exports.blockUser = async (userId, user2Id) => {
-	try {
-		const block = await UserInteractions.blockUser(userId, user2Id);
-		await NotificationService.newBlockNotification(user2Id, userId);
-		return block;
-	} catch (error) {
-		throw new Error('Failed to block user');
-	}
+
+	if (!userId || !user2Id) throw new ApiException(400, 'User IDs are required');
+	if (userId == user2Id) throw new ApiException(400, 'You cannot block yourself');
+
+	const block = await UserInteractions.blockUser(userId, user2Id);
+	await NotificationService.newBlockNotification(user2Id, userId);
+	return block;
 }
 
 exports.getBlockedUsersIdsByUserId = async (userId) => {
-	try {
-		const blockedUsers = await UserInteractions.getBlockedUsersByUserId(userId);
+	if (!userId) throw new ApiException(400, 'User ID is required');
 
-		const blockedUserIds = new Set(
-            blockedUsers.flatMap(blocked => [blocked.user1, blocked.user2])
-        );
+	const blockedUsers = await UserInteractions.getBlockedUsersByUserId(userId);
 
-		blockedUserIds.delete(userId);
-		return blockedUserIds;
-	} catch (error) {
-		throw new Error('Failed to fetch blocked users');
-	}
+	const blockedUserIds = new Set(
+		blockedUsers.flatMap(blocked => [blocked.user1, blocked.user2])
+	);
+
+	blockedUserIds.delete(userId);
+	return blockedUserIds;
 }
 
 exports.getLikedProfilesIdsByUserId = async (userId) => {
-	try {
-		const likes = await UserInteractions.getLikesGivenByUserId(userId);
+	if (!userId) throw new ApiException(400, 'User ID is required');
 
-		const likedUserIds = new Set(
-			likes.flatMap(like => [like.user1, like.user2])
-		);
+	const likes = await UserInteractions.getLikesGivenByUserId(userId);
 
-		return likedUserIds;
-	} catch (error) {
-		throw new Error('Failed to fetch liked users');
-	}
+	const likedUserIds = new Set(
+		likes.flatMap(like => [like.user1, like.user2])
+	);
+
+	return likedUserIds;
 }
 
 const isUserAlreadyLiked = async (userId, user2Id) => {
-	try {
-		const like = await UserInteractions.getLikesReceivedByUserId(userId);
+	const like = await UserInteractions.getLikesReceivedByUserId(userId);
 
-		const isLiked = like.some(like => like.user1 == user2Id);
+	const isLiked = like.some(like => like.user1 == user2Id);
 
-		return isLiked ? true : false;
-	} catch (error) {
-		throw new Error('Failed to check if user is already liked');
-	}
-}
-
-const hasLikedMe = async (userId, user2Id) => {
-	try {
-		const like = await UserInteractions.getLikesReceivedByUserId(userId);
-
-		const isLiked = like.some(like => like.user1 == user2Id);
-
-		return isLiked ? true : false;
-	} catch (error) {
-		throw new Error('Failed to check if user has liked me');
-	}
+	return isLiked ? true : false;
 }

@@ -48,7 +48,7 @@ const getInterestsNamesByUserId = async (userId) => {
 			return matchingInterest.name;
 		} else {
 			console.log(`Interest with ID "${interestId}" not found in database`);
-			throw new Error(`Interest with ID "${interestId}" not found in database`);
+			return null;
 		}
 	}).filter(name => name !== null);
 	return interestNames;

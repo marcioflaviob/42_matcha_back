@@ -1,4 +1,5 @@
 const db = require('../../config/db.js');
+const ApiException = require('../../exceptions/ApiException.js');
 
 class Location {
 
@@ -8,10 +9,10 @@ class Location {
                 'INSERT INTO location (user_id, longitude, latitude, city, country) VALUES ($1, $2, $3, $4, $5) RETURNING user_id',
                 [locationData.userId, locationData.longitude, locationData.latitude, locationData.city, locationData.country]
             );
-            return result.rows[0].id; // Return the newly created location ID
+            return result.rows[0].id;
         } catch (error) {
             console.log(error);
-            throw new Error('Failed to create location');
+            throw new ApiException(500, 'Failed to create location');
         }
     }
 
@@ -22,12 +23,12 @@ class Location {
                 [userId]
             );
             if (result.rows.length === 0) {
-                throw new Error('Location not found for the given user ID');
+                throw new ApiException(404, 'Location not found for the given user ID');
             }
             return result.rows[0];
         } catch (error) {
             console.log(error);
-            throw new Error('Failed to find location by user ID');
+            throw new ApiException(500, 'Failed to find location by user ID');
         }
     }
 
@@ -38,12 +39,12 @@ class Location {
                 [locationData.longitude, locationData.latitude, locationData.city, locationData.country, userId]
             );
             if (result.rows.length === 0) {
-                throw new Error('Location not found for the given user ID');
+                throw new ApiException(404, 'Location not found for the given user ID');
             }
             return result.rows[0];
         } catch (error) {
             console.log(error);
-            throw new Error('Failed to update location');
+            throw new ApiException(500, 'Failed to update location');
         }
     }
 }

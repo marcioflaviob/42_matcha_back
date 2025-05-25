@@ -1,88 +1,44 @@
 const UserService = require('../services/UserService.js');
 
 exports.getAllUsers = async (req, res) => {
-	try {
-		const users = await UserService.getAllUsers();
-		res.send(users);
-	} catch (err) {
-		res.status(404).send({ error: err.message });
-	}
+    const users = await UserService.getAllUsers();
+    res.send(users);
 }
 
 exports.createUser = async (req, res) => {
-    try {
-        const user = await UserService.createUser(req.body);
-		if (!user) {
-			return res.status(400).send('User not created');
-		}
-        return res.status(201).send(user);
-    } catch (err) {
-        return res.status(400).send({ error: err.message });
-    }
+    const user = await UserService.createUser(req.body);
+    return res.status(201).send(user);
 };
 
 exports.getUserById = async (req, res) => {
-    try {
-        const user = await UserService.getUserById(req.params.id);
-        res.send(user);
-    } catch (err) {
-        res.status(404).send({ error: err.message });
-    }
+    const user = await UserService.getUserById(req.params.id);
+    res.send(user);
 };
 
 exports.getUserByEmail = async (req, res) => {
-    try {
-        const user = await UserService.getUserByEmail(req.params.email);
-        res.send(user);
-    } catch (err) {
-        res.status(404).send({ error: err.message });
-    }
+    const user = await UserService.getUserByEmail(req.params.email);
+    res.send(user);
 }
 
 exports.updateUser = async (req, res) => {
-    try {
-        const user = await UserService.updateUser(req);
-        res.send(user);
-    } catch (err) {
-        res.status(400).send({ error: err.message });
-    }
+    const user = await UserService.updateUser(req);
+    res.send(user);
 };
 
 exports.resetPassword = async (req, res) => {
-    try {
-        const userId = req.user.id;
+    const userId = req.user.id;
 
-        if (!req.body.password || !userId) {
-            return res.status(400).send({ error: 'Missing fields' });
-        }
-
-        const user = await UserService.resetPassword(userId, req.body.password);
-        res.status(200).send(user);
-    } catch (err) {
-        res.status(400).send({ error: err.message });
+    if (!req.body.password || !userId) {
+        return res.status(400).send({ error: 'Missing fields' });
     }
+
+    const user = await UserService.resetPassword(userId, req.body.password);
+    res.status(200).send(user);
 };
 
 exports.validateUser = async (req, res) => {
-    try {
-        const userId = req.user.id;
+    const userId = req.user.id;
 
-        if (!userId) {
-            return res.status(400).send({ error: 'Missing fields' });
-        }
-
-        const user = await UserService.validateUser(userId);
-        res.status(200).send(user);
-    } catch (err) {
-        res.status(400).send({ error: err.message });
-    }
+    const user = await UserService.validateUser(userId);
+    res.status(200).send(user);
 }
-
-exports.deleteUser = async (req, res) => {
-    try {
-        await UserService.deleteUser(req.params.id);
-        res.send({ message: 'User deleted successfully' });
-    } catch (err) {
-        res.status(404).send({ error: err.message });
-    }
-};

@@ -1,4 +1,5 @@
 const db = require('../../config/db.js');
+const ApiException = require('../../exceptions/ApiException.js');
 
 class Messages {
 	static async createMessage(senderId, receiverId, content, dateId) {
@@ -11,7 +12,7 @@ class Messages {
 			return result.rows[0];
 		} catch (error) {
 			console.error('Error creating message:', error);
-			throw new Error('Failed to create message');
+			throw new ApiException(500, 'Failed to create message');
 		}
 	}
 
@@ -25,7 +26,7 @@ class Messages {
 			return result.rows;
 		} catch (error) {
 			console.error('Error fetching messages:', error);
-			throw new Error('Failed to fetch messages');
+			throw new ApiException(500, 'Failed to fetch messages');
 		}
 	}
 
@@ -39,7 +40,7 @@ class Messages {
 			return result.rowCount;
 		} catch (error) {
 			console.error('Error reading messages:', error);
-			throw new Error('Failed to read messages');
+			throw new ApiException(500, 'Failed to read messages');
 		}
 	}
 
@@ -52,7 +53,7 @@ class Messages {
 			return result.rows;
 		} catch (error) {
 			console.error('Error fetching unread messages:', error);
-			throw new Error('Failed to fetch unread messages');
+			throw new ApiException(500, 'Failed to fetch unread messages');
 		}
 	}
 }
