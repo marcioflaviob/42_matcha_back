@@ -15,6 +15,7 @@ exports.uploadPicture = async (userId, file) => {
 
         return urlPath;
     } catch (err) {
+        console.error('Error uploading picture:', err);
         throw new ApiException(500, 'Failed to upload picture');
     }
 };
@@ -52,6 +53,7 @@ async function deleteFile(url) {
         await del(url);
         return true;
     } catch (error) {
+        console.error('Error deleting file:', error);
         throw new ApiException(500, 'Failed to delete file');
     }
 }

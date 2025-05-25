@@ -51,6 +51,7 @@ exports.sendStatusChange = async (senderId, receiverId, status) => {
 			status,
 		});
 	} catch (error) {
+		console.error('Error sending status change:', error);
 		throw new ApiException('Failed to send message', 500);
 	}
 }
@@ -65,6 +66,7 @@ exports.requestStatus = async (userId) => {
 			});
 		})
 	} catch (error) {
+		console.error('Error requesting status:', error);
 		throw new ApiException('Failed to send message', 500);
 	}
 }

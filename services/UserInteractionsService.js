@@ -56,18 +56,13 @@ exports.getMatchesByUserId = async (userId) => {
 }
 
 exports.getMatchesAsUsersByUserId = async (userId) => {
-	try {
-		const matchesIds = await this.getMatchesIdsByUserId(userId);
+	const matchesIds = await this.getMatchesIdsByUserId(userId);
 
-		const users = await Promise.all(matchesIds.map(async (id) => {
-			return await UserService.getUserById(id);
-		}));
+	const users = await Promise.all(matchesIds.map(async (id) => {
+		return await UserService.getUserById(id);
+	}));
 
-		return users;
-	} catch (error) {
-		console.error('Error fetching matches:', error);
-		throw new Error('Failed to fetch matches');
-	}
+	return users;
 }
 
 exports.getMatchesIdsByUserId = async (userId) => {
@@ -106,7 +101,7 @@ exports.getPotentialMatches = async (userId) => {
 	});
 
 	const filteredMatches = await Promise.all(filteredUsers.map(async (match) => {
-		match.liked_me = await hasLikedMe(userId, match.id);
+		match.liked_me = await isUserAlreadyLiked(userId, match.id);
 		return match;
 	}));
 
@@ -149,14 +144,6 @@ exports.getLikedProfilesIdsByUserId = async (userId) => {
 }
 
 const isUserAlreadyLiked = async (userId, user2Id) => {
-	const like = await UserInteractions.getLikesReceivedByUserId(userId);
-
-	const isLiked = like.some(like => like.user1 == user2Id);
-
-	return isLiked ? true : false;
-}
-
-const hasLikedMe = async (userId, user2Id) => {
 	const like = await UserInteractions.getLikesReceivedByUserId(userId);
 
 	const isLiked = like.some(like => like.user1 == user2Id);
