@@ -4,6 +4,7 @@ const routes = require('../routes.js');
 const app = express();
 const PORT = process.env.PORT || 3000;
 const passport = require('../utils/PassportSetup.js');
+const errorHandler = require('../utils/ErrorHandler.js');
 
 // Enable trust proxy to get real client IP
 app.set('trust proxy', true);
@@ -24,6 +25,8 @@ app.use(express.urlencoded({ extended: true }));
 app.use(passport.initialize());
  
 app.use('', routes);
+
+app.use(errorHandler);
 
 app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);

@@ -1,4 +1,5 @@
 const db = require('../../config/db.js');
+const ApiException = require('../../exceptions/ApiException.js');
 
 class Interests {
     static async findAll() {
@@ -7,7 +8,7 @@ class Interests {
             return result.rows;
         } catch (error) {
             console.log(error);
-            throw new Error(error);
+            throw new ApiException(500, 'Failed to fetch interests');
         }
     }
 
@@ -21,7 +22,7 @@ class Interests {
             return interestIds;
         } catch (error) {
             console.log(error);
-            throw new Error(error);
+            throw new ApiException(500, 'Failed to fetch interests by user ID');
         }
     }
 
@@ -34,7 +35,7 @@ class Interests {
             return true;
         } catch (error) {
             console.log(error);
-            throw new Error('Failed to add interest');
+            throw new ApiException(500, 'Failed to add interest');
         }
     }
 
@@ -47,7 +48,7 @@ class Interests {
             return true;
         } catch (error) {
             console.log(error);
-            throw new Error('Failed to remove interest');
+            throw new ApiException(500, 'Failed to remove interest');
         }
     }
 
@@ -57,7 +58,7 @@ class Interests {
             return true;
         } catch (error) {
             console.log(error);
-            throw new Error('Failed to remove all interests');
+            throw new ApiException(500, 'Failed to remove all interests');
         }
     }
 

@@ -1,4 +1,5 @@
 const db = require('../../config/db.js');
+const ApiException = require('../../exceptions/ApiException.js');
 
 class Notification {
 
@@ -7,7 +8,7 @@ class Notification {
 			const queryResult = await db.query('SELECT * FROM notifications WHERE user_id = $1', [userId]);
 			return queryResult.rows;
 		} catch (error) {
-			throw new Error('Failed to fetch notifications');
+			throw new ApiException(500, 'Failed to fetch notifications');
 		}
 	}
 
@@ -16,7 +17,7 @@ class Notification {
 			const queryResult = await db.query('SELECT * FROM notifications WHERE user_id = $1 AND seen = false', [userId]);
 			return queryResult.rows;
 		} catch (error) {
-			throw new Error('Failed to fetch notifications');
+			throw new ApiException(500, 'Failed to fetch unseen notifications');
 		}
 	}
 
@@ -28,7 +29,7 @@ class Notification {
 			);
 			return queryResult.rows[0];
 		} catch (error) {
-			throw new Error('Failed to create notification');
+			throw new ApiException(500, 'Failed to create notification');
 		}
 	}
 
@@ -40,7 +41,7 @@ class Notification {
 			);
 			return queryResult.rows;
 		} catch (error) {
-			throw new Error('Failed to mark notifications as seen');
+			throw new ApiException(500, 'Failed to mark notifications as seen');
 		}
 	}
 

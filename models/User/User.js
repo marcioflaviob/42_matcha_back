@@ -1,5 +1,6 @@
 const db = require('../../config/db.js');
 const bcrypt = require('bcrypt');
+const ApiException = require('../../exceptions/ApiException.js');
 
 class User {
 
@@ -10,29 +11,29 @@ class User {
 
         } catch (error) {
             console.log(error);
-            throw new Error(error);
+            throw new ApiException(500, 'Failed to fetch users');
         }
     }
 
     static async findById(id) {
         try {
             const queryResult = await db.query('SELECT * FROM users WHERE id = $1', [id]);
-            if (queryResult.rows.length === 0) return null;
+            if (queryResult.rows.length === 0) throw new ApiException(404, 'User not found');
             return queryResult.rows[0];
         } catch (error) {
             console.log(error);
-            throw new Error(error);
+            throw new ApiException(500, 'Failed to fetch user by ID');
         }
     }
 
     static async findByEmail(email) {
         try {
             const queryResult = await db.query('SELECT * FROM users WHERE email = $1', [email]);
-            if (queryResult.rows.length === 0) return null;
+            if (queryResult.rows.length === 0) throw new ApiException(404, 'User not found');
             return queryResult.rows[0];
         } catch (error) {
             console.log(error);
-            throw new Error(error);
+            throw new ApiException(500, 'Failed to fetch user by email');
         }
     }
 
@@ -45,7 +46,7 @@ class User {
             return result.rows;
         } catch (error) {
             console.error('Error fetching potential matches:', error);
-            throw new Error('Failed to fetch potential matches');
+            throw new ApiException(500, 'Failed to fetch potential matches');
         }
     }
 
@@ -70,11 +71,11 @@ class User {
             `;
             
             const result = await db.query(query, values);
-            if (result.rows.length === 0) return null;
+            if (result.rows.length === 0) throw new ApiException(500, 'Failed to create user');
             return result.rows[0];
         } catch (error) {
             console.log(error);
-            return null;
+            throw new ApiException(500, 'Failed to create user');
         }
     }
 
@@ -153,7 +154,7 @@ class User {
         } catch (error) {
             console.log('User update error:', error);
             result.userError = error.message;
-            throw new Error(error);
+            throw new ApiException(500, 'Failed to update user');
         }
     }
 
@@ -163,7 +164,7 @@ class User {
             return { success: true };
         } catch (error) {
             console.log(error);
-            throw new Error(error);
+            throw new ApiException(500, 'Failed to delete user');
         }
     }
 
@@ -179,12 +180,12 @@ class User {
                 [hashedPassword, userId]
             );
 
-            if (result.rows.length === 0) return null;
+            if (result.rows.length === 0) throw new ApiException(404, 'User not found');
 
             return result.rows[0];
         } catch (error) {
             console.log(error);
-            throw new Error(error);
+            throw new ApiException(500, 'Failed to reset password');
         }
     }
 
@@ -195,12 +196,12 @@ class User {
                 ['complete', userId]
             );
 
-            if (result.rows.length === 0) return null;
+            if (result.rows.length === 0) throw new ApiException(404, 'User not found');
 
             return result.rows[0];
         } catch (error) {
             console.log(error);
-            throw new Error(error);
+            throw new ApiException(500, 'Failed to validate user');
         }
     }
 }

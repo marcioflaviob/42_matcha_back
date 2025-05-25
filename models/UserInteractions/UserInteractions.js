@@ -1,4 +1,5 @@
 const db = require('../../config/db.js');
+const ApiException = require('../../exceptions/ApiException.js');
 
 class UserInteractions {
 
@@ -11,7 +12,7 @@ class UserInteractions {
 			return result.rows.length;
 		} catch (error) {
 			console.error('Error fetching like count:', error);
-			throw new Error('Failed to fetch like count');
+			throw new ApiException(500, 'Failed to fetch like count');
 		}
 	}
 
@@ -24,7 +25,7 @@ class UserInteractions {
 			return result.rows;
 		} catch (error) {
 			console.error('Error fetching likes:', error);
-			throw new Error('Failed to fetch likes');
+			throw new ApiException(500, 'Failed to fetch likes');
 		}
 	}
 
@@ -37,7 +38,7 @@ class UserInteractions {
 			return result.rows;
 		} catch (error) {
 			console.error('Error fetching likes:', error);
-			throw new Error('Failed to fetch likes');
+			throw new ApiException(500, 'Failed to fetch likes');
 		}
 	}
 
@@ -47,10 +48,11 @@ class UserInteractions {
 				'INSERT INTO user_interactions (user1, user2, interaction_type) VALUES ($1, $2, $3) RETURNING *',
 				[userId, user2Id, 'like']
 			);
+			if (result.rows.length === 0) throw new ApiException(500, 'Failed to like user');
 			return result.rows[0];
 		} catch (error) {
 			console.error('Error liking user:', error);
-			throw new Error('Failed to like user');
+			throw new ApiException(500, 'Failed to like user');
 		}
 	}
 
@@ -63,7 +65,7 @@ class UserInteractions {
 			return result.rows;
 		} catch (error) {
 			console.error('Error fetching profile views:', error);
-			throw new Error('Failed to fetch profile views');
+			throw new ApiException(500, 'Failed to fetch profile views');
 		}
 	}
 
@@ -73,10 +75,11 @@ class UserInteractions {
 				'INSERT INTO user_interactions (user1, user2, interaction_type) VALUES ($1, $2, $3) RETURNING *',
 				[userId, user2Id, 'match']
 			);
+			if (result.rows.length === 0) throw new ApiException(500, 'Failed to match users');
 			return result.rows[0];
 		} catch (error) {
 			console.error('Error matching users:', error);
-			throw new Error('Failed to match users');
+			throw new ApiException(500, 'Failed to match users');
 		}
 	}
 
@@ -89,7 +92,7 @@ class UserInteractions {
 			return result.rows;
 		} catch (error) {
 			console.error('Error fetching matches:', error);
-			throw new Error('Failed to fetch matches');
+			throw new ApiException(500, 'Failed to fetch matches');
 		}
 	}
 
@@ -99,10 +102,11 @@ class UserInteractions {
 				'INSERT INTO user_interactions (user1, user2, interaction_type) VALUES ($1, $2, $3) RETURNING *',
 				[userId, user2Id, 'block']
 			);
+			if (result.rows.length === 0) throw new ApiException(500, 'Failed to block user');
 			return result.rows[0];
 		} catch (error) {
 			console.error('Error blocking user:', error);
-			throw new Error('Failed to block user');
+			throw new ApiException(500, 'Failed to block user');
 		}
 	}
 
@@ -115,7 +119,7 @@ class UserInteractions {
 			return result.rows;
 		} catch (error) {
 			console.error('Error fetching blocked users:', error);
-			throw new Error('Failed to fetch blocked users');
+			throw new ApiException(500, 'Failed to fetch blocked users');
 		}
 	}
 

@@ -1,4 +1,5 @@
 const db = require('../../config/db.js');
+const ApiException = require('../../exceptions/ApiException.js');
 
 class UserPictures {
     static async findByUserId(userId) {
@@ -7,10 +8,13 @@ class UserPictures {
                 'SELECT * FROM user_pictures WHERE user_id = $1',
                 [userId]
             );
+
+            if (result.rows.length === 0) throw new ApiException(404, 'No pictures found for this user');
+            
             return result.rows;
         } catch (error) {
             console.log(error);
-            throw new Error('Failed to get user pictures');
+            throw new ApiException(500, 'Failed to fetch user pictures');
         }
     }
     
@@ -27,12 +31,15 @@ class UserPictures {
                 VALUES (${placeholders})
                 RETURNING *
             `;
+
             
             const result = await db.query(query, values);
-            return result.rows[0] || null;
+            if (result.rows.length === 0) throw new ApiException(500, 'Failed to create user picture');
+
+            return result.rows[0];
         } catch (error) {
             console.log(error);
-            throw new Error('Failed to create picture');
+            throw new ApiException(500, 'Failed to create user picture');
         }
     }
     
@@ -45,7 +52,7 @@ class UserPictures {
             return true;
         } catch (error) {
             console.log(error);
-            throw new Error('Failed to delete picture');
+            throw new ApiException(500, 'Failed to delete user picture');
         }
     }
     
@@ -58,7 +65,7 @@ class UserPictures {
             return true;
         } catch (error) {
             console.log(error);
-            throw new Error('Failed to reset profile pictures');
+            throw new ApiException(500, 'Failed to reset profile picture');
         }
     }
     
@@ -68,10 +75,12 @@ class UserPictures {
                 'UPDATE user_pictures SET is_profile = true WHERE id = $1 AND user_id = $2 RETURNING *',
                 [pictureId, userId]
             );
-            return result.rows[0] || null;
+
+            if (result.rows.length === 0) throw new ApiException(404, 'Picture not found or not owned by user');
+            return result.rows[0];
         } catch (error) {
             console.log(error);
-            throw new Error('Failed to set picture as profile');
+            throw new ApiException(500, 'Failed to set picture as profile');
         }
     }
     
@@ -81,10 +90,11 @@ class UserPictures {
                 'SELECT * FROM user_pictures WHERE id = $1',
                 [pictureId]
             );
-            return result.rows[0] || null;
+            if (result.rows.length === 0) throw new ApiException(404, 'Picture not found');
+            return result.rows[0];
         } catch (error) {
             console.log(error);
-            throw new Error('Failed to find picture');
+            throw new ApiException(500, 'Failed to fetch picture by ID');
         }
     }
 }

@@ -1,8 +1,11 @@
+const ApiException = require('../exceptions/ApiException.js');
 const Location = require('../models/Location/Location.js');
 const fetch = require('node-fetch');
 
 const getLocationByUserId = async (userId) => {
+    if (!userId) throw new ApiException(400, 'User ID is required');
 	const location = await Location.findByUserId(userId);
+    if (!location) throw new ApiException(404, 'Location not found for user');
 	return location;
 }
 
@@ -17,11 +20,18 @@ const createLocation = async (locationData) => {
 };
 
 const updateLocation = async (userId, locationData) => {
+    if (!userId) throw new ApiException(400, 'User ID is required');
     const location = await Location.updateLocation(userId, locationData);
     return location;
 };
 
 const getCityAndCountry = async (latitude, longitude, userId) => {
+    if (!latitude || !longitude) {
+        throw new ApiException(400, 'Latitude and longitude are required');
+    }
+  
+    if (!userId) throw new ApiException(400, 'User ID is required');
+  
     try {
         const response = await fetch(
             `https://api.opencagedata.com/geocode/v1/json?q=${latitude}+${longitude}&key=${process.env.GEOCODE_API_KEY}`
@@ -39,7 +49,7 @@ const getCityAndCountry = async (latitude, longitude, userId) => {
             await createLocation(locationData);
             return data;
         } else {
-            throw new Error('Unable to fetch city and country.');
+            throw new ApiException(500, 'Failed to fetch location');
     }
     } catch (err) {
         console.error('Error fetching city and country:', err);
@@ -47,7 +57,11 @@ const getCityAndCountry = async (latitude, longitude, userId) => {
     }
 }
 
-const getAdress = async (latitude, longitude) => {
+const getAddress = async (latitude, longitude) => {
+    if (!latitude || !longitude) {
+        throw new ApiException(400, 'Latitude and longitude are required');
+    }
+  
     try {
         const response = await fetch(
             `https://api.opencagedata.com/geocode/v1/json?q=${latitude}+${longitude}&key=${process.env.GEOCODE_API_KEY}`
@@ -61,6 +75,7 @@ const getAdress = async (latitude, longitude) => {
 }
 
 const getLocationFromIP = async (userId) => {
+    if (!userId) throw new ApiException(400, 'User ID is required');
     try {
         const publicIpResponse = await fetch('https://api.ipify.org?format=json');
         const publicIpData = await publicIpResponse.json();
@@ -83,6 +98,7 @@ const getLocationFromIP = async (userId) => {
             }
         } catch (ipApiError) {
             console.log('ip-api.com failed:', ipApiError.message);
+            throw new ApiException('Geolocation service failed', 500);
         }
         try {
             const fallbackResponse = await fetch(`https://ipapi.co/${publicIp}/json/`);
@@ -122,5 +138,5 @@ module.exports = {
     getCityAndCountry,
     getLocationFromIP,
     updateLocation,
-    getAdress
+    getAddress
 };
