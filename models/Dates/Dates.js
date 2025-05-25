@@ -1,4 +1,5 @@
 const db = require('../../config/db.js');
+const ApiException = require('../../exceptions/ApiException.js');
 
 class Dates {
     static async getDatesByUserId(userId) {
@@ -10,7 +11,7 @@ class Dates {
             return result.rows;
         } catch (error) {
             console.error('Error fetching dates:', error);
-            throw new Error('Failed to fetch dates');
+            throw new ApiException(500, 'Failed to fetch dates');
         }
     }
 
@@ -23,7 +24,7 @@ class Dates {
             return result.rows;
         } catch (error) {
             console.error('Error fetching dates:', error);
-            throw new Error('Failed to fetch dates');
+            throw new ApiException(500, 'Failed to fetch dates by data');
         }
     }
 
@@ -36,7 +37,7 @@ class Dates {
             return result.rows;
         } catch (error) {
             console.error('Error fetching dates:', error);
-            throw new Error('Failed to fetch dates');
+            throw new ApiException(500, 'Failed to fetch unanswered dates');
         }
     }
 
@@ -47,22 +48,9 @@ class Dates {
             return result.rows[0];
         } catch (error) {
             console.error('Error creating date:', error);
-            throw new Error('Failed to create date');
+            throw new ApiException(500, 'Failed to create date');
         }
     }
-
-    // static async removeDate(id)
-    // {
-    //     try {
-    //         const result = await db.query('DELETE FROM dates WHERE id = $1 RETURNING *',
-    //         [id]);
-    //         return result.rows[0];
-    //     }
-    //     catch (error) {
-    //         console.error('Error removing date:', error);
-    //         throw new Error('Failed to remove date');
-    //     }
-    // }
 
     static async getDateById(id) {
         try {
@@ -71,7 +59,7 @@ class Dates {
             return result.rows[0];
         } catch (error) {
             console.error('Error fetching date by composite key:', error);
-            throw new Error('Failed to fetch date');
+            throw new ApiException(500, 'Failed to fetch date by ID');
         }
     }
 
@@ -82,7 +70,7 @@ class Dates {
             return result.rows[0];
         } catch (error) {
             console.error('Error accepting date:', error);
-            throw new Error('Failed to accept date');
+            throw new ApiException(500, 'Failed to update date');
         }
     }
 }

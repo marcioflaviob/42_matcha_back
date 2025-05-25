@@ -1,20 +1,16 @@
 const { pusher } = require('../utils/PusherMiddleware.js');
 const UserInteractionsService = require('../services/UserInteractionsService.js');
+const ApiException = require('../exceptions/ApiException.js');
 
 
 exports.broadcastStatusChange = async (userId, status) => {
-	try {
-		const matchesIds = await UserInteractionsService.getMatchesIdsByUserId(userId);
+	const matchesIds = await UserInteractionsService.getMatchesIdsByUserId(userId);
 
-		matchesIds.forEach(async (matchId) => {
-			await this.sendStatusChange(userId, matchId, status);
-		})
+	matchesIds.forEach(async (matchId) => {
+		await this.sendStatusChange(userId, matchId, status);
+	})
 
-		return true;
-	} catch (error) {
-		console.error('Error broadcasting status change:', error);
-		throw new Error('Failed to broadcast status change');
-	}
+	return true;
 }
 
 exports.sendMessage = async (messageData) => {
@@ -28,7 +24,7 @@ exports.sendMessage = async (messageData) => {
 			is_read: false,
 		});
 	} catch (error) {
-		throw new Error('Failed to send message');
+		throw new ApiException('Failed to send message', 500);
 	}
 }
 
@@ -44,7 +40,7 @@ exports.sendNotification = async (notificationData) => {
 			seen: false,
 		});
 	} catch (error) {
-		throw new Error('Failed to send notification');
+		throw new ApiException('Failed to send message', 500);
 	}
 }
 
@@ -55,8 +51,7 @@ exports.sendStatusChange = async (senderId, receiverId, status) => {
 			status,
 		});
 	} catch (error) {
-		console.error('Error sending status change:', error);
-		throw new Error('Failed to send status change');
+		throw new ApiException('Failed to send message', 500);
 	}
 }
 
@@ -70,8 +65,7 @@ exports.requestStatus = async (userId) => {
 			});
 		})
 	} catch (error) {
-		console.error('Error requesting status:', error);
-		throw new Error('Failed to request status');
+		throw new ApiException('Failed to send message', 500);
 	}
 }
 
@@ -80,8 +74,10 @@ exports.authenticatePusher = async (userId, socketId, channelName) => {
 		const { authenticate } = require("../utils/PusherMiddleware.js");
     	const auth = await authenticate(userId, socketId, channelName);
 
+		if (!auth) throw new ApiException(403, 'Authentication failed');
+
 		return auth;
 	} catch (error) {
-		throw new Error('Failed to authenticate Pusher');
+		throw new ApiException('Failed to authenticate', 500);
 	}
 }
