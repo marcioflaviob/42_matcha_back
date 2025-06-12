@@ -4,9 +4,8 @@ const fetch = require('node-fetch');
 
 const getLocationByUserId = async (userId) => {
     if (!userId) throw new ApiException(400, 'User ID is required');
-	const location = await Location.findByUserId(userId);
-    if (!location) throw new ApiException(404, 'Location not found for user');
-	return location;
+    const location = await Location.findByUserId(userId);
+    return location;
 }
 
 const createLocation = async (locationData) => {
@@ -19,19 +18,33 @@ const createLocation = async (locationData) => {
     return locationId;
 };
 
-const updateLocation = async (userId, locationData) => {
-    if (!userId) throw new ApiException(400, 'User ID is required');
-    const location = await Location.updateLocation(userId, locationData);
+const updateLocation = async (locationData) => {
+    const location = await Location.updateLocation(locationData);
     return location;
 };
+
+const updateUserLocation = async (location, userId) => {
+    if (location !== undefined) {
+        try {
+            if (location) {
+                await updateLocation(userId, location);
+                const result = await getLocationByUserId(userId);
+                return result;
+            }
+        } catch (locationError) {
+            console.log('Location update error:', locationError);
+            throw new Error(locationError);
+        }
+    }
+}
 
 const getCityAndCountry = async (latitude, longitude, userId) => {
     if (!latitude || !longitude) {
         throw new ApiException(400, 'Latitude and longitude are required');
     }
-  
+
     if (!userId) throw new ApiException(400, 'User ID is required');
-  
+
     try {
         const response = await fetch(
             `https://api.opencagedata.com/geocode/v1/json?q=${latitude}+${longitude}&key=${process.env.GEOCODE_API_KEY}`
@@ -50,7 +63,7 @@ const getCityAndCountry = async (latitude, longitude, userId) => {
             return data;
         } else {
             throw new ApiException(500, 'Failed to fetch location');
-    }
+        }
     } catch (err) {
         console.error('Error fetching city and country:', err);
         return { city: 'Unknown', country: 'Unknown' };
@@ -61,7 +74,7 @@ const getAddress = async (latitude, longitude) => {
     if (!latitude || !longitude) {
         throw new ApiException(400, 'Latitude and longitude are required');
     }
-  
+
     try {
         const response = await fetch(
             `https://api.opencagedata.com/geocode/v1/json?q=${latitude}+${longitude}&key=${process.env.GEOCODE_API_KEY}`
@@ -84,7 +97,7 @@ const getLocationFromIP = async (userId) => {
         try {
             const response = await fetch(`http://ip-api.com/json/${publicIp}`);
             const data = await response.json();
-            
+
             if (data.status === 'success') {
                 const locationData = {
                     userId: userId,
@@ -98,12 +111,11 @@ const getLocationFromIP = async (userId) => {
             }
         } catch (ipApiError) {
             console.log('ip-api.com failed:', ipApiError.message);
-            throw new ApiException('Geolocation service failed', 500);
         }
         try {
             const fallbackResponse = await fetch(`https://ipapi.co/${publicIp}/json/`);
             const fallbackData = await fallbackResponse.json();
-            
+
             if (!fallbackData.error && fallbackData.latitude && fallbackData.longitude) {
                 const locationData = {
                     userId: userId,
@@ -113,7 +125,7 @@ const getLocationFromIP = async (userId) => {
                     longitude: fallbackData.longitude
                 }
                 const locate = await createLocation(locationData);
-                return locate;    
+                return locate;
             }
         } catch (ipapiError) {
             console.log('ipapi.co failed:', ipapiError.message);
@@ -133,10 +145,11 @@ const getLocationFromIP = async (userId) => {
 };
 
 module.exports = {
-	getLocationByUserId,
+    getLocationByUserId,
     createLocation,
     getCityAndCountry,
     getLocationFromIP,
     updateLocation,
-    getAddress
+    getAddress,
+    updateUserLocation
 };

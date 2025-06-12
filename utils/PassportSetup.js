@@ -26,8 +26,7 @@ passport.use(
     async (accessToken, refreshToken, profile, done) => {
       try {
         let user = await UserService.getUserByEmail(profile.emails[0].value);
-        
-        // If user doesn't exist, create a new one
+
         if (!user) {
           const newUserData = {
             first_name: profile.name.givenName,
@@ -36,10 +35,10 @@ passport.use(
             password: require('crypto').randomBytes(16).toString('hex'),
             status: 'step_one',
           };
-          
+
           user = await UserService.createUser(newUserData);
         }
-        
+
         return done(null, user);
       } catch (error) {
         return done(error, null);

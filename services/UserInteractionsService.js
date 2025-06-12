@@ -29,7 +29,6 @@ exports.getProfileViewsByUserId = async (userId) => {
 
 	const views = await UserInteractions.getProfileViewsByUserId(userId);
 
-	// Fetch users' details based on their IDs
 	const users = views.map(async (view) => {
 		return await UserService.getUserById(view.user1);
 	});
@@ -48,7 +47,7 @@ exports.getMatchesByUserId = async (userId) => {
 	const matches = await UserInteractions.getMatchesByUserId(userId);
 	const blockedUsers = await this.getBlockedUsersIdsByUserId(userId);
 
-	const filteredMatches = matches.filter(match => 
+	const filteredMatches = matches.filter(match =>
 		!blockedUsers.has(match.user1) && !blockedUsers.has(match.user2)
 	);
 
@@ -96,8 +95,8 @@ exports.getPotentialMatches = async (userId) => {
 			match.sexual_interest == userData.gender;
 
 		return !unwantedMatches.has(match.id) &&
-		interested_genders.includes(match.gender) &&
-		hasCommonInterest && isInterestedInMyGender;
+			interested_genders.includes(match.gender) &&
+			hasCommonInterest && isInterestedInMyGender;
 	});
 
 	const filteredMatches = await Promise.all(filteredUsers.map(async (match) => {
