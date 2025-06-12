@@ -1,6 +1,6 @@
 const InterestsService = require('../services/InterestsService.js');
 
-exports.getAllInterests = async (res) => {
+exports.getAllInterests = async (req, res) => {
 	const interests = await InterestsService.getAllInterests();
 	res.send(interests);
 }
