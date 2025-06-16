@@ -4,9 +4,9 @@ const fetch = require('node-fetch');
 
 const getLocationByUserId = async (userId) => {
     if (!userId) throw new ApiException(400, 'User ID is required');
-	const location = await Location.findByUserId(userId);
+    const location = await Location.findByUserId(userId);
     if (!location) throw new ApiException(404, 'Location not found for user');
-	return location;
+    return location;
 }
 
 const createLocation = async (locationData) => {
@@ -21,7 +21,8 @@ const createLocation = async (locationData) => {
 
 const updateLocation = async (userId, locationData) => {
     if (!userId) throw new ApiException(400, 'User ID is required');
-    const location = await Location.updateLocation(userId, locationData);
+    const locationDataWithUserId = { ...locationData, userId };
+    const location = await Location.updateLocation(locationDataWithUserId);
     return location;
 };
 
@@ -29,9 +30,9 @@ const getCityAndCountry = async (latitude, longitude, userId) => {
     if (!latitude || !longitude) {
         throw new ApiException(400, 'Latitude and longitude are required');
     }
-  
+
     if (!userId) throw new ApiException(400, 'User ID is required');
-  
+
     try {
         const response = await fetch(
             `https://api.opencagedata.com/geocode/v1/json?q=${latitude}+${longitude}&key=${process.env.GEOCODE_API_KEY}`
@@ -50,7 +51,7 @@ const getCityAndCountry = async (latitude, longitude, userId) => {
             return data;
         } else {
             throw new ApiException(500, 'Failed to fetch location');
-    }
+        }
     } catch (err) {
         console.error('Error fetching city and country:', err);
         return { city: 'Unknown', country: 'Unknown' };
@@ -61,7 +62,7 @@ const getAddress = async (latitude, longitude) => {
     if (!latitude || !longitude) {
         throw new ApiException(400, 'Latitude and longitude are required');
     }
-  
+
     try {
         const response = await fetch(
             `https://api.opencagedata.com/geocode/v1/json?q=${latitude}+${longitude}&key=${process.env.GEOCODE_API_KEY}`
@@ -84,7 +85,7 @@ const getLocationFromIP = async (userId) => {
         try {
             const response = await fetch(`http://ip-api.com/json/${publicIp}`);
             const data = await response.json();
-            
+
             if (data.status === 'success') {
                 const locationData = {
                     userId: userId,
@@ -103,7 +104,7 @@ const getLocationFromIP = async (userId) => {
         try {
             const fallbackResponse = await fetch(`https://ipapi.co/${publicIp}/json/`);
             const fallbackData = await fallbackResponse.json();
-            
+
             if (!fallbackData.error && fallbackData.latitude && fallbackData.longitude) {
                 const locationData = {
                     userId: userId,
@@ -113,7 +114,7 @@ const getLocationFromIP = async (userId) => {
                     longitude: fallbackData.longitude
                 }
                 const locate = await createLocation(locationData);
-                return locate;    
+                return locate;
             }
         } catch (ipapiError) {
             console.log('ipapi.co failed:', ipapiError.message);
@@ -132,11 +133,24 @@ const getLocationFromIP = async (userId) => {
     }
 };
 
+const calculateDistance = (lat1, lon1, lat2, lon2) => {
+    const R = 6371;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+};
+
 module.exports = {
-	getLocationByUserId,
+    getLocationByUserId,
     createLocation,
     getCityAndCountry,
     getLocationFromIP,
     updateLocation,
-    getAddress
+    getAddress,
+    calculateDistance
 };

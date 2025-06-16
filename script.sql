@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS users (
 	gender VARCHAR(255),
 	sexual_interest VARCHAR(255),
 	biography TEXT,
-	rating INT DEFAULT 10,
+	rating INT DEFAULT 0,
 	min_desired_rating INT DEFAULT 0,
 	age_range_min INT DEFAULT 0,
 	age_range_max INT DEFAULT 100

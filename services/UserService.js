@@ -2,10 +2,10 @@ const ApiException = require('../exceptions/ApiException.js');
 const User = require('../models/User/User.js');
 
 const getAllUsers = async () => {
-	const users = await User.findAll()
+    const users = await User.findAll()
     const formattedUsers = await Promise.all(
         users.map(async (user) => {
-          return await formatUser(user);
+            return await formatUser(user);
         })
     );
     return formattedUsers;
@@ -22,18 +22,18 @@ const createUser = async (userData) => {
 const calculateAge = (birthdate) => {
     try {
         if (!birthdate) return null;
-        
+
         const birthDate = new Date(birthdate);
         if (isNaN(birthDate.getTime())) return null;
-        
+
         const today = new Date();
         let age = today.getFullYear() - birthDate.getFullYear();
         const m = today.getMonth() - birthDate.getMonth();
-        
+
         if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
             age--;
         }
-    return age >= 0 ? age : null; // Prevent negative ages
+        return age >= 0 ? age : null; // Prevent negative ages
     } catch (e) {
         console.error("Age calculation error:", e);
         return null;
@@ -70,7 +70,7 @@ const getUserById = async (userId) => {
 };
 
 const getUserByEmailWithPassword = async (email) => {
-    if(!email) throw new ApiException(400, 'Email is required');
+    if (!email) throw new ApiException(400, 'Email is required');
 
     const user = await User.findByEmail(email);
 
@@ -80,7 +80,7 @@ const getUserByEmailWithPassword = async (email) => {
 };
 
 const getUserByEmail = async (email) => {
-    if(!email) throw new ApiException(400, 'Email is required');
+    if (!email) throw new ApiException(400, 'Email is required');
 
     const user = await User.findByEmail(email);
 
@@ -96,15 +96,15 @@ const getValidUsers = async (userId) => {
     const users = await User.findAllValidUsers(userId);
     const formattedUsers = await Promise.all(
         users.map(async (user) => {
-          return await formatUser(user);
+            return await formatUser(user);
         })
     );
     return formattedUsers;
 }
 
 const updateUser = async (req) => {
-    if (!req || !req.body || !req.body.id) {
-        throw new ApiException(400, 'User ID is required for update');
+    if (!req || !req.user || !req.user.id) {
+        throw new ApiException(400, 'User authentication required for update');
     }
 
     const user = await User.update(req);
@@ -135,7 +135,20 @@ const validateUser = async (userId) => {
     if (!userId) throw new ApiException(400, 'User ID is required');
 
     const user = await User.validateUser(userId);
-    
+
+    if (!user) throw new ApiException(404, 'User not found');
+
+    const formattedUser = await formatUser(user);
+    return formattedUser;
+};
+
+const addFameRating = async (userId, rating) => {
+    if (!userId || !rating) {
+        throw new ApiException(400, 'User ID and rating are required');
+    }
+
+    const user = await User.addFameRating(userId, rating);
+
     if (!user) throw new ApiException(404, 'User not found');
 
     const formattedUser = await formatUser(user);
@@ -143,7 +156,7 @@ const validateUser = async (userId) => {
 };
 
 module.exports = {
-	getAllUsers,
+    getAllUsers,
     createUser,
     getUserById,
     getUserByEmail,
@@ -153,4 +166,5 @@ module.exports = {
     getUserByEmailWithPassword,
     resetPassword,
     validateUser,
+    addFameRating,
 };

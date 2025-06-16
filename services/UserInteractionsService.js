@@ -1,5 +1,6 @@
 const UserInteractions = require('../models/UserInteractions/UserInteractions.js');
 const UserService = require('./UserService.js');
+const LocationService = require('./LocationService.js');
 const NotificationService = require('./NotificationService.js');
 const ApiException = require('../exceptions/ApiException.js');
 
@@ -14,7 +15,7 @@ exports.likeUser = async (userId, user2Id) => {
 	if (userId == user2Id) throw new ApiException(400, 'You cannot like yourself');
 
 	const like = await UserInteractions.likeUser(userId, user2Id);
-
+	await UserService.addFameRating(user2Id, 10);
 	if (await isUserAlreadyLiked(userId, user2Id)) {
 		return await this.matchUsers(userId, user2Id);
 	}
@@ -48,7 +49,7 @@ exports.getMatchesByUserId = async (userId) => {
 	const matches = await UserInteractions.getMatchesByUserId(userId);
 	const blockedUsers = await this.getBlockedUsersIdsByUserId(userId);
 
-	const filteredMatches = matches.filter(match => 
+	const filteredMatches = matches.filter(match =>
 		!blockedUsers.has(match.user1) && !blockedUsers.has(match.user2)
 	);
 
@@ -75,6 +76,11 @@ exports.getMatchesIdsByUserId = async (userId) => {
 	return userIds;
 }
 
+exports.getUsersByMinimumFameRating = async (minFameRating, validUsers) => {
+	const filteredUsers = validUsers.filter(user => user.rating >= minFameRating);
+	return filteredUsers;
+}
+
 exports.getPotentialMatches = async (userId) => {
 	const userData = await UserService.getUserById(userId);
 	const validUsers = await UserService.getValidUsers(userId);
@@ -95,16 +101,28 @@ exports.getPotentialMatches = async (userId) => {
 		const isInterestedInMyGender = match.sexual_interest == 'Any' ||
 			match.sexual_interest == userData.gender;
 
+		const isFameRatingSufficient = match.rating >= userData.min_desired_rating;
+
+		const isWithinRadius = userData.location && match.location ?
+			LocationService.calculateDistance(
+				userData.location.latitude,
+				userData.location.longitude,
+				match.location.latitude,
+				match.location.longitude
+			) <= 10 : false;
+
 		return !unwantedMatches.has(match.id) &&
-		interested_genders.includes(match.gender) &&
-		hasCommonInterest && isInterestedInMyGender;
+			interested_genders.includes(match.gender) &&
+			hasCommonInterest &&
+			isInterestedInMyGender &&
+			isFameRatingSufficient &&
+			isWithinRadius;
 	});
 
 	const filteredMatches = await Promise.all(filteredUsers.map(async (match) => {
 		match.liked_me = await isUserAlreadyLiked(userId, match.id);
 		return match;
 	}));
-
 	return filteredMatches;
 }
 
@@ -115,6 +133,7 @@ exports.blockUser = async (userId, user2Id) => {
 
 	const block = await UserInteractions.blockUser(userId, user2Id);
 	await NotificationService.newBlockNotification(user2Id, userId);
+	await UserService.addFameRating(user2Id, -10);
 	return block;
 }
 

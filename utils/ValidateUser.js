@@ -1,6 +1,6 @@
 const { getUserById } = require("../services/UserService.js");
 
-module.exports = function validateUser(req, res, next) {
+module.exports = async function validateUser(req, res, next) {
     const user = req.body;
     const userId = req.body.id ? req.body.id : req.user ? req.user.id : null;
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -9,8 +9,15 @@ module.exports = function validateUser(req, res, next) {
         return res.status(400).send('Missing required fields: id');
     }
 
-    if (!user.status && !getUserById(user.id)) {
-        return res.status(400).send('User not found');
+    if (!user.status && userId) {
+        try {
+            const existingUser = await getUserById(userId);
+            if (!existingUser) {
+                return res.status(400).send('User not found');
+            }
+        } catch (error) {
+            return res.status(400).send('User not found');
+        }
     }
 
     if (user.first_name && (typeof user.first_name !== 'string' || user.first_name.trim().length < 3)) {

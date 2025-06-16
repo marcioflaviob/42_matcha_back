@@ -60,16 +60,16 @@ class User {
 
             const keys = Object.keys(userData);
             const values = Object.values(userData);
-            
-            const placeholders = keys.map((_, i) => `$${i+1}`).join(', ');
+
+            const placeholders = keys.map((_, i) => `$${i + 1}`).join(', ');
             const columns = keys.join(', ');
-            
+
             const query = `
                 INSERT INTO users (${columns})
                 VALUES (${placeholders})
                 RETURNING *
             `;
-            
+
             const result = await db.query(query, values);
             if (result.rows.length === 0) throw new ApiException(500, 'Failed to create user');
             return result.rows[0];
@@ -85,8 +85,7 @@ class User {
         const id = req.user.id;
         const interests = userData.interests;
         const location = userData.location;
-        
-        // Remove these fields because they will be handled separately since they are stored in different tables
+
         delete userData.interests;
         delete userData.id;
         try {
@@ -97,33 +96,33 @@ class User {
                     userData.password = await bcrypt.hash(userData.password, salt);
                 }
 
-                if (userData.email && !userData.status) {
+                if (userData.status) {
                     userData.status = 'validation';
                 }
-                
+
                 const keys = Object.keys(userData);
                 const values = Object.values(userData);
-                
-                const setClause = keys.map((key, i) => `${key} = $${i+2}`).join(', ');
-                
+
+                const setClause = keys.map((key, i) => `${key} = $${i + 2}`).join(', ');
+
                 const query = `
                     UPDATE users 
                     SET ${setClause}
                     WHERE id = $1
                     RETURNING *
                 `;
-                
+
                 const updateResult = await db.query(query, [id, ...values]);
                 result.userData = updateResult.rows[0];
             } else {
                 const userResult = await db.query('SELECT * FROM users WHERE id = $1', [id]);
                 result.userData = userResult.rows[0];
             }
-            
+
             if (interests !== undefined) {
                 try {
                     const InterestsService = require('../../services/InterestsService.js');
-                    
+
                     if (Array.isArray(interests)) {
                         await InterestsService.updateInterests(id, interests);
                         result.userData.interests = await InterestsService.getInterestsNamesByUserId(id);
@@ -137,7 +136,7 @@ class User {
             if (location !== undefined) {
                 try {
                     const LocationService = require('../../services/LocationService.js');
-                    
+
                     if (location) {
                         await LocationService.updateLocation(id, location);
                         result.userData.location = await LocationService.getLocationByUserId(id);
@@ -148,7 +147,7 @@ class User {
                     throw new Error(locationError);
                 }
             }
-            
+
             delete result.userData.password;
             return result;
         } catch (error) {
@@ -170,9 +169,9 @@ class User {
 
     static async resetPassword(userId, newPassword) {
         try {
-            
+
             const salt = await bcrypt.genSalt(10);
-            
+
             const hashedPassword = await bcrypt.hash(newPassword, salt);
 
             const result = await db.query(
@@ -202,6 +201,22 @@ class User {
         } catch (error) {
             console.log(error);
             throw new ApiException(500, 'Failed to validate user');
+        }
+    }
+
+    static async addFameRating(userId, rating) {
+        try {
+            const result = await db.query(
+                'UPDATE users SET rating = rating + $1 WHERE id = $2 RETURNING *',
+                [rating, userId]
+            );
+
+            if (result.rows.length === 0) throw new ApiException(404, 'User not found');
+
+            return result.rows[0];
+        } catch (error) {
+            console.log(error);
+            throw new ApiException(500, 'Failed to add fame rating');
         }
     }
 }
