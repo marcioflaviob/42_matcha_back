@@ -42,6 +42,7 @@ router.post('/upload/single/', Authenticate, upload.single('picture'), asyncHand
 router.get('/pictures/:userId', asyncHandler(UserPicturesController.getUserPictures));
 router.delete('/pictures/:userId/:pictureId', asyncHandler(UserPicturesController.deleteUserPicture));
 router.put('/pictures/:userId/:pictureId/profile', asyncHandler(UserPicturesController.setProfilePicture));
+router.post('/pictures/upload-from-url', Authenticate, asyncHandler(UserPicturesController.uploadPictureFromUrl));
 
 // User Interactions
 router.post('/like/:id', Authenticate, asyncHandler(UserInteractionsController.likeUser));
