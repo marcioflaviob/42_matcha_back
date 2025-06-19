@@ -48,6 +48,7 @@ const formatUser = async (data) => {
 
     interestsList = await InterestsService.getInterestsListByUserId(data.id);
     pictures = await UserPictureService.getUserPictures(data.id);
+    pictures.sort((a, b) => (a.is_profile ? -1 : 1));
     data.interests = interestsList;
     data.pictures = pictures;
     data.like_count = await UserInteractionsService.getLikeCountByUserId(data.id);
