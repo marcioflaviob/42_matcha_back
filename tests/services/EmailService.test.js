@@ -1,7 +1,7 @@
 process.env.JWT_SECRET = 'test_jwt_secret';
 process.env.EMAIL_API_KEY = 'fake-api-key';
 process.env.EMAIL_FROM = 'no-reply@example.com';
-process.env.FRONTEND_URL = 'http://frontend.com';
+process.env.FRONTEND_URL = 'https://frontend.com';
 
 jest.mock('resend', () => {
     const mockSend = jest.fn();
@@ -66,7 +66,7 @@ describe('EmailService', () => {
                 { expiresIn: '1h' }
             );
             expect(passwordRecoveryTemplate).toHaveBeenCalledWith(
-                `http://frontend.com/reset-password?token=${token}`
+                `https://frontend.com/reset-password?token=${token}`
             );
             expect(__mockSend).toHaveBeenCalledWith({
                 from: 'no-reply@example.com',
@@ -167,7 +167,7 @@ describe('EmailService', () => {
                 { expiresIn: '24h' }
             );
             expect(emailVerificationTemplate).toHaveBeenCalledWith(
-                `http://frontend.com/register?token=${token}`
+                `https://frontend.com/register?token=${token}`
             );
             expect(__mockSend).toHaveBeenCalledWith({
                 from: 'no-reply@example.com',
@@ -364,7 +364,7 @@ describe('EmailService', () => {
             const result = await sendPasswordRecoveryEmail(user.email);
 
             expect(passwordRecoveryTemplate).toHaveBeenCalledWith(
-                `http://frontend.com/reset-password?token=${veryLongToken}`
+                `https://frontend.com/reset-password?token=${veryLongToken}`
             );
             expect(result).toEqual('email-sent');
         });

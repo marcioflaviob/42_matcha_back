@@ -7,6 +7,11 @@ const ApiException = require('../exceptions/ApiException.js');
 const JWT_SECRET = process.env.JWT_SECRET;
 const resend = new Resend(process.env.EMAIL_API_KEY);
 
+// Security: Validate FRONTEND_URL uses HTTPS in production
+if (process.env.NODE_ENV === 'production' && process.env.FRONTEND_URL && !process.env.FRONTEND_URL.startsWith('https://')) {
+	console.warn('⚠️  Security Warning: FRONTEND_URL should use HTTPS in production');
+}
+
 const sendEmail = async (to, subject, html) => {
 	const { data, error } = await resend.emails.send({
 		from: process.env.EMAIL_FROM,
