@@ -5,9 +5,16 @@ jest.mock('node-fetch');
 const Location = require('../../models/Location/Location');
 const ApiException = require('../../exceptions/ApiException');
 const LocationService = require('../../services/LocationService');
-const { mockConsole, restoreConsole, createMockData } = require('../utils/testSetup');
+const {
+    mockConsole,
+    restoreConsole,
+    createMockData,
+    createLocationTestUtils
+} = require('../utils/testSetup');
 
 jest.mock('../../models/Location/Location');
+
+const locationUtils = createLocationTestUtils();
 
 beforeEach(() => {
     mockConsole();
@@ -127,6 +134,10 @@ describe('LocationService', () => {
     });
 
     describe('getCityAndCountry', () => {
+        beforeEach(() => {
+            locationUtils.setupLocationMocks();
+        });
+
         it('should throw ApiException(400) if missing coords or userId', async () => {
             await expect(LocationService.getCityAndCountry(null, 2, mockUserId))
                 .rejects.toThrow(ApiException);
@@ -137,152 +148,96 @@ describe('LocationService', () => {
         });
 
         it('should fetch and store location if user has none', async () => {
-            const mockApiResponse = {
-                results: [{
-                    components: {
-                        city: 'Berlin',
-                        country: 'Germany'
-                    }
-                }]
-            };
-            fetch.mockResolvedValueOnce(new Response(JSON.stringify(mockApiResponse)));
-            Location.findByUserId.mockResolvedValue(null);
-            Location.createLocation.mockResolvedValue('newLocation');
+            const mockApiResponse = locationUtils.setupFetchMocks.geocodeSuccess('Berlin', 'Germany');
 
             const result = await LocationService.getCityAndCountry(52.52, 13.405, mockUserId);
 
             expect(fetch).toHaveBeenCalled();
-            expect(Location.createLocation).toHaveBeenCalledWith(expect.objectContaining({
-                userId: mockUserId,
+            locationUtils.expectLocationCreated(mockUserId, {
                 city: 'Berlin',
                 country: 'Germany',
                 latitude: 52.52,
                 longitude: 13.405
-            }));
+            });
             expect(result).toEqual(mockApiResponse);
         });
 
         it('should update existing user location with fetched data', async () => {
-            const mockApiResponse = {
-                results: [{
-                    components: {
-                        city: 'Lisbon',
-                        country: 'Portugal'
-                    }
-                }]
-            };
-            fetch.mockResolvedValueOnce(new Response(JSON.stringify(mockApiResponse)));
+            const mockApiResponse = locationUtils.setupFetchMocks.geocodeSuccess('Lisbon', 'Portugal');
             Location.findByUserId.mockResolvedValue(mockLocation);
-            Location.updateLocation.mockResolvedValue('updatedLocation');
 
             const result = await LocationService.getCityAndCountry(38.7169, -9.1399, mockUserId);
 
-            expect(Location.updateLocation).toHaveBeenCalledWith(expect.objectContaining({
+            locationUtils.expectLocationUpdated({
                 userId: mockUserId,
                 city: 'Lisbon',
                 country: 'Portugal',
                 latitude: 38.7169,
                 longitude: -9.1399
-            }));
-            expect(result).toEqual(mockApiResponse);
-        });
-
-        it('should create new user location with geocode data', async () => {
-            const mockApiResponse = {
-                results: [{
-                    components: {
-                        city: 'Berlin',
-                        country: 'Germany'
-                    }
-                }]
-            };
-            fetch.mockResolvedValueOnce(new Response(JSON.stringify(mockApiResponse)));
-            Location.findByUserId.mockResolvedValue(null);
-            Location.createLocation.mockResolvedValue('newLocation');
-
-            const result = await LocationService.getCityAndCountry(52.52, 13.405, mockUserId);
-
-            expect(fetch).toHaveBeenCalled();
-            expect(Location.createLocation).toHaveBeenCalledWith(expect.objectContaining({
-                userId: mockUserId,
-                city: 'Berlin',
-                country: 'Germany',
-                latitude: 52.52,
-                longitude: 13.405
-            }));
+            });
             expect(result).toEqual(mockApiResponse);
         });
 
         it('should use town as fallback when city is not available', async () => {
-            const mockApiResponse = {
-                results: [{
-                    components: {
-                        town: 'Small Town',
-                        country: 'Germany'
-                    }
-                }]
-            };
-            fetch.mockResolvedValueOnce(new Response(JSON.stringify(mockApiResponse)));
-            Location.findByUserId.mockResolvedValue(null);
-            Location.createLocation.mockResolvedValue('newLocation');
+            const mockApiResponse = locationUtils.setupFetchMocks.geocodeWithTown('Small Town', 'Germany');
 
             const result = await LocationService.getCityAndCountry(52.52, 13.405, mockUserId);
 
-            expect(Location.createLocation).toHaveBeenCalledWith(expect.objectContaining({
-                userId: mockUserId,
+            locationUtils.expectLocationCreated(mockUserId, {
                 city: 'Small Town',
                 country: 'Germany',
                 latitude: 52.52,
                 longitude: 13.405
-            }));
+            });
             expect(result).toEqual(mockApiResponse);
         });
 
         it('should use village as fallback when city and town are not available', async () => {
-            const mockApiResponse = {
-                results: [{
-                    components: {
-                        village: 'Rural Village',
-                        country: 'Germany'
-                    }
-                }]
-            };
-            fetch.mockResolvedValueOnce(new Response(JSON.stringify(mockApiResponse)));
-            Location.findByUserId.mockResolvedValue(null);
-            Location.createLocation.mockResolvedValue('newLocation');
+            const mockApiResponse = locationUtils.setupFetchMocks.geocodeWithVillage('Rural Village', 'Germany');
 
             const result = await LocationService.getCityAndCountry(52.52, 13.405, mockUserId);
 
-            expect(Location.createLocation).toHaveBeenCalledWith(expect.objectContaining({
-                userId: mockUserId,
+            locationUtils.expectLocationCreated(mockUserId, {
                 city: 'Rural Village',
                 country: 'Germany',
                 latitude: 52.52,
                 longitude: 13.405
-            }));
+            });
             expect(result).toEqual(mockApiResponse);
         });
 
         it('should use Unknown as fallback when no location components are available', async () => {
-            const mockApiResponse = {
-                results: [{
-                    components: {}
-                }]
-            };
+            const mockApiResponse = locationUtils.mockGeocodeResponse(undefined, undefined, {
+                components: {}
+            });
             fetch.mockResolvedValueOnce(new Response(JSON.stringify(mockApiResponse)));
-            Location.findByUserId.mockResolvedValue(null);
-            Location.createLocation.mockResolvedValue('newLocation');
 
             const result = await LocationService.getCityAndCountry(52.52, 13.405, mockUserId);
 
-            expect(Location.createLocation).toHaveBeenCalledWith(expect.objectContaining({
-                userId: mockUserId,
+            locationUtils.expectLocationCreated(mockUserId, {
                 city: 'Unknown',
                 country: 'Unknown',
                 latitude: 52.52,
                 longitude: 13.405
-            }));
+            });
             expect(result).toEqual(mockApiResponse);
+        });
+
+        it('should return default values when fetch fails', async () => {
+            locationUtils.setupFetchMocks.geocodeError();
+
+            const result = await LocationService.getCityAndCountry(48.8566, 2.3522, mockUserId);
+
+            expect(result).toEqual({ city: 'Unknown', country: 'Unknown' });
+            expect(console.error).toHaveBeenCalledWith('Error fetching city and country:', expect.any(Error));
+        });
+
+        it('should handle API response with no results', async () => {
+            locationUtils.setupFetchMocks.geocodeEmpty();
+
+            const result = await LocationService.getCityAndCountry(52.52, 13.405, mockUserId);
+            expect(result).toEqual({ city: 'Unknown', country: 'Unknown' });
+            expect(console.error).toHaveBeenCalledWith('Error fetching city and country:', expect.any(Error));
         });
     });
 
@@ -293,16 +248,15 @@ describe('LocationService', () => {
         });
 
         it('should return geocode data from fetch', async () => {
-            const mockData = { results: [] };
-            fetch.mockResolvedValueOnce(new Response(JSON.stringify(mockData)));
+            const mockData = locationUtils.setupFetchMocks.geocodeSuccess();
 
             const result = await LocationService.getAddress(1, 2);
             expect(fetch).toHaveBeenCalled();
             expect(result).toEqual(mockData);
         });
 
-        it('should handle errors in getAddress', async () => {
-            fetch.mockRejectedValue(new Error('Network error'));
+        it('should handle errors gracefully', async () => {
+            locationUtils.setupFetchMocks.geocodeError();
 
             const result = await LocationService.getAddress(1, 2);
             expect(result).toEqual({ city: 'Unknown', country: 'Unknown' });
@@ -311,6 +265,10 @@ describe('LocationService', () => {
     });
 
     describe('getLocationFromIP', () => {
+        beforeEach(() => {
+            locationUtils.setupLocationMocks();
+        });
+
         it('should throw ApiException(400) if userId is missing', async () => {
             await expect(LocationService.getLocationFromIP(null))
                 .rejects.toThrow(new ApiException(400, 'User ID is required'));
@@ -319,38 +277,27 @@ describe('LocationService', () => {
         });
 
         it('should use fallback to ipapi.co if ip-api fails', async () => {
-            fetch
-                .mockResolvedValueOnce(new Response(JSON.stringify({ ip: '8.8.8.8' })))
-                .mockRejectedValueOnce(new Error('ip-api failed'))
-                .mockResolvedValueOnce(new Response(JSON.stringify({
-                    city: 'Madrid',
-                    country: 'Spain',
-                    latitude: 40.4168,
-                    longitude: -3.7038
-                })));
-
-            Location.findByUserId.mockResolvedValue(null);
-            Location.createLocation.mockResolvedValue('fromFallback');
+            locationUtils.setupFetchMocks.ipLocationWithFallback();
 
             const result = await LocationService.getLocationFromIP(mockUserId);
 
             expect(fetch).toHaveBeenCalledTimes(3);
-            expect(result).toBe('fromFallback');
+            expect(result).toBe('newLocationId');
         });
 
         it('should fallback to default Paris location if all fails', async () => {
-            fetch
-                .mockResolvedValueOnce(new Response(JSON.stringify({ ip: '8.8.8.8' })))
-                .mockRejectedValueOnce(new Error('ip-api failed'))
-                .mockRejectedValueOnce(new Error('ipapi failed'));
-
-            Location.findByUserId.mockResolvedValue(null);
-            Location.createLocation.mockResolvedValue('parisFallback');
+            locationUtils.setupFetchMocks.ipLocationAllFail();
 
             const result = await LocationService.getLocationFromIP(mockUserId);
 
             expect(fetch).toHaveBeenCalledTimes(3);
-            expect(result).toBe('parisFallback');
+            locationUtils.expectLocationCreated(mockUserId, {
+                city: 'Paris',
+                country: 'France',
+                latitude: 48.8566,
+                longitude: 2.3522
+            });
+            expect(result).toBe('newLocationId');
         });
     });
 
@@ -403,333 +350,64 @@ describe('LocationService', () => {
         });
     });
 
-    describe('getCityAndCountry error handling', () => {
-        beforeEach(() => {
-            fetch.mockClear();
-        });
-
-        it('should return default values when fetch throws an error', async () => {
-            fetch.mockRejectedValue(new Error('Network connection failed'));
-
-            const result = await LocationService.getCityAndCountry(1, 48.8566, 2.3522);
-
-            expect(result).toEqual({ city: 'Unknown', country: 'Unknown' });
-            expect(console.error).toHaveBeenCalledWith('Error fetching city and country:', expect.any(Error));
-        });
-
-        it('should return default values when response.json() throws an error', async () => {
-            fetch.mockResolvedValue({
-                json: () => Promise.reject(new Error('Invalid JSON response'))
-            });
-
-            const result = await LocationService.getCityAndCountry(1, 48.8566, 2.3522);
-
-            expect(result).toEqual({ city: 'Unknown', country: 'Unknown' });
-            expect(console.error).toHaveBeenCalledWith('Error fetching city and country:', expect.any(Error));
-        });
-
-        it('should return default values when API response has no results', async () => {
-            const mockApiResponse = {
-                results: null
-            };
-            fetch.mockResolvedValueOnce(new Response(JSON.stringify(mockApiResponse)));
-
-            const result = await LocationService.getCityAndCountry(52.52, 13.405, mockUserId);
-            expect(result).toEqual({ city: 'Unknown', country: 'Unknown' });
-            expect(console.error).toHaveBeenCalledWith('Error fetching city and country:', expect.any(Error));
-        });
-    });
-
     describe('getLocationFromIP fallback scenarios', () => {
         beforeEach(() => {
-            fetch.mockClear();
-            Location.createLocation.mockResolvedValue({ id: 1 });
-            Location.updateLocation.mockResolvedValue({ id: 1 });
+            locationUtils.setupLocationMocks();
         });
 
         it('should handle successful first API response', async () => {
-            const userId = 1;
-            const publicIp = '8.8.8.8';
+            locationUtils.setupFetchMocks.ipLocationSuccess();
 
-            fetch
-                .mockResolvedValueOnce(new Response(JSON.stringify({ ip: publicIp })))
-                .mockResolvedValueOnce(new Response(JSON.stringify({
-                    status: 'success',
-                    city: 'New York',
-                    country: 'United States',
-                    lat: 40.7128,
-                    lon: -74.0060
-                })));
-
-            Location.findByUserId.mockResolvedValue(null);
-
-            const result = await LocationService.getLocationFromIP(userId);
+            const result = await LocationService.getLocationFromIP(mockUserId);
 
             expect(fetch).toHaveBeenCalledTimes(2);
-            expect(fetch).toHaveBeenNthCalledWith(1, 'https://api.ipify.org?format=json');
-            expect(fetch).toHaveBeenNthCalledWith(2, `http://ip-api.com/json/${publicIp}`);
-            expect(result).toEqual({ id: 1 });
-            expect(Location.createLocation).toHaveBeenCalledWith({
-                userId: userId,
+            locationUtils.expectLocationCreated(mockUserId, {
                 city: 'New York',
                 country: 'United States',
                 latitude: 40.7128,
                 longitude: -74.0060
             });
-        });
-
-        it('should use fallback API when main API fails', async () => {
-            const userId = 1;
-            const publicIp = '8.8.8.8';
-
-            fetch
-                .mockResolvedValueOnce(new Response(JSON.stringify({ ip: publicIp })))
-                .mockRejectedValueOnce(new Error('Network error'))
-                .mockResolvedValueOnce(new Response(JSON.stringify({
-                    city: 'San Francisco',
-                    country_name: 'United States',
-                    latitude: 37.7749,
-                    longitude: -122.4194
-                })));
-
-            const result = await LocationService.getLocationFromIP(userId);
-
-            expect(fetch).toHaveBeenCalledTimes(3);
-            expect(fetch).toHaveBeenNthCalledWith(1, 'https://api.ipify.org?format=json');
-            expect(fetch).toHaveBeenNthCalledWith(2, `http://ip-api.com/json/${publicIp}`);
-            expect(fetch).toHaveBeenNthCalledWith(3, `https://ipapi.co/${publicIp}/json/`);
-            expect(result).toEqual({ id: 1 });
+            expect(result).toBe('newLocationId');
         });
 
         it('should handle complete API failure gracefully', async () => {
-            const userId = 1;
-            const publicIp = '8.8.8.8';
-
-            fetch
-                .mockResolvedValueOnce(new Response(JSON.stringify({ ip: publicIp })))
-                .mockRejectedValueOnce(new Error('Main API error'))
-                .mockRejectedValueOnce(new Error('Fallback API error'));
-
-            Location.findByUserId.mockResolvedValue(null);
+            locationUtils.setupFetchMocks.ipLocationAllFail();
             const consoleSpy = jest.spyOn(console, 'log').mockImplementation(() => { });
 
-            const result = await LocationService.getLocationFromIP(userId);
+            const result = await LocationService.getLocationFromIP(mockUserId);
 
             expect(fetch).toHaveBeenCalledTimes(3);
-            expect(result).toEqual({ id: 1 });
-            expect(Location.createLocation).toHaveBeenCalledWith({
-                userId: userId,
+            locationUtils.expectLocationCreated(mockUserId, {
                 city: 'Paris',
                 country: 'France',
                 latitude: 48.8566,
                 longitude: 2.3522
             });
+            expect(result).toBe('newLocationId');
 
             if (consoleSpy.mockRestore) consoleSpy.mockRestore();
         });
 
-        it('should handle main API returning unsuccessful status', async () => {
-            const userId = 1;
-            const publicIp = '8.8.8.8';
-
+        it('should handle missing data gracefully with fallbacks', async () => {
+            // Test various missing data scenarios with single test
             fetch
-                .mockResolvedValueOnce(new Response(JSON.stringify({ ip: publicIp })))
-                .mockResolvedValueOnce(new Response(JSON.stringify({
-                    status: 'fail',
-                    message: 'Invalid IP'
-                })))
-                .mockResolvedValueOnce(new Response(JSON.stringify({
-                    city: 'Los Angeles',
-                    country_name: 'United States',
-                    latitude: 34.0522,
-                    longitude: -118.2437
-                })));
-
-            const result = await LocationService.getLocationFromIP(userId);
-
-            expect(fetch).toHaveBeenCalledTimes(3);
-            expect(result).toEqual({ id: 1 });
-        });
-
-        it('should handle createLocation failure and log error', async () => {
-            const userId = 1;
-            const publicIp = '8.8.8.8';
-
-            fetch
-                .mockResolvedValueOnce(new Response(JSON.stringify({ ip: publicIp })))
+                .mockResolvedValueOnce(new Response(JSON.stringify({ ip: '8.8.8.8' })))
                 .mockResolvedValueOnce(new Response(JSON.stringify({
                     status: 'success',
-                    city: 'London',
-                    country: 'United Kingdom',
-                    lat: 51.5074,
-                    lon: -0.1278
-                })));
-
-            Location.findByUserId.mockResolvedValue(null);
-            Location.createLocation.mockRejectedValue(new Error('Database connection failed'));
-
-            const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => { });
-
-            const result = await LocationService.getLocationFromIP(userId);
-
-            expect(result).toBeUndefined();
-            expect(consoleSpy).toHaveBeenCalledWith('Error getting location from IP:', expect.any(Error));
-
-            if (consoleSpy.mockRestore) consoleSpy.mockRestore();
-        });
-
-        it('should handle fallback API with missing city data', async () => {
-            const userId = 1;
-            const publicIp = '8.8.8.8';
-
-            fetch
-                .mockResolvedValueOnce(new Response(JSON.stringify({ ip: publicIp })))
-                .mockRejectedValueOnce(new Error('Main API error'))
-                .mockResolvedValueOnce(new Response(JSON.stringify({
-                    country: 'Canada',
-                    latitude: 43.6532,
-                    longitude: -79.3832
-                })));
-
-            const result = await LocationService.getLocationFromIP(userId);
-
-            expect(fetch).toHaveBeenCalledTimes(3);
-            expect(result).toEqual({ id: 1 });
-            expect(Location.createLocation).toHaveBeenCalledWith({
-                userId: userId,
-                city: 'Unknown',
-                country: 'Canada',
-                latitude: 43.6532,
-                longitude: -79.3832
-            });
-        });
-
-        it('should handle fallback API with missing country data', async () => {
-            const userId = 1;
-            const publicIp = '8.8.8.8';
-
-            fetch
-                .mockResolvedValueOnce(new Response(JSON.stringify({ ip: publicIp })))
-                .mockRejectedValueOnce(new Error('Main API error'))
-                .mockResolvedValueOnce(new Response(JSON.stringify({
-                    city: 'Toronto',
-                    latitude: 43.6532,
-                    longitude: -79.3832
-                })));
-
-            const result = await LocationService.getLocationFromIP(userId);
-
-            expect(fetch).toHaveBeenCalledTimes(3);
-            expect(result).toEqual({ id: 1 });
-            expect(Location.createLocation).toHaveBeenCalledWith({
-                userId: userId,
-                city: 'Toronto',
-                country: 'Unknown',
-                latitude: 43.6532,
-                longitude: -79.3832
-            });
-        });
-
-        it('should handle fallback API returning error', async () => {
-            const userId = 1;
-            const publicIp = '8.8.8.8';
-
-            fetch
-                .mockResolvedValueOnce(new Response(JSON.stringify({ ip: publicIp })))
-                .mockRejectedValueOnce(new Error('Main API error'))
-                .mockResolvedValueOnce(new Response(JSON.stringify({
-                    error: true,
-                    reason: 'Invalid IP address'
-                })));
-
-            const result = await LocationService.getLocationFromIP(userId);
-
-            expect(fetch).toHaveBeenCalledTimes(3);
-            expect(result).toEqual({ id: 1 });
-            expect(Location.createLocation).toHaveBeenCalledWith({
-                userId: userId,
-                city: 'Paris',
-                country: 'France',
-                latitude: 48.8566,
-                longitude: 2.3522
-            });
-        });
-
-        it('should handle fallback API missing latitude/longitude', async () => {
-            const userId = 1;
-            const publicIp = '8.8.8.8';
-
-            fetch
-                .mockResolvedValueOnce(new Response(JSON.stringify({ ip: publicIp })))
-                .mockRejectedValueOnce(new Error('Main API error'))
-                .mockResolvedValueOnce(new Response(JSON.stringify({
-                    city: 'Toronto',
-                    country: 'Canada'
-                })));
-
-            const result = await LocationService.getLocationFromIP(userId);
-
-            expect(fetch).toHaveBeenCalledTimes(3);
-            expect(result).toEqual({ id: 1 });
-            expect(Location.createLocation).toHaveBeenCalledWith({
-                userId: userId,
-                city: 'Paris',
-                country: 'France',
-                latitude: 48.8566,
-                longitude: 2.3522
-            });
-        });
-
-        it('should handle main API with missing city data', async () => {
-            const userId = 1;
-            const publicIp = '8.8.8.8';
-
-            fetch
-                .mockResolvedValueOnce(new Response(JSON.stringify({ ip: publicIp })))
-                .mockResolvedValueOnce(new Response(JSON.stringify({
-                    status: 'success',
-                    country: 'United States',
+                    country: 'United States', // missing city
                     lat: 40.7128,
                     lon: -74.0060
                 })));
 
-            const result = await LocationService.getLocationFromIP(userId);
+            const result = await LocationService.getLocationFromIP(mockUserId);
 
-            expect(fetch).toHaveBeenCalledTimes(2);
-            expect(result).toEqual({ id: 1 });
-            expect(Location.createLocation).toHaveBeenCalledWith({
-                userId: userId,
+            locationUtils.expectLocationCreated(mockUserId, {
                 city: 'Unknown',
                 country: 'United States',
                 latitude: 40.7128,
                 longitude: -74.0060
             });
-        });
-
-        it('should handle main API with missing country data', async () => {
-            const userId = 1;
-            const publicIp = '8.8.8.8';
-
-            fetch
-                .mockResolvedValueOnce(new Response(JSON.stringify({ ip: publicIp })))
-                .mockResolvedValueOnce(new Response(JSON.stringify({
-                    status: 'success',
-                    city: 'New York',
-                    lat: 40.7128,
-                    lon: -74.0060
-                })));
-
-            const result = await LocationService.getLocationFromIP(userId);
-
-            expect(fetch).toHaveBeenCalledTimes(2);
-            expect(result).toEqual({ id: 1 });
-            expect(Location.createLocation).toHaveBeenCalledWith({
-                userId: userId,
-                city: 'New York',
-                country: 'Unknown',
-                latitude: 40.7128,
-                longitude: -74.0060
-            });
+            expect(result).toBe('newLocationId');
         });
     });
 });

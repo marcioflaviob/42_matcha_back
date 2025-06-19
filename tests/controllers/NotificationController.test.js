@@ -1,6 +1,11 @@
 const NotificationService = require('../../services/NotificationService');
 const NotificationController = require('../../controllers/NotificationController');
-const { createMockReqRes, createMockData, createControllerTestSetup } = require('../utils/testSetup');
+const {
+    createMockReqRes,
+    createMockData,
+    createControllerTestSetup,
+    createNotificationTestUtils
+} = require('../utils/testSetup');
 
 jest.mock('../../services/NotificationService', () => ({
     getNotSeenNotificationsByUserId: jest.fn(),
@@ -15,10 +20,12 @@ jest.mock('../../services/NotificationService', () => ({
 
 describe('NotificationController', () => {
     let controllerTest;
+    let notificationUtils;
 
     beforeEach(() => {
         jest.clearAllMocks();
         controllerTest = createControllerTestSetup();
+        notificationUtils = createNotificationTestUtils();
     });
 
     describe('getNotSeenNotificationsByUserId', () => {
@@ -27,33 +34,23 @@ describe('NotificationController', () => {
                 createMockData.notification({ id: 1, user_id: 1, type: 'new-message', seen: false }),
                 createMockData.notification({ id: 2, user_id: 1, type: 'new-like', seen: false })
             ];
-            const { mockReq, mockRes } = createMockReqRes();
-            const req = {
-                ...mockReq,
-                user: {
-                    id: 1
-                }
-            };
-            const res = mockRes;
+            const { req, res } = notificationUtils.createNotificationRequestData({
+                req: { user: { id: 1 } }
+            });
 
-            NotificationService.getNotSeenNotificationsByUserId.mockResolvedValue(mockNotifications);
-
-            await NotificationController.getNotSeenNotificationsByUserId(req, res);
-
-            expect(NotificationService.getNotSeenNotificationsByUserId).toHaveBeenCalledWith(req.user.id);
-            expect(res.status).toHaveBeenCalledWith(200);
-            expect(res.send).toHaveBeenCalledWith(mockNotifications);
+            await notificationUtils.testNotificationController(
+                NotificationController.getNotSeenNotificationsByUserId,
+                NotificationService.getNotSeenNotificationsByUserId,
+                mockNotifications,
+                { req, res },
+                [req.user.id]
+            );
         });
 
         it('should handle errors gracefully', async () => {
-            const { mockReq, mockRes } = createMockReqRes();
-            const req = {
-                ...mockReq,
-                user: {
-                    id: 1
-                }
-            };
-            const res = mockRes;
+            const { req, res } = notificationUtils.createNotificationRequestData({
+                req: { user: { id: 1 } }
+            });
 
             NotificationService.getNotSeenNotificationsByUserId.mockRejectedValue(new Error('Database error'));
 
@@ -67,229 +64,89 @@ describe('NotificationController', () => {
 
     describe('sendNewCallNotification', () => {
         it('should create new call notification and send 200 with notification data', async () => {
-            const mockNotification = createMockData.notification({
-                id: 1,
-                user_id: 2,
-                concerned_user_id: 1,
-                type: 'new-call',
-                title: 'Incoming Call',
-                message: 'John is calling you'
-            });
-            const { mockReq, mockRes } = createMockReqRes();
-            const req = {
-                ...mockReq,
-                user: {
-                    id: 1
-                },
-                params: {
-                    id: 2
-                }
-            };
-            const res = mockRes;
+            const mockNotification = notificationUtils.mockNotificationTypes.call();
 
-            NotificationService.newCallNotification.mockResolvedValue(mockNotification);
-
-            await NotificationController.sendNewCallNotification(req, res);
-
-            expect(NotificationService.newCallNotification).toHaveBeenCalledWith(req.params.id, req.user.id);
-            expect(res.status).toHaveBeenCalledWith(200);
-            expect(res.send).toHaveBeenCalledWith(mockNotification);
+            await notificationUtils.testNotificationWithParams(
+                NotificationController.sendNewCallNotification,
+                NotificationService.newCallNotification,
+                mockNotification
+            );
         });
     });
 
     describe('sendStopCallNotification', () => {
         it('should create stop call notification and send 200 with notification data', async () => {
-            const mockNotification = {
-                id: 1,
-                user_id: 2,
-                concerned_user_id: 1,
-                type: 'stop-call',
-                title: 'Stop Call',
-                message: 'John interrupted the call'
-            };
-            const { mockReq, mockRes } = createMockReqRes();
-            const req = {
-                ...mockReq,
-                user: {
-                    id: 1
-                },
-                params: {
-                    id: 2
-                }
-            };
-            const res = mockRes;
+            const mockNotification = notificationUtils.mockNotificationTypes.stopCall();
 
-            NotificationService.newStopCallNotification.mockResolvedValue(mockNotification);
-
-            await NotificationController.sendStopCallNotification(req, res);
-
-            expect(NotificationService.newStopCallNotification).toHaveBeenCalledWith(req.params.id, req.user.id);
-            expect(res.status).toHaveBeenCalledWith(200);
-            expect(res.send).toHaveBeenCalledWith(mockNotification);
+            await notificationUtils.testNotificationWithParams(
+                NotificationController.sendStopCallNotification,
+                NotificationService.newStopCallNotification,
+                mockNotification
+            );
         });
     });
 
     describe('sendSeenNotification', () => {
         it('should create seen notification and send 200 with notification data', async () => {
-            const mockNotification = {
-                id: 1,
-                user_id: 2,
-                concerned_user_id: 1,
-                type: 'new-seen',
-                title: 'Your profile was viewed',
-                message: 'John has seen your profile'
-            };
-            const { mockReq, mockRes } = createMockReqRes();
-            const req = {
-                ...mockReq,
-                user: {
-                    id: 1
-                },
-                params: {
-                    id: 2
-                }
-            };
-            const res = mockRes;
+            const mockNotification = notificationUtils.mockNotificationTypes.seen();
 
-            NotificationService.newSeenNotification.mockResolvedValue(mockNotification);
-
-            await NotificationController.sendSeenNotification(req, res);
-
-            expect(NotificationService.newSeenNotification).toHaveBeenCalledWith(req.params.id, req.user.id);
-            expect(res.status).toHaveBeenCalledWith(200);
-            expect(res.send).toHaveBeenCalledWith(mockNotification);
+            await notificationUtils.testNotificationWithParams(
+                NotificationController.sendSeenNotification,
+                NotificationService.newSeenNotification,
+                mockNotification
+            );
         });
     });
 
     describe('sendRefuseCallNotification', () => {
         it('should create refuse call notification and send 200 with notification data', async () => {
-            const mockNotification = {
-                id: 1,
-                user_id: 2,
-                concerned_user_id: 1,
-                type: 'new-refused-call',
-                title: 'New Refused Call',
-                message: 'John refused your call'
-            };
-            const { mockReq, mockRes } = createMockReqRes();
-            const req = {
-                ...mockReq,
-                user: {
-                    id: 1
-                },
-                params: {
-                    id: 2
-                }
-            };
-            const res = mockRes;
+            const mockNotification = notificationUtils.mockNotificationTypes.refusedCall();
 
-            NotificationService.newRefusedCallNotification.mockResolvedValue(mockNotification);
-
-            await NotificationController.sendRefuseCallNotification(req, res);
-
-            expect(NotificationService.newRefusedCallNotification).toHaveBeenCalledWith(req.params.id, req.user.id);
-            expect(res.status).toHaveBeenCalledWith(200);
-            expect(res.send).toHaveBeenCalledWith(mockNotification);
+            await notificationUtils.testNotificationWithParams(
+                NotificationController.sendRefuseCallNotification,
+                NotificationService.newRefusedCallNotification,
+                mockNotification
+            );
         });
     });
 
     describe('sendDateNotification', () => {
         it('should create date notification and send 200 with notification and date data', async () => {
-            const mockData = {
-                notification: {
-                    id: 1,
-                    user_id: 2,
-                    concerned_user_id: 1,
-                    type: 'new-date',
-                    title: 'New Date',
-                    message: 'John scheduled a date with you'
-                },
-                date: {
-                    id: 1,
-                    sender_id: 1,
-                    receiver_id: 2,
-                    scheduled_date: '2023-12-31',
-                    address: '123 Main St',
-                    latitude: 123.456,
-                    longitude: 789.012
-                }
-            };
-            const { mockReq, mockRes } = createMockReqRes();
-            const req = {
-                ...mockReq,
-                body: {
-                    senderId: 1,
-                    receiverId: 2,
-                    dateData: '2023-12-31',
-                    address: '123 Main St',
-                    latitude: 123.456,
-                    longitude: 789.012
-                }
-            };
-            const res = mockRes;
+            const mockData = notificationUtils.mockNotificationTypes.date();
+            const { req, res } = notificationUtils.createDateRequestData();
 
-            NotificationService.newDateNotification.mockResolvedValue(mockData);
-
-            await NotificationController.sendDateNotification(req, res);
-
-            expect(NotificationService.newDateNotification).toHaveBeenCalledWith(
-                req.body.senderId,
-                req.body.receiverId,
-                req.body.dateData,
-                req.body.address,
-                req.body.latitude,
-                req.body.longitude
+            await notificationUtils.testNotificationController(
+                NotificationController.sendDateNotification,
+                NotificationService.newDateNotification,
+                mockData,
+                { req, res },
+                [req.body.senderId, req.body.receiverId, req.body.dateData, req.body.address, req.body.latitude, req.body.longitude]
             );
-            expect(res.status).toHaveBeenCalledWith(200);
-            expect(res.send).toHaveBeenCalledWith(mockData);
         });
     });
 
     describe('newUnansweredDate', () => {
         it('should create unanswered date notification and send 200 with notification and date data', async () => {
-            const mockData = {
-                notification: {
-                    id: 1,
-                    user_id: 2,
-                    concerned_user_id: 1,
-                    type: 'new-unanswered-date',
-                    title: 'Unanswered Date',
-                    message: 'You have an unanswered date'
-                },
-                date: {
-                    id: 1,
-                    status: 'unanswered'
-                }
-            };
-            const { mockReq, mockRes } = createMockReqRes();
-            const req = {
-                ...mockReq,
-                params: {
-                    id: 1
-                }
-            };
-            const res = mockRes;
+            const mockData = notificationUtils.mockNotificationTypes.unansweredDate();
+            const { req, res } = notificationUtils.createNotificationRequestData({
+                req: { params: { id: 1 } }
+            });
 
-            NotificationService.newUnansweredDate.mockResolvedValue(mockData);
-
-            await NotificationController.newUnansweredDate(req, res);
-
-            expect(NotificationService.newUnansweredDate).toHaveBeenCalledWith(req.params.id);
-            expect(res.status).toHaveBeenCalledWith(200);
-            expect(res.send).toHaveBeenCalledWith(mockData);
+            await notificationUtils.testNotificationController(
+                NotificationController.newUnansweredDate,
+                NotificationService.newUnansweredDate,
+                mockData,
+                { req, res },
+                [req.params.id]
+            );
         });
     });
 
     describe('markNotificationAsSeen', () => {
         it('should mark all notifications as seen and send 204', async () => {
-            const { mockReq, mockRes } = createMockReqRes();
-            const req = {
-                ...mockReq,
-                user: {
-                    id: 1
-                }
-            };
-            const res = mockRes;
+            const { req, res } = notificationUtils.createNotificationRequestData({
+                req: { user: { id: 1 } }
+            });
 
             NotificationService.markAllAsSeen.mockResolvedValue([]);
 
