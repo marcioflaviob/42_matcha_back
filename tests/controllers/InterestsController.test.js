@@ -1,5 +1,6 @@
 const InterestsService = require('../../services/InterestsService');
 const InterestsController = require('../../controllers/InterestsController');
+const { createMockReqRes } = require('../utils/testSetup');
 
 jest.mock('../../services/InterestsService');
 
@@ -7,12 +8,9 @@ describe('InterestsController', () => {
     let mockReq, mockRes;
 
     beforeEach(() => {
-        mockReq = {};
-        mockRes = {
-            send: jest.fn(),
-            status: jest.fn().mockReturnThis(),
-            json: jest.fn()
-        };
+        const mocks = createMockReqRes();
+        mockReq = mocks.mockReq;
+        mockRes = mocks.mockRes;
         jest.clearAllMocks();
     });
 
@@ -25,7 +23,7 @@ describe('InterestsController', () => {
 
             InterestsService.getAllInterests.mockResolvedValue(interests);
 
-            await InterestsController.getAllInterests(mockRes);
+            await InterestsController.getAllInterests(mockReq, mockRes);
 
             expect(InterestsService.getAllInterests).toHaveBeenCalled();
             expect(mockRes.send).toHaveBeenCalledWith(interests);

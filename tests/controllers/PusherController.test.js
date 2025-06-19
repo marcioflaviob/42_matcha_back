@@ -1,5 +1,6 @@
 const PusherController = require('../../controllers/PusherController.js');
 const PusherService = require('../../services/PusherService.js');
+const { createMockReqRes } = require('../utils/testSetup');
 
 jest.mock('../../services/PusherService.js');
 
@@ -8,19 +9,14 @@ describe('PusherController', () => {
     let mockRes;
 
     beforeEach(() => {
-        mockReq = {
-            user: {
-                id: 1
-            },
-            body: {}
-        };
-
-        mockRes = {
-            status: jest.fn().mockReturnThis(),
-            json: jest.fn(),
-            send: jest.fn()
-        };
-
+        const mocks = createMockReqRes({
+            req: {
+                user: { id: 1 },
+                body: {}
+            }
+        });
+        mockReq = mocks.mockReq;
+        mockRes = mocks.mockRes;
         jest.clearAllMocks();
     });
 

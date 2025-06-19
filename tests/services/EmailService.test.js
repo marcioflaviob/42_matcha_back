@@ -1,7 +1,11 @@
-process.env.JWT_SECRET = 'test_jwt_secret';
-process.env.EMAIL_API_KEY = 'fake-api-key';
-process.env.EMAIL_FROM = 'no-reply@example.com';
-process.env.FRONTEND_URL = 'https://frontend.com';
+const { setupTestEnv } = require('../utils/testSetup');
+
+setupTestEnv({
+    JWT_SECRET: 'test_jwt_secret',
+    EMAIL_API_KEY: 'fake-api-key',
+    EMAIL_FROM: 'no-reply@example.com',
+    FRONTEND_URL: 'https://frontend.com'
+});
 
 jest.mock('resend', () => {
     const mockSend = jest.fn();

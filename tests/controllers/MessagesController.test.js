@@ -1,5 +1,6 @@
 const MessagesService = require('../../services/MessagesService');
 const MessagesController = require('../../controllers/MessagesController');
+const { createMockReqRes } = require('../utils/testSetup');
 
 jest.mock('../../services/MessagesService');
 
@@ -14,26 +15,20 @@ describe('MessagesController', () => {
                 { id: 1, sender_id: 1, receiver_id: 2, content: 'Hello!' },
                 { id: 2, sender_id: 2, receiver_id: 1, content: 'Hi!' }
             ];
-            const req = {
-                user: {
-                    id: 1
-                },
-                params: {
-                    id: 2
+            const { mockReq, mockRes } = createMockReqRes({
+                req: {
+                    user: { id: 1 },
+                    params: { id: 2 }
                 }
-            };
-            const res = {
-                status: jest.fn().mockReturnThis(),
-                send: jest.fn()
-            };
+            });
 
             MessagesService.getMessagesByUserId.mockResolvedValue(mockMessages);
 
-            await MessagesController.getMessagesByUserId(req, res);
+            await MessagesController.getMessagesByUserId(mockReq, mockRes);
 
-            expect(MessagesService.getMessagesByUserId).toHaveBeenCalledWith(req.user.id, req.params.id);
-            expect(res.status).toHaveBeenCalledWith(200);
-            expect(res.send).toHaveBeenCalledWith(mockMessages);
+            expect(MessagesService.getMessagesByUserId).toHaveBeenCalledWith(1, 2);
+            expect(mockRes.status).toHaveBeenCalledWith(200);
+            expect(mockRes.send).toHaveBeenCalledWith(mockMessages);
         });
     });
 

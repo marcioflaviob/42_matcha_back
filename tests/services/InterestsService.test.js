@@ -1,14 +1,15 @@
 const InterestsService = require('../../services/InterestsService');
 const Interests = require('../../models/Interests/Interests');
+const { mockConsole, restoreConsole } = require('../utils/testSetup');
 
 jest.mock('../../models/Interests/Interests');
 
 beforeEach(() => {
-    jest.spyOn(console, 'log').mockImplementation(() => { });
+    mockConsole();
 });
 
 afterEach(() => {
-    console.log.mockRestore();
+    restoreConsole();
 });
 
 describe('InterestsService', () => {

@@ -1,15 +1,16 @@
 const db = require('../../../config/db.js');
 const UserPictures = require('../../../models/User/UserPictures.js');
 const ApiException = require('../../../exceptions/ApiException.js');
+const { mockConsole, restoreConsole } = require('../../utils/testSetup');
 
 jest.mock('../../../config/db.js');
 
 beforeEach(() => {
-    jest.spyOn(console, 'log').mockImplementation(() => { });
+    mockConsole();
 });
 
 afterEach(() => {
-    console.log.mockRestore();
+    restoreConsole();
 });
 
 describe('UserPictures', () => {

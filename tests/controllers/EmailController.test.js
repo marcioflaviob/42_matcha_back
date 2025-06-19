@@ -1,4 +1,5 @@
 const EmailService = require('../../services/EmailService.js');
+const { createMockReqRes } = require('../utils/testSetup');
 
 jest.mock('../../services/EmailService.js');
 
@@ -9,15 +10,9 @@ describe('EmailController', () => {
 
     beforeEach(() => {
         jest.clearAllMocks();
-
-        req = {
-            body: {},
-            user: {}
-        };
-        res = {
-            status: jest.fn().mockReturnThis(),
-            send: jest.fn()
-        };
+        const mockReqRes = createMockReqRes();
+        req = mockReqRes.mockReq;
+        res = mockReqRes.mockRes;
     });
 
     describe('sendForgotPasswordEmail', () => {

@@ -1,16 +1,17 @@
 const db = require('../../../config/db');
 const ApiException = require('../../../exceptions/ApiException');
 const Location = require('../../../models/Location/Location');
+const { mockConsole, restoreConsole } = require('../../utils/testSetup');
 
 jest.mock('../../../config/db');
 
 describe('Location model', () => {
     beforeEach(() => {
-        jest.spyOn(console, 'log').mockImplementation(() => { });
+        mockConsole();
     });
 
     afterEach(() => {
-        console.log.mockRestore();
+        restoreConsole();
         jest.clearAllMocks();
     });
 

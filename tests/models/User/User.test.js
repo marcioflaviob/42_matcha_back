@@ -2,18 +2,17 @@ const User = require('../../../models/User/User.js');
 const db = require('../../../config/db.js');
 const bcrypt = require('bcrypt');
 const ApiException = require('../../../exceptions/ApiException.js');
+const { mockConsole, restoreConsole } = require('../../utils/testSetup');
 
 jest.mock('../../../config/db.js');
 jest.mock('bcrypt');
 
 beforeEach(() => {
-    jest.spyOn(console, 'log').mockImplementation(() => { });
-    jest.spyOn(console, 'error').mockImplementation(() => { });
+    mockConsole();
 });
 
 afterEach(() => {
-    console.log.mockRestore();
-    console.error.mockRestore();
+    restoreConsole();
 });
 
 describe('User Model', () => {

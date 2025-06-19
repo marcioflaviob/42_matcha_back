@@ -13,6 +13,7 @@ const passport = require('passport');
 const AuthService = require('../../services/AuthService');
 const UserService = require('../../services/UserService');
 const AuthController = require('../../controllers/AuthController');
+const { mockConsole, createMockReqRes } = require('../utils/testSetup');
 
 describe('AuthController', () => {
     let req;
@@ -20,19 +21,14 @@ describe('AuthController', () => {
     let next;
 
     beforeEach(() => {
+        const { mockReq, mockRes } = createMockReqRes();
         req = {
-            body: {},
-            header: jest.fn(),
-            user: {},
+            ...mockReq,
+            header: jest.fn()
         };
-        res = {
-            status: jest.fn().mockReturnThis(),
-            json: jest.fn(),
-            redirect: jest.fn(),
-        };
+        res = mockRes;
         next = jest.fn();
-        jest.spyOn(console, 'log').mockImplementation(() => { });
-        jest.spyOn(console, 'error').mockImplementation(() => { });
+        mockConsole();
     });
 
     afterEach(() => {

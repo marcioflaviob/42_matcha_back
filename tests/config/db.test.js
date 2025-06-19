@@ -1,5 +1,6 @@
 const { Pool } = require('pg');
 const ApiException = require('../../exceptions/ApiException.js');
+const { mockConsole, restoreConsole } = require('../utils/testSetup');
 
 let mockClient;
 const mockPool = {
@@ -34,17 +35,13 @@ describe('Database Configuration', () => {
         mockPool.query.mockResolvedValue({ rows: [] });
 
         jest.resetModules();
-
-        jest.spyOn(console, 'log').mockImplementation(() => { });
-        jest.spyOn(console, 'error').mockImplementation(() => { });
-
+        mockConsole();
         delete require.cache[require.resolve('../../config/db.js')];
     });
 
     afterEach(() => {
         process.env = originalEnv;
-        console.log.mockRestore();
-        console.error.mockRestore();
+        restoreConsole();
     });
 
     describe('Database Initialization', () => {

@@ -1,5 +1,6 @@
 const UserPicturesController = require('../../controllers/UserPicturesController.js');
 const UserPictureService = require('../../services/UserPictureService.js');
+const { createMockReqRes } = require('../utils/testSetup');
 
 jest.mock('../../services/UserPictureService.js');
 
@@ -11,15 +12,15 @@ describe('UserPicturesController', () => {
 
     beforeEach(() => {
         jest.clearAllMocks();
-        mockReq = {
-            user: { id: mockUserId },
-            params: {},
-            body: {}
-        };
-        mockRes = {
-            status: jest.fn().mockReturnThis(),
-            send: jest.fn()
-        };
+        const mocks = createMockReqRes({
+            req: {
+                user: { id: mockUserId },
+                params: {},
+                body: {}
+            }
+        });
+        mockReq = mocks.mockReq;
+        mockRes = mocks.mockRes;
     });
 
     describe('uploadPicture', () => {

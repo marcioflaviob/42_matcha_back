@@ -2,18 +2,17 @@ const { put, del } = require('@vercel/blob');
 const UserPictureService = require('../../services/UserPictureService.js');
 const UserPictures = require('../../models/User/UserPictures.js');
 const ApiException = require('../../exceptions/ApiException.js');
+const { mockConsole, restoreConsole } = require('../utils/testSetup');
 
 jest.mock('@vercel/blob');
 jest.mock('../../models/User/UserPictures.js');
 
 beforeEach(() => {
-    jest.spyOn(console, 'log').mockImplementation(() => { });
-    jest.spyOn(console, 'error').mockImplementation(() => { });
+    mockConsole();
 });
 
 afterEach(() => {
-    if (console.log.mockRestore) console.log.mockRestore();
-    if (console.error.mockRestore) console.error.mockRestore();
+    restoreConsole();
 });
 
 describe('UserPictureService', () => {

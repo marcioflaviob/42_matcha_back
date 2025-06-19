@@ -1,5 +1,6 @@
 const DatesService = require('../../services/DatesService');
 const DatesController = require('../../controllers/DatesController');
+const { createMockReqRes } = require('../utils/testSetup');
 
 jest.mock('../../services/DatesService');
 
@@ -8,7 +9,9 @@ describe("DatesController.createDate", () => {
         jest.clearAllMocks();
     });
     it("should create the date and send 201 with the date information", async () => {
+        const { mockReq, mockRes } = createMockReqRes();
         const req = {
+            ...mockReq,
             user: {
                 id: 1,
             },
@@ -21,11 +24,8 @@ describe("DatesController.createDate", () => {
                 latitude: 2,
                 longitude: 2,
             }
-        }
-        const res = {
-            status: jest.fn().mockReturnThis(),
-            send: jest.fn(),
         };
+        const res = mockRes;
         const expectedDate = {
             id: 1,
             sender_id: 1,
@@ -57,15 +57,14 @@ describe("DatesController.getDatesByUserId", () => {
             { id: 1, sender_id: 1, scheduled_date: futureDate, status: "accepted" },
             { id: 2, sender_id: 1, scheduled_date: futureDate, status: "pending" },
         ];
+        const { mockReq, mockRes } = createMockReqRes();
         const req = {
+            ...mockReq,
             user: {
                 id: 1
             }
-        }
-        const res = {
-            status: jest.fn().mockReturnThis(),
-            send: jest.fn(),
         };
+        const res = mockRes;
         DatesService.getDatesByUserId.mockResolvedValue(mockedDates);
 
         await DatesController.getDatesByUserId(req, res);
@@ -83,17 +82,15 @@ describe("DatesController.updateDate", () => {
 
     it("should update the date and send it back with 200", async () => {
         const updatedDate = { id: 1, status: "accepted" };
-
+        const { mockReq, mockRes } = createMockReqRes();
         const req = {
+            ...mockReq,
             body: {
                 id: 1,
                 status: "accepted"
             }
         };
-        const res = {
-            status: jest.fn().mockReturnThis(),
-            send: jest.fn(),
-        };
+        const res = mockRes;
 
         DatesService.updateDate.mockResolvedValue(updatedDate);
 
@@ -112,16 +109,14 @@ describe("DatesController.getDateById", () => {
 
     it("should return a date by ID with 200", async () => {
         const date = { id: 42, status: "pending" };
-
+        const { mockReq, mockRes } = createMockReqRes();
         const req = {
+            ...mockReq,
             params: {
                 id: 42
             }
         };
-        const res = {
-            status: jest.fn().mockReturnThis(),
-            send: jest.fn(),
-        };
+        const res = mockRes;
 
         DatesService.getDateById.mockResolvedValue(date);
 

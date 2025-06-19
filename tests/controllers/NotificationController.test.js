@@ -1,5 +1,6 @@
 const NotificationService = require('../../services/NotificationService');
 const NotificationController = require('../../controllers/NotificationController');
+const { createMockReqRes } = require('../utils/testSetup');
 
 jest.mock('../../services/NotificationService', () => ({
     getNotSeenNotificationsByUserId: jest.fn(),
@@ -23,15 +24,14 @@ describe('NotificationController', () => {
                 { id: 1, user_id: 1, type: 'new-message', seen: false },
                 { id: 2, user_id: 1, type: 'new-like', seen: false }
             ];
+            const { mockReq, mockRes } = createMockReqRes();
             const req = {
+                ...mockReq,
                 user: {
                     id: 1
                 }
             };
-            const res = {
-                status: jest.fn().mockReturnThis(),
-                send: jest.fn()
-            };
+            const res = mockRes;
 
             NotificationService.getNotSeenNotificationsByUserId.mockResolvedValue(mockNotifications);
 
@@ -43,15 +43,14 @@ describe('NotificationController', () => {
         });
 
         it('should handle errors gracefully', async () => {
+            const { mockReq, mockRes } = createMockReqRes();
             const req = {
+                ...mockReq,
                 user: {
                     id: 1
                 }
             };
-            const res = {
-                status: jest.fn().mockReturnThis(),
-                send: jest.fn()
-            };
+            const res = mockRes;
 
             NotificationService.getNotSeenNotificationsByUserId.mockRejectedValue(new Error('Database error'));
 
@@ -73,7 +72,9 @@ describe('NotificationController', () => {
                 title: 'Incoming Call',
                 message: 'John is calling you'
             };
+            const { mockReq, mockRes } = createMockReqRes();
             const req = {
+                ...mockReq,
                 user: {
                     id: 1
                 },
@@ -81,10 +82,7 @@ describe('NotificationController', () => {
                     id: 2
                 }
             };
-            const res = {
-                status: jest.fn().mockReturnThis(),
-                send: jest.fn()
-            };
+            const res = mockRes;
 
             NotificationService.newCallNotification.mockResolvedValue(mockNotification);
 
@@ -106,7 +104,9 @@ describe('NotificationController', () => {
                 title: 'Stop Call',
                 message: 'John interrupted the call'
             };
+            const { mockReq, mockRes } = createMockReqRes();
             const req = {
+                ...mockReq,
                 user: {
                     id: 1
                 },
@@ -114,10 +114,7 @@ describe('NotificationController', () => {
                     id: 2
                 }
             };
-            const res = {
-                status: jest.fn().mockReturnThis(),
-                send: jest.fn()
-            };
+            const res = mockRes;
 
             NotificationService.newStopCallNotification.mockResolvedValue(mockNotification);
 
@@ -139,7 +136,9 @@ describe('NotificationController', () => {
                 title: 'Your profile was viewed',
                 message: 'John has seen your profile'
             };
+            const { mockReq, mockRes } = createMockReqRes();
             const req = {
+                ...mockReq,
                 user: {
                     id: 1
                 },
@@ -147,10 +146,7 @@ describe('NotificationController', () => {
                     id: 2
                 }
             };
-            const res = {
-                status: jest.fn().mockReturnThis(),
-                send: jest.fn()
-            };
+            const res = mockRes;
 
             NotificationService.newSeenNotification.mockResolvedValue(mockNotification);
 
@@ -172,7 +168,9 @@ describe('NotificationController', () => {
                 title: 'New Refused Call',
                 message: 'John refused your call'
             };
+            const { mockReq, mockRes } = createMockReqRes();
             const req = {
+                ...mockReq,
                 user: {
                     id: 1
                 },
@@ -180,10 +178,7 @@ describe('NotificationController', () => {
                     id: 2
                 }
             };
-            const res = {
-                status: jest.fn().mockReturnThis(),
-                send: jest.fn()
-            };
+            const res = mockRes;
 
             NotificationService.newRefusedCallNotification.mockResolvedValue(mockNotification);
 
@@ -216,7 +211,9 @@ describe('NotificationController', () => {
                     longitude: 789.012
                 }
             };
+            const { mockReq, mockRes } = createMockReqRes();
             const req = {
+                ...mockReq,
                 body: {
                     senderId: 1,
                     receiverId: 2,
@@ -226,10 +223,7 @@ describe('NotificationController', () => {
                     longitude: 789.012
                 }
             };
-            const res = {
-                status: jest.fn().mockReturnThis(),
-                send: jest.fn()
-            };
+            const res = mockRes;
 
             NotificationService.newDateNotification.mockResolvedValue(mockData);
 
@@ -264,15 +258,14 @@ describe('NotificationController', () => {
                     status: 'unanswered'
                 }
             };
+            const { mockReq, mockRes } = createMockReqRes();
             const req = {
+                ...mockReq,
                 params: {
                     id: 1
                 }
             };
-            const res = {
-                status: jest.fn().mockReturnThis(),
-                send: jest.fn()
-            };
+            const res = mockRes;
 
             NotificationService.newUnansweredDate.mockResolvedValue(mockData);
 
@@ -286,15 +279,14 @@ describe('NotificationController', () => {
 
     describe('markNotificationAsSeen', () => {
         it('should mark all notifications as seen and send 204', async () => {
+            const { mockReq, mockRes } = createMockReqRes();
             const req = {
+                ...mockReq,
                 user: {
                     id: 1
                 }
             };
-            const res = {
-                status: jest.fn().mockReturnThis(),
-                send: jest.fn()
-            };
+            const res = mockRes;
 
             NotificationService.markAllAsSeen.mockResolvedValue([]);
 

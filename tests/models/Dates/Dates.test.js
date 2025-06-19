@@ -1,15 +1,16 @@
 const Dates = require('../../../models/Dates/Dates');
 const db = require('../../../config/db')
 const ApiException = require('../../../exceptions/ApiException');
+const { mockConsole, restoreConsole } = require('../../utils/testSetup');
 
 jest.mock('../../../config/db');
 
 beforeEach(() => {
-  jest.spyOn(console, 'log').mockImplementation(() => { });
+  mockConsole();
 });
 
 afterEach(() => {
-  console.log.mockRestore();
+  restoreConsole();
 });
 
 describe('Dates.getDatesByUserId', () => {

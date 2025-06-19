@@ -1,5 +1,6 @@
 const LocationService = require('../../services/LocationService');
 const LocationController = require('../../controllers/LocationController');
+const { createMockReqRes } = require('../utils/testSetup');
 
 jest.mock('../../services/LocationService');
 
@@ -17,23 +18,15 @@ describe('LocationController', () => {
                 latitude: 48.8566,
                 longitude: 2.3522
             };
-            const req = {
-                user: {
-                    id: 1
-                }
-            };
-            const res = {
-                status: jest.fn().mockReturnThis(),
-                send: jest.fn()
-            };
+            const { mockReq, mockRes } = createMockReqRes();
 
             LocationService.getLocationFromIP.mockResolvedValue(mockLocation);
 
-            await LocationController.setUserLocation(req, res);
+            await LocationController.setUserLocation(mockReq, mockRes);
 
-            expect(LocationService.getLocationFromIP).toHaveBeenCalledWith(req.user.id);
-            expect(res.status).toHaveBeenCalledWith(200);
-            expect(res.send).toHaveBeenCalledWith(mockLocation);
+            expect(LocationService.getLocationFromIP).toHaveBeenCalledWith(mockReq.user.id);
+            expect(mockRes.status).toHaveBeenCalledWith(200);
+            expect(mockRes.send).toHaveBeenCalledWith(mockLocation);
         });
     });
 

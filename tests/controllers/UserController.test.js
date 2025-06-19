@@ -1,5 +1,6 @@
 const UserService = require('../../services/UserService');
 const UserController = require('../../controllers/UserController');
+const { createMockReqRes } = require('../utils/testSetup');
 
 jest.mock('../../services/UserService');
 
@@ -14,17 +15,14 @@ describe('UserController', () => {
                 { id: 1, email: 'user1@test.com', name: 'User One' },
                 { id: 2, email: 'user2@test.com', name: 'User Two' }
             ];
-            const req = {};
-            const res = {
-                send: jest.fn()
-            };
+            const { mockReq, mockRes } = createMockReqRes();
 
             UserService.getAllUsers.mockResolvedValue(mockUsers);
 
-            await UserController.getAllUsers(req, res);
+            await UserController.getAllUsers(mockReq, mockRes);
 
             expect(UserService.getAllUsers).toHaveBeenCalledTimes(1);
-            expect(res.send).toHaveBeenCalledWith(mockUsers);
+            expect(mockRes.send).toHaveBeenCalledWith(mockUsers);
         });
     });
 

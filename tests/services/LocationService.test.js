@@ -5,17 +5,16 @@ jest.mock('node-fetch');
 const Location = require('../../models/Location/Location');
 const ApiException = require('../../exceptions/ApiException');
 const LocationService = require('../../services/LocationService');
+const { mockConsole, restoreConsole } = require('../utils/testSetup');
 
 jest.mock('../../models/Location/Location');
 
 beforeEach(() => {
-    jest.spyOn(console, 'log').mockImplementation(() => { });
-    jest.spyOn(console, 'error').mockImplementation(() => { });
+    mockConsole();
 });
 
 afterEach(() => {
-    if (console.log.mockRestore) console.log.mockRestore();
-    if (console.error.mockRestore) console.error.mockRestore();
+    restoreConsole();
 });
 
 

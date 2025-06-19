@@ -3,17 +3,18 @@ const Dates = require('../../models/Dates/Dates');
 const NotificationService = require('../../services/NotificationService');
 const MessagesService = require('../../services/MessagesService');
 const ApiException = require('../../exceptions/ApiException');
+const { mockConsole, restoreConsole } = require('../utils/testSetup');
 
 jest.mock('../../models/Dates/Dates');
 jest.mock('../../services/NotificationService');
 jest.mock('../../services/MessagesService');
 
 beforeEach(() => {
-    jest.spyOn(console, 'log').mockImplementation(() => { });
+    mockConsole();
 });
 
 afterEach(() => {
-    console.log.mockRestore();
+    restoreConsole();
 });
 
 describe('DatesService.createDate', () => {

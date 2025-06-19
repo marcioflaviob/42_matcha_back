@@ -6,6 +6,7 @@ const UserInteractionsService = require('../../services/UserInteractionsService.
 const ApiException = require('../../exceptions/ApiException.js');
 const UserService = require('../../services/UserService.js');
 const bcrypt = require('bcrypt');
+const { mockConsole, restoreConsole } = require('../utils/testSetup');
 
 jest.mock('../../models/User/User.js');
 jest.mock('../../services/InterestsService.js');
@@ -15,13 +16,11 @@ jest.mock('../../services/UserInteractionsService.js');
 jest.mock('bcrypt');
 
 beforeEach(() => {
-    jest.spyOn(console, 'log').mockImplementation(() => { });
-    jest.spyOn(console, 'error').mockImplementation(() => { });
+    mockConsole();
 });
 
 afterEach(() => {
-    if (console.log.mockRestore) console.log.mockRestore();
-    if (console.error.mockRestore) console.error.mockRestore();
+    restoreConsole();
 });
 
 describe('UserService', () => {

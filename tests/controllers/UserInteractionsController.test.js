@@ -1,5 +1,6 @@
 const UserInteractionsController = require('../../controllers/UserInteractionsController.js');
 const UserInteractionsService = require('../../services/UserInteractionsService.js');
+const { createMockReqRes } = require('../utils/testSetup');
 
 jest.mock('../../services/UserInteractionsService.js');
 
@@ -9,14 +10,9 @@ describe('UserInteractionsController', () => {
 
     beforeEach(() => {
         jest.clearAllMocks();
-        mockReq = {
-            user: { id: 1 },
-            params: {}
-        };
-        mockRes = {
-            status: jest.fn().mockReturnThis(),
-            send: jest.fn()
-        };
+        const mocks = createMockReqRes();
+        mockReq = mocks.mockReq;
+        mockRes = mocks.mockRes;
     });
 
     describe('getLikeCountByUserId', () => {

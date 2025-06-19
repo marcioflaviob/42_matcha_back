@@ -1,6 +1,7 @@
 const Messages = require('../../../models/Messages/Messages');
 const db = require('../../../config/db');
 const ApiException = require('../../../exceptions/ApiException');
+const { mockConsole, restoreConsole } = require('../../utils/testSetup');
 
 jest.mock('../../../config/db');
 
@@ -10,13 +11,11 @@ describe('Messages Model', () => {
     });
 
     beforeEach(() => {
-        jest.spyOn(console, 'log').mockImplementation(() => { });
-        jest.spyOn(console, 'error').mockImplementation(() => { });
+        mockConsole();
     });
 
     afterEach(() => {
-        console.log.mockRestore();
-        console.error.mockRestore();
+        restoreConsole();
     });
 
 
