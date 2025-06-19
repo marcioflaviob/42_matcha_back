@@ -189,25 +189,13 @@ describe('AuthController', () => {
             process.env.JWT_SECRET = 'test-secret';
         };
 
-        const createSuccessfulAuthMock = (user) => {
-            passport.authenticate.mockImplementation((strategy, options, callback) => {
-                const middleware = (req, res, next) => callback(null, user);
-                return middleware;
-            });
+        const createAuthMiddleware = (error, user) => (req, res, next) => {
+            const callback = passport.authenticate.mock.calls[passport.authenticate.mock.calls.length - 1][2];
+            callback(error, user);
         };
 
-        const createFailedAuthMock = (error) => {
-            passport.authenticate.mockImplementation((strategy, options, callback) => {
-                const middleware = (req, res, next) => callback(error, null);
-                return middleware;
-            });
-        };
-
-        const createNoUserAuthMock = () => {
-            passport.authenticate.mockImplementation((strategy, options, callback) => {
-                const middleware = (req, res, next) => callback(null, null);
-                return middleware;
-            });
+        const mockPassportAuth = (error, user) => {
+            passport.authenticate.mockImplementation(() => createAuthMiddleware(error, user));
         };
 
         it('should handle Google authentication setup correctly', () => {
@@ -221,7 +209,7 @@ describe('AuthController', () => {
         it('should handle successful Google callback', () => {
             const mockUser = { id: 1, email: 'test@example.com' };
             setupEnvironment();
-            createSuccessfulAuthMock(mockUser);
+            mockPassportAuth(null, mockUser);
 
             AuthController.googleCallback(req, res, next);
 
@@ -232,7 +220,7 @@ describe('AuthController', () => {
 
         it('should handle Google callback failure', () => {
             setupEnvironment();
-            createFailedAuthMock(new Error('Authentication failed'));
+            mockPassportAuth(new Error('Authentication failed'), null);
 
             AuthController.googleCallback(req, res, next);
 
@@ -243,7 +231,7 @@ describe('AuthController', () => {
 
         it('should handle Google callback with no user', () => {
             setupEnvironment();
-            createNoUserAuthMock();
+            mockPassportAuth(null, null);
 
             AuthController.googleCallback(req, res, next);
 

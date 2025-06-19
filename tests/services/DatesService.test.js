@@ -96,7 +96,7 @@ describe("DatesService.getDatesByUserId", () => {
     })
     it("should return an empty array if none of the dates status and scheduled_date match criteria", async () => {
         const userId = 1;
-        mockedDates = [
+        const mockedDates = [
             { id: 1, sender_id: userId, scheduled_date: new Date(), status: "refused" },
             { id: 2, sender_id: userId, scheduled_date: new Date(), status: "pending" },
         ]
@@ -140,7 +140,7 @@ describe("DatesService.updateDate", () => {
         }
         Dates.updateDate.mockResolvedValue(date);
 
-        result = await DatesService.updateDate(id, newStatus);
+        const result = await DatesService.updateDate(id, newStatus);
 
         expect(Dates.updateDate).toHaveBeenCalledWith(id, newStatus);
         expect(result).toEqual(date);
