@@ -1,6 +1,6 @@
 const NotificationService = require('../../services/NotificationService');
 const NotificationController = require('../../controllers/NotificationController');
-const { createMockReqRes } = require('../utils/testSetup');
+const { createMockReqRes, createMockData, createControllerTestSetup } = require('../utils/testSetup');
 
 jest.mock('../../services/NotificationService', () => ({
     getNotSeenNotificationsByUserId: jest.fn(),
@@ -14,15 +14,18 @@ jest.mock('../../services/NotificationService', () => ({
 }));
 
 describe('NotificationController', () => {
+    let controllerTest;
+
     beforeEach(() => {
         jest.clearAllMocks();
+        controllerTest = createControllerTestSetup();
     });
 
     describe('getNotSeenNotificationsByUserId', () => {
         it('should get unseen notifications and send 200 with notifications data', async () => {
             const mockNotifications = [
-                { id: 1, user_id: 1, type: 'new-message', seen: false },
-                { id: 2, user_id: 1, type: 'new-like', seen: false }
+                createMockData.notification({ id: 1, user_id: 1, type: 'new-message', seen: false }),
+                createMockData.notification({ id: 2, user_id: 1, type: 'new-like', seen: false })
             ];
             const { mockReq, mockRes } = createMockReqRes();
             const req = {
@@ -64,14 +67,14 @@ describe('NotificationController', () => {
 
     describe('sendNewCallNotification', () => {
         it('should create new call notification and send 200 with notification data', async () => {
-            const mockNotification = {
+            const mockNotification = createMockData.notification({
                 id: 1,
                 user_id: 2,
                 concerned_user_id: 1,
                 type: 'new-call',
                 title: 'Incoming Call',
                 message: 'John is calling you'
-            };
+            });
             const { mockReq, mockRes } = createMockReqRes();
             const req = {
                 ...mockReq,

@@ -6,7 +6,12 @@ const UserInteractionsService = require('../../services/UserInteractionsService.
 const ApiException = require('../../exceptions/ApiException.js');
 const UserService = require('../../services/UserService.js');
 const bcrypt = require('bcrypt');
-const { mockConsole, restoreConsole } = require('../utils/testSetup');
+const {
+    mockConsole,
+    restoreConsole,
+    createMockData,
+    createServiceMocks
+} = require('../utils/testSetup');
 
 jest.mock('../../models/User/User.js');
 jest.mock('../../services/InterestsService.js');
@@ -15,8 +20,17 @@ jest.mock('../../services/UserPictureService.js');
 jest.mock('../../services/UserInteractionsService.js');
 jest.mock('bcrypt');
 
+let serviceMocks;
+
 beforeEach(() => {
     mockConsole();
+    serviceMocks = createServiceMocks();
+
+    // Set up default service mocks
+    InterestsService.getInterestsListByUserId = serviceMocks.interestsService.getInterestsListByUserId;
+    UserPictureService.getUserPictures = serviceMocks.pictureService.getUserPictures;
+    UserInteractionsService.getLikeCountByUserId = serviceMocks.userInteractionsService.getLikeCountByUserId;
+    LocationService.getLocationByUserId = serviceMocks.locationService.getLocationByUserId;
 });
 
 afterEach(() => {
@@ -31,15 +45,11 @@ describe('UserService', () => {
     describe('getAllUsers', () => {
         it('should return formatted users', async () => {
             const mockUsers = [
-                { id: 1, email: 'user1@test.com', birthdate: '1990-01-01' },
-                { id: 2, email: 'user2@test.com', birthdate: '1995-01-01' }
+                createMockData.user({ id: 1, email: 'user1@test.com', birthdate: '1990-01-01' }),
+                createMockData.user({ id: 2, email: 'user2@test.com', birthdate: '1995-01-01' })
             ];
 
             User.findAll.mockResolvedValue(mockUsers);
-            InterestsService.getInterestsListByUserId.mockResolvedValue([]);
-            UserPictureService.getUserPictures.mockResolvedValue([]);
-            UserInteractionsService.getLikeCountByUserId.mockResolvedValue(0);
-            LocationService.getLocationByUserId.mockResolvedValue(null);
 
             const result = await UserService.getAllUsers();
 
@@ -57,11 +67,11 @@ describe('UserService', () => {
 
     describe('createUser', () => {
         it('should create user successfully', async () => {
-            const userData = {
+            const userData = createMockData.userWithPassword({
                 email: 'test@example.com',
                 password: 'password123'
-            };
-            const mockUser = { ...userData, id: 1 };
+            });
+            const mockUser = createMockData.user({ ...userData, id: 1 });
 
             User.create.mockResolvedValue(mockUser);
 

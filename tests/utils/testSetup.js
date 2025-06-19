@@ -201,6 +201,44 @@ const setupDbMocks = (db) => {
     };
 };
 
+/**
+ * Common patterns for service layer testing
+ */
+const createServiceTestSetup = (serviceName, dependencies = []) => {
+    const setup = {
+        mockDependencies: {},
+        setupMocks: () => {
+            dependencies.forEach(dep => {
+                setup.mockDependencies[dep] = jest.fn();
+            });
+        },
+        resetMocks: () => {
+            Object.values(setup.mockDependencies).forEach(mock => {
+                if (mock.mockReset) mock.mockReset();
+            });
+        }
+    };
+
+    return setup;
+};
+
+/**
+ * Common controller test patterns
+ */
+const createControllerTestSetup = () => {
+    return {
+        expectSuccessResponse: (res, statusCode = 200, data = undefined) => {
+            expect(res.status).toHaveBeenCalledWith(statusCode);
+            if (data !== undefined) {
+                expect(res.send).toHaveBeenCalledWith(data);
+            }
+        },
+        expectErrorResponse: (res, statusCode = 500) => {
+            expect(res.status).toHaveBeenCalledWith(statusCode);
+        }
+    };
+};
+
 module.exports = {
     mockConsole,
     restoreConsole,
@@ -211,5 +249,7 @@ module.exports = {
     expectDbError,
     createMockData,
     createServiceMocks,
-    setupDbMocks
+    setupDbMocks,
+    createServiceTestSetup,
+    createControllerTestSetup
 };

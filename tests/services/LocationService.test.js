@@ -5,7 +5,7 @@ jest.mock('node-fetch');
 const Location = require('../../models/Location/Location');
 const ApiException = require('../../exceptions/ApiException');
 const LocationService = require('../../services/LocationService');
-const { mockConsole, restoreConsole } = require('../utils/testSetup');
+const { mockConsole, restoreConsole, createMockData } = require('../utils/testSetup');
 
 jest.mock('../../models/Location/Location');
 
@@ -17,16 +17,15 @@ afterEach(() => {
     restoreConsole();
 });
 
-
 describe('LocationService', () => {
     const mockUserId = '123';
-    const mockLocation = {
+    const mockLocation = createMockData.location({
         userId: mockUserId,
         latitude: 1.23,
         longitude: 4.56,
         city: 'Paris',
         country: 'France'
-    };
+    });
 
     afterEach(() => {
         jest.clearAllMocks();
