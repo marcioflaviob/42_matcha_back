@@ -98,8 +98,16 @@ exports.uploadAndPersistPictureFromUrl = async (userId, url) => {
         throw new ApiException(400, 'You can only upload up to 5 pictures');
     }
     let response;
+
+    let parsedUrl;
     try {
-        response = await fetch(url, { method: 'GET', timeout: 10000 });
+        parsedUrl = new URL(url);
+    } catch (err) {
+        throw new ApiException(400, 'Invalid URL format');
+    }
+
+    try {
+        response = await fetch(parsedUrl, { method: 'GET', timeout: 10000 });
     } catch (err) {
         throw new ApiException(500, err.message || 'Failed to fetch image from URL');
     }
