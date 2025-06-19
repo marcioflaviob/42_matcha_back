@@ -103,7 +103,7 @@ exports.uploadAndPersistPictureFromUrl = async (userId, url) => {
     try {
         parsedUrl = new URL(url);
     } catch (err) {
-        throw new ApiException(400, 'Invalid URL format');
+        throw new ApiException(400, err.message || 'Invalid URL format');
     }
 
     try {
