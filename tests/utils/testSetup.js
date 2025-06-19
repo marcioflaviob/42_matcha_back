@@ -201,9 +201,6 @@ const setupDbMocks = (db) => {
     };
 };
 
-/**
- * Common patterns for service layer testing
- */
 const createServiceTestSetup = (serviceName, dependencies = []) => {
     const setup = {
         mockDependencies: {},
@@ -222,9 +219,6 @@ const createServiceTestSetup = (serviceName, dependencies = []) => {
     return setup;
 };
 
-/**
- * Common controller test patterns
- */
 const createControllerTestSetup = () => {
     return {
         expectSuccessResponse: (res, statusCode = 200, data = undefined) => {
