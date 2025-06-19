@@ -73,11 +73,11 @@ describe("DatesService.getDatesByUserId", () => {
         jest.clearAllMocks();
     });
     it("should get dates and filter them for only present to future not refused", async () => {
-        userId = 1;
+        const userId = 1;
         const now = new Date();
         const futureDate = new Date(now.getTime() + 100000);
         const pastDate = new Date(now.getTime() - 100000);
-        mockedDates = [
+        const mockedDates = [
             { id: 1, sender_id: userId, scheduled_date: futureDate, status: "refused" },
             { id: 2, sender_id: userId, scheduled_date: futureDate, status: "pending" },
             { id: 3, sender_id: userId, scheduled_date: pastDate, status: "pending" },
@@ -120,7 +120,7 @@ describe("DatesService.getDateById", () => {
         }
         Dates.getDateById.mockResolvedValue(date);
 
-        result = await DatesService.getDateById(id);
+        const result = await DatesService.getDateById(id);
 
         expect(Dates.getDateById).toHaveBeenCalledWith(id);
         expect(result).toEqual(date);

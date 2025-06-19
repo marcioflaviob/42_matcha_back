@@ -27,7 +27,7 @@ const updateUserLocation = async (location, userId) => {
     if (location !== undefined) {
         try {
             if (location) {
-                await updateLocation(userId, location);
+                await updateLocation(location);
                 const result = await getLocationByUserId(userId);
                 return result;
             }

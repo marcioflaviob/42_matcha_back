@@ -54,7 +54,6 @@ describe('PusherMiddleware', () => {
             const mockResult = { auth: 'test-auth-string' };
             pusher.authorizeChannel.mockReturnValue(mockResult);
 
-            // Test with string user ID
             authenticate('123', 'socket1', 'channel1');
             expect(pusher.authorizeChannel).toHaveBeenCalledWith(
                 'socket1',
@@ -62,7 +61,6 @@ describe('PusherMiddleware', () => {
                 { user_id: '123' }
             );
 
-            // Test with numeric user ID
             authenticate(456, 'socket2', 'channel2');
             expect(pusher.authorizeChannel).toHaveBeenCalledWith(
                 'socket2',
@@ -75,7 +73,6 @@ describe('PusherMiddleware', () => {
             const mockResult = { auth: 'test-auth-string' };
             pusher.authorizeChannel.mockReturnValue(mockResult);
 
-            // Test private channel
             authenticate('user1', 'socket1', 'private-user-1');
             expect(pusher.authorizeChannel).toHaveBeenCalledWith(
                 'socket1',
@@ -83,7 +80,6 @@ describe('PusherMiddleware', () => {
                 { user_id: 'user1' }
             );
 
-            // Test presence channel
             authenticate('user2', 'socket2', 'presence-chat-room');
             expect(pusher.authorizeChannel).toHaveBeenCalledWith(
                 'socket2',
@@ -119,7 +115,6 @@ describe('PusherMiddleware', () => {
             const mockResult = { auth: 'test-auth-string' };
             pusher.authorizeChannel.mockReturnValue(mockResult);
 
-            // Test with null values
             authenticate(null, null, null);
             expect(pusher.authorizeChannel).toHaveBeenCalledWith(
                 null,
@@ -127,7 +122,6 @@ describe('PusherMiddleware', () => {
                 { user_id: null }
             );
 
-            // Test with empty strings
             authenticate('', '', '');
             expect(pusher.authorizeChannel).toHaveBeenCalledWith(
                 '',

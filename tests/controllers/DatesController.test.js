@@ -1,5 +1,5 @@
-DatesService = require('../../services/DatesService');
-DatesController = require('../../controllers/DatesController');
+const DatesService = require('../../services/DatesService');
+const DatesController = require('../../controllers/DatesController');
 
 jest.mock('../../services/DatesService');
 
@@ -53,7 +53,7 @@ describe("DatesController.getDatesByUserId", () => {
     it("should send 200 and return all the dates filtered", async () => {
         const now = new Date();
         const futureDate = new Date(now.getTime() + 100000);
-        mockedDates = [
+        const mockedDates = [
             { id: 1, sender_id: 1, scheduled_date: futureDate, status: "accepted" },
             { id: 2, sender_id: 1, scheduled_date: futureDate, status: "pending" },
         ];

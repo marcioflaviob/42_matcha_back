@@ -184,6 +184,32 @@ describe('AuthController', () => {
     });
 
     describe('Google Authentication', () => {
+        const setupEnvironment = () => {
+            process.env.FRONTEND_URL = 'http://localhost:3000';
+            process.env.JWT_SECRET = 'test-secret';
+        };
+
+        const createSuccessfulAuthMock = (user) => {
+            passport.authenticate.mockImplementation((strategy, options, callback) => {
+                const middleware = (req, res, next) => callback(null, user);
+                return middleware;
+            });
+        };
+
+        const createFailedAuthMock = (error) => {
+            passport.authenticate.mockImplementation((strategy, options, callback) => {
+                const middleware = (req, res, next) => callback(error, null);
+                return middleware;
+            });
+        };
+
+        const createNoUserAuthMock = () => {
+            passport.authenticate.mockImplementation((strategy, options, callback) => {
+                const middleware = (req, res, next) => callback(null, null);
+                return middleware;
+            });
+        };
+
         it('should handle Google authentication setup correctly', () => {
             expect(passport.authenticate).toHaveBeenCalledWith('google', {
                 scope: ['profile', 'email'],
@@ -194,14 +220,8 @@ describe('AuthController', () => {
 
         it('should handle successful Google callback', () => {
             const mockUser = { id: 1, email: 'test@example.com' };
-            process.env.FRONTEND_URL = 'http://localhost:3000';
-            process.env.JWT_SECRET = 'test-secret';
-
-            passport.authenticate.mockImplementation((strategy, options, callback) => {
-                return (req, res, next) => {
-                    callback(null, mockUser);
-                };
-            });
+            setupEnvironment();
+            createSuccessfulAuthMock(mockUser);
 
             AuthController.googleCallback(req, res, next);
 
@@ -211,13 +231,8 @@ describe('AuthController', () => {
         });
 
         it('should handle Google callback failure', () => {
-            process.env.FRONTEND_URL = 'http://localhost:3000';
-
-            passport.authenticate.mockImplementation((strategy, options, callback) => {
-                return (req, res, next) => {
-                    callback(new Error('Authentication failed'));
-                };
-            });
+            setupEnvironment();
+            createFailedAuthMock(new Error('Authentication failed'));
 
             AuthController.googleCallback(req, res, next);
 
@@ -227,13 +242,8 @@ describe('AuthController', () => {
         });
 
         it('should handle Google callback with no user', () => {
-            process.env.FRONTEND_URL = 'http://localhost:3000';
-
-            passport.authenticate.mockImplementation((strategy, options, callback) => {
-                return (req, res, next) => {
-                    callback(null, null);
-                };
-            });
+            setupEnvironment();
+            createNoUserAuthMock();
 
             AuthController.googleCallback(req, res, next);
 

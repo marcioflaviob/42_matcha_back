@@ -83,7 +83,7 @@ describe('Dates.createDate', () => {
 
   it('should throw ApiException on db error', async () => {
     db.query.mockRejectedValue(new Error('DB failure'));
-    promise = Dates.createDate(date);
+    const promise = Dates.createDate(date);
     await expect(promise).rejects.toThrow(ApiException);
     await expect(promise).rejects.toThrow('Failed to create date');
   });

@@ -179,7 +179,6 @@ describe('UserPictureService', () => {
         it('should handle successful file deletion', async () => {
             const { del } = require('@vercel/blob');
 
-            // Mock successful deletion
             del.mockResolvedValue();
 
             UserPictures.findById.mockResolvedValue({
@@ -197,10 +196,8 @@ describe('UserPictureService', () => {
         it('should handle file deletion errors gracefully without failing the operation', async () => {
             const { del } = require('@vercel/blob');
 
-            // Mock file deletion to fail
             del.mockRejectedValue(new Error('File not found'));
 
-            // Mock console functions to verify they're called
             const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => { });
             const consoleLogSpy = jest.spyOn(console, 'log').mockImplementation(() => { });
 
@@ -210,13 +207,11 @@ describe('UserPictureService', () => {
             });
             UserPictures.delete.mockResolvedValue(true);
 
-            // The main operation should succeed even if file deletion fails
             const result = await UserPictureService.deleteUserPicture(mockUserId, mockPictureId);
 
             expect(result.message).toBe('Picture deleted successfully');
             expect(del).toHaveBeenCalledWith(`https://example.com/${mockUrl}`);
 
-            // Wait for the async error handling to complete
             await new Promise(resolve => setTimeout(resolve, 10));
 
             expect(consoleErrorSpy).toHaveBeenCalledWith('Error deleting file:', expect.any(Error));

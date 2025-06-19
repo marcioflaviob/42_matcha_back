@@ -14,6 +14,36 @@ describe('UserInteractionsService', () => {
         jest.restoreAllMocks();
     });
 
+    const mockUserService = {
+        mockGetUserById: (users) => {
+            UserService.getUserById.mockImplementation((id) => {
+                const user = users.find(u => u.id === id);
+                return Promise.resolve(user);
+            });
+        },
+        mockGetUserByIdSingle: (user) => {
+            UserService.getUserById.mockResolvedValue(user);
+        },
+        mockGetValidUsers: (users) => {
+            UserService.getValidUsers.mockResolvedValue(users);
+        }
+    };
+
+    const mockInteractionService = {
+        mockLikedProfiles: (ids = new Set()) => {
+            jest.spyOn(UserInteractionsService, 'getLikedProfilesIdsByUserId').mockResolvedValue(ids);
+        },
+        mockBlockedUsers: (ids = new Set()) => {
+            jest.spyOn(UserInteractionsService, 'getBlockedUsersIdsByUserId').mockResolvedValue(ids);
+        },
+        mockMatches: (matches) => {
+            jest.spyOn(UserInteractionsService, 'getMatchesByUserId').mockResolvedValue(matches);
+        },
+        mockMatchIds: (ids) => {
+            jest.spyOn(UserInteractionsService, 'getMatchesIdsByUserId').mockResolvedValue(ids);
+        }
+    };
+
     describe('getLikeCountByUserId', () => {
         it('should return like count for a user', async () => {
             const mockCount = 5;
@@ -92,8 +122,7 @@ describe('UserInteractionsService', () => {
             ];
 
             UserInteractions.getProfileViewsByUserId.mockResolvedValue(mockViews);
-            UserService.getUserById
-                .mockImplementation(id => Promise.resolve(mockUsers.find(u => u.id === id)));
+            mockUserService.mockGetUserById(mockUsers);
 
             const result = await Promise.all(await UserInteractionsService.getProfileViewsByUserId(1));
 
@@ -133,8 +162,7 @@ describe('UserInteractionsService', () => {
             const mockBlockedIds = new Set([3]);
 
             UserInteractions.getMatchesByUserId.mockResolvedValue(mockMatches);
-            jest.spyOn(UserInteractionsService, 'getBlockedUsersIdsByUserId')
-                .mockImplementation(() => Promise.resolve(mockBlockedIds));
+            mockInteractionService.mockBlockedUsers(mockBlockedIds);
 
             const result = await UserInteractionsService.getMatchesByUserId(1);
 
@@ -205,12 +233,10 @@ describe('UserInteractionsService', () => {
                 }
             ];
 
-            UserService.getUserById.mockResolvedValue(mockUser);
-            UserService.getValidUsers.mockResolvedValue(mockValidUsers);
-            jest.spyOn(UserInteractionsService, 'getLikedProfilesIdsByUserId')
-                .mockImplementation(() => Promise.resolve(new Set()));
-            jest.spyOn(UserInteractionsService, 'getBlockedUsersIdsByUserId')
-                .mockImplementation(() => Promise.resolve(new Set()));
+            mockUserService.mockGetUserByIdSingle(mockUser);
+            mockUserService.mockGetValidUsers(mockValidUsers);
+            mockInteractionService.mockLikedProfiles();
+            mockInteractionService.mockBlockedUsers();
             UserInteractions.getLikesReceivedByUserId.mockResolvedValue([]);
 
             const result = await UserInteractionsService.getPotentialMatches(1);
@@ -220,78 +246,74 @@ describe('UserInteractionsService', () => {
             expect(result[0].liked_me).toBe(false);
         });
 
-        describe('getPotentialMatches with different sexual preferences', () => {
-            it('should handle specific sexual preference (not Any)', async () => {
-                const mockUserId = 1;
-                const mockUserData = {
-                    id: mockUserId,
-                    sexual_interest: 'Female', // Specific preference, not 'Any'
+        it('should handle specific sexual preference (not Any)', async () => {
+            const mockUserId = 1;
+            const mockUserData = {
+                id: mockUserId,
+                sexual_interest: 'Female',
+                gender: 'Male',
+                interests: [{ id: 1, name: 'coding' }]
+            };
+
+            const mockValidUsers = [
+                {
+                    id: 2,
+                    sexual_interest: 'Male',
+                    gender: 'Female',
+                    interests: [{ id: 1, name: 'coding' }]
+                }
+            ];
+
+            mockUserService.mockGetUserByIdSingle(mockUserData);
+            mockUserService.mockGetValidUsers(mockValidUsers);
+            mockInteractionService.mockLikedProfiles();
+            mockInteractionService.mockBlockedUsers();
+
+            const result = await UserInteractionsService.getPotentialMatches(mockUserId);
+
+            expect(result).toHaveLength(1);
+            expect(result[0].id).toBe(2);
+        });
+
+        it('should handle "Any" sexual preference', async () => {
+            const mockUserId = 1;
+            const mockUserData = {
+                id: mockUserId,
+                sexual_interest: 'Any',
+                gender: 'Male',
+                interests: [{ id: 1, name: 'coding' }]
+            };
+
+            const mockValidUsers = [
+                {
+                    id: 2,
+                    sexual_interest: 'Male',
+                    gender: 'Female',
+                    interests: [{ id: 1, name: 'coding' }]
+                },
+                {
+                    id: 3,
+                    sexual_interest: 'Male',
                     gender: 'Male',
                     interests: [{ id: 1, name: 'coding' }]
-                };
-
-                const mockValidUsers = [
-                    {
-                        id: 2,
-                        sexual_interest: 'Male',
-                        gender: 'Female',
-                        interests: [{ id: 1, name: 'coding' }]
-                    }
-                ]; UserService.getUserById.mockResolvedValue(mockUserData);
-                UserService.getValidUsers.mockResolvedValue(mockValidUsers);
-
-                // Mock the internal service functions using jest.spyOn
-                jest.spyOn(UserInteractionsService, 'getLikedProfilesIdsByUserId').mockResolvedValue(new Set());
-                jest.spyOn(UserInteractionsService, 'getBlockedUsersIdsByUserId').mockResolvedValue(new Set());
-
-                const result = await UserInteractionsService.getPotentialMatches(mockUserId);
-
-                expect(result).toHaveLength(1);
-                expect(result[0].id).toBe(2);
-            });
-
-            it('should handle "Any" sexual preference', async () => {
-                const mockUserId = 1;
-                const mockUserData = {
-                    id: mockUserId,
-                    sexual_interest: 'Any', // Test the 'Any' case
-                    gender: 'Male',
+                },
+                {
+                    id: 4,
+                    sexual_interest: 'Male',
+                    gender: 'Other',
                     interests: [{ id: 1, name: 'coding' }]
-                };
+                }
+            ];
 
-                const mockValidUsers = [
-                    {
-                        id: 2,
-                        sexual_interest: 'Male',
-                        gender: 'Female', // Should match because user is interested in 'Any'
-                        interests: [{ id: 1, name: 'coding' }]
-                    },
-                    {
-                        id: 3,
-                        sexual_interest: 'Male',
-                        gender: 'Male', // Should also match because user is interested in 'Any'
-                        interests: [{ id: 1, name: 'coding' }]
-                    },
-                    {
-                        id: 4,
-                        sexual_interest: 'Male',
-                        gender: 'Other', // Should also match because user is interested in 'Any'
-                        interests: [{ id: 1, name: 'coding' }]
-                    }
-                ];
+            mockUserService.mockGetUserByIdSingle(mockUserData);
+            mockUserService.mockGetValidUsers(mockValidUsers);
+            mockInteractionService.mockLikedProfiles();
+            mockInteractionService.mockBlockedUsers();
 
-                UserService.getUserById.mockResolvedValue(mockUserData);
-                UserService.getValidUsers.mockResolvedValue(mockValidUsers);
+            const result = await UserInteractionsService.getPotentialMatches(mockUserId);
 
-                // Mock the internal service functions using jest.spyOn
-                jest.spyOn(UserInteractionsService, 'getLikedProfilesIdsByUserId').mockResolvedValue(new Set());
-                jest.spyOn(UserInteractionsService, 'getBlockedUsersIdsByUserId').mockResolvedValue(new Set());
-
-                const result = await UserInteractionsService.getPotentialMatches(mockUserId);
-
-                expect(result).toHaveLength(3); // All three should match
-                expect(result.map(u => u.id)).toEqual(expect.arrayContaining([2, 3, 4]));
-            });
+            expect(result).toHaveLength(3);
+            expect(result.map(u => u.id)).toEqual(expect.arrayContaining([2, 3, 4]));
         });
     });
 
@@ -303,10 +325,8 @@ describe('UserInteractionsService', () => {
                 { id: 3, name: 'User 3' }
             ];
 
-            jest.spyOn(UserInteractionsService, 'getMatchesIdsByUserId')
-                .mockImplementation(() => Promise.resolve(mockMatchIds));
-            UserService.getUserById
-                .mockImplementation(id => Promise.resolve(mockUsers.find(u => u.id === id)));
+            mockInteractionService.mockMatchIds(mockMatchIds);
+            mockUserService.mockGetUserById(mockUsers);
 
             const result = await UserInteractionsService.getMatchesAsUsersByUserId(1);
 
@@ -373,7 +393,7 @@ describe('UserInteractionsService', () => {
                 { user1: 1, user2: 3 }
             ];
 
-            jest.spyOn(UserInteractionsService, 'getMatchesByUserId').mockResolvedValue(mockMatches);
+            mockInteractionService.mockMatches(mockMatches);
 
             const result = await UserInteractionsService.getMatchesIdsByUserId(userId);
 
@@ -388,7 +408,7 @@ describe('UserInteractionsService', () => {
                 { user1: 3, user2: 2 }
             ];
 
-            jest.spyOn(UserInteractionsService, 'getMatchesByUserId').mockResolvedValue(mockMatches);
+            mockInteractionService.mockMatches(mockMatches);
 
             const result = await UserInteractionsService.getMatchesIdsByUserId(userId);
 
@@ -399,7 +419,7 @@ describe('UserInteractionsService', () => {
         it('should return empty array when no matches found', async () => {
             const userId = 1;
 
-            jest.spyOn(UserInteractionsService, 'getMatchesByUserId').mockResolvedValue([]);
+            mockInteractionService.mockMatches([]);
 
             const result = await UserInteractionsService.getMatchesIdsByUserId(userId);
 
@@ -410,12 +430,12 @@ describe('UserInteractionsService', () => {
         it('should handle mixed matches correctly', async () => {
             const userId = 2;
             const mockMatches = [
-                { user1: 1, user2: 2 },  // user2 is current user
-                { user1: 2, user2: 3 },  // user1 is current user
-                { user1: 4, user2: 2 }   // user2 is current user
+                { user1: 1, user2: 2 },
+                { user1: 2, user2: 3 },
+                { user1: 4, user2: 2 }
             ];
 
-            jest.spyOn(UserInteractionsService, 'getMatchesByUserId').mockResolvedValue(mockMatches);
+            mockInteractionService.mockMatches(mockMatches);
 
             const result = await UserInteractionsService.getMatchesIdsByUserId(userId);
 

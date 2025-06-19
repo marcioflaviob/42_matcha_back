@@ -59,7 +59,7 @@ const updateUserInterests = async (interests, userId) => {
 		try {
 			if (Array.isArray(interests)) {
 				await updateInterests(userId, interests);
-				result = await getInterestsNamesByUserId(userId);
+				const result = await getInterestsNamesByUserId(userId);
 				return result;
 			}
 		} catch (interestError) {

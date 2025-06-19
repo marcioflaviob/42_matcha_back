@@ -7,7 +7,6 @@ jest.mock('../../models/Notification/Notification');
 jest.mock('../../services/UserService');
 jest.mock('../../services/PusherService');
 
-// Store original functions to restore them when needed
 const originalGetNotSeenNotificationsByUserId = NotificationService.getNotSeenNotificationsByUserId;
 const originalCreateNotification = NotificationService.createNotification;
 
@@ -15,7 +14,6 @@ describe('NotificationService', () => {
     beforeEach(() => {
         jest.clearAllMocks();
         jest.resetAllMocks();
-        // Restore original functions
         NotificationService.getNotSeenNotificationsByUserId = originalGetNotSeenNotificationsByUserId;
         NotificationService.createNotification = originalCreateNotification;
     });
@@ -324,7 +322,6 @@ describe('NotificationService', () => {
         });
     });
 
-    // Error handling tests
     describe('Error handling', () => {
         beforeEach(() => {
             jest.clearAllMocks();
@@ -350,7 +347,6 @@ describe('NotificationService', () => {
         });
 
         it('should handle errors in createNotification when Notification.createNotification fails', async () => {
-            // Mock the internal function call to avoid the duplication check
             NotificationService.getNotSeenNotificationsByUserId = jest.fn().mockResolvedValue([]);
 
             const error = new Error('Database error');
@@ -397,7 +393,6 @@ describe('NotificationService', () => {
         });
     });
 
-    // Edge cases
     describe('Edge cases', () => {
         beforeEach(() => {
             jest.clearAllMocks();
@@ -409,7 +404,6 @@ describe('NotificationService', () => {
             UserService.getUserById.mockResolvedValue(nullUser);
             const mockNotification = { id: 1, type: 'new-like' };
 
-            // Mock the internal function
             NotificationService.createNotification = jest.fn().mockResolvedValue(mockNotification);
 
             const result = await NotificationService.newLikeNotification(2, 1);
@@ -425,7 +419,6 @@ describe('NotificationService', () => {
         });
 
         it('should handle empty notifications array in duplicate check', async () => {
-            // Mock the internal function call
             NotificationService.getNotSeenNotificationsByUserId = jest.fn().mockResolvedValue([]);
 
             const mockNotification = { id: 1, type: 'test' };
@@ -443,7 +436,6 @@ describe('NotificationService', () => {
                 { id: 2, message: 'Another message' }
             ];
 
-            // Mock the internal function call
             NotificationService.getNotSeenNotificationsByUserId = jest.fn().mockResolvedValue(existingNotifications);
 
             const mockNotification = { id: 3, type: 'test' };
@@ -462,7 +454,6 @@ describe('NotificationService', () => {
                 { id: 3, message: 'Another message' }
             ];
 
-            // Mock the internal function call
             NotificationService.getNotSeenNotificationsByUserId = jest.fn().mockResolvedValue(existingNotifications);
 
             const result = await NotificationService.createNotification(1, 2, 'test', 'Test', 'Exact match');

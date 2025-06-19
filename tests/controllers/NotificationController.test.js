@@ -17,12 +17,6 @@ describe('NotificationController', () => {
         jest.clearAllMocks();
     });
 
-    const mockUser = {
-        id: 1,
-        first_name: 'John',
-        last_name: 'Doe'
-    };
-
     describe('getNotSeenNotificationsByUserId', () => {
         it('should get unseen notifications and send 200 with notifications data', async () => {
             const mockNotifications = [

@@ -453,10 +453,8 @@ describe('LocationService', () => {
             const userId = 1;
             const publicIp = '8.8.8.8';
 
-            // Mock ipify.org API to get public IP
             fetch
                 .mockResolvedValueOnce(new Response(JSON.stringify({ ip: publicIp })))
-                // Mock main API to succeed
                 .mockResolvedValueOnce(new Response(JSON.stringify({
                     status: 'success',
                     city: 'New York',
@@ -486,12 +484,9 @@ describe('LocationService', () => {
             const userId = 1;
             const publicIp = '8.8.8.8';
 
-            // Mock ipify.org API to get public IP
             fetch
                 .mockResolvedValueOnce(new Response(JSON.stringify({ ip: publicIp })))
-                // Mock main API to fail
                 .mockRejectedValueOnce(new Error('Network error'))
-                // Mock fallback API to succeed
                 .mockResolvedValueOnce(new Response(JSON.stringify({
                     city: 'San Francisco',
                     country_name: 'United States',
@@ -512,12 +507,9 @@ describe('LocationService', () => {
             const userId = 1;
             const publicIp = '8.8.8.8';
 
-            // Mock ipify.org API to get public IP
             fetch
                 .mockResolvedValueOnce(new Response(JSON.stringify({ ip: publicIp })))
-                // Mock main API to fail
                 .mockRejectedValueOnce(new Error('Main API error'))
-                // Mock fallback API to fail
                 .mockRejectedValueOnce(new Error('Fallback API error'));
 
             Location.findByUserId.mockResolvedValue(null);
@@ -525,10 +517,7 @@ describe('LocationService', () => {
 
             const result = await LocationService.getLocationFromIP(userId);
 
-            // Both API calls should have failed, expect 3 total calls (ipify + 2 failures)
             expect(fetch).toHaveBeenCalledTimes(3);
-
-            // Should still return default Paris location
             expect(result).toEqual({ id: 1 });
             expect(Location.createLocation).toHaveBeenCalledWith({
                 userId: userId,
@@ -545,15 +534,12 @@ describe('LocationService', () => {
             const userId = 1;
             const publicIp = '8.8.8.8';
 
-            // Mock ipify.org API to get public IP
             fetch
                 .mockResolvedValueOnce(new Response(JSON.stringify({ ip: publicIp })))
-                // Mock main API to return unsuccessful status
                 .mockResolvedValueOnce(new Response(JSON.stringify({
                     status: 'fail',
                     message: 'Invalid IP'
                 })))
-                // Mock fallback API to succeed  
                 .mockResolvedValueOnce(new Response(JSON.stringify({
                     city: 'Los Angeles',
                     country_name: 'United States',
@@ -571,10 +557,8 @@ describe('LocationService', () => {
             const userId = 1;
             const publicIp = '8.8.8.8';
 
-            // Mock ipify.org API to get public IP
             fetch
                 .mockResolvedValueOnce(new Response(JSON.stringify({ ip: publicIp })))
-                // Mock main API to succeed  
                 .mockResolvedValueOnce(new Response(JSON.stringify({
                     status: 'success',
                     city: 'London',
@@ -584,7 +568,6 @@ describe('LocationService', () => {
                 })));
 
             Location.findByUserId.mockResolvedValue(null);
-            // Make createLocation throw an error
             Location.createLocation.mockRejectedValue(new Error('Database connection failed'));
 
             const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => { });
@@ -601,12 +584,9 @@ describe('LocationService', () => {
             const userId = 1;
             const publicIp = '8.8.8.8';
 
-            // Mock ipify.org API to get public IP
             fetch
                 .mockResolvedValueOnce(new Response(JSON.stringify({ ip: publicIp })))
-                // Mock main API to fail
                 .mockRejectedValueOnce(new Error('Main API error'))
-                // Mock fallback API to succeed but with missing city
                 .mockResolvedValueOnce(new Response(JSON.stringify({
                     country: 'Canada',
                     latitude: 43.6532,
@@ -630,12 +610,9 @@ describe('LocationService', () => {
             const userId = 1;
             const publicIp = '8.8.8.8';
 
-            // Mock ipify.org API to get public IP
             fetch
                 .mockResolvedValueOnce(new Response(JSON.stringify({ ip: publicIp })))
-                // Mock main API to fail
                 .mockRejectedValueOnce(new Error('Main API error'))
-                // Mock fallback API to succeed but with missing country
                 .mockResolvedValueOnce(new Response(JSON.stringify({
                     city: 'Toronto',
                     latitude: 43.6532,
@@ -659,12 +636,9 @@ describe('LocationService', () => {
             const userId = 1;
             const publicIp = '8.8.8.8';
 
-            // Mock ipify.org API to get public IP
             fetch
                 .mockResolvedValueOnce(new Response(JSON.stringify({ ip: publicIp })))
-                // Mock main API to fail
                 .mockRejectedValueOnce(new Error('Main API error'))
-                // Mock fallback API to return error response
                 .mockResolvedValueOnce(new Response(JSON.stringify({
                     error: true,
                     reason: 'Invalid IP address'
@@ -674,7 +648,6 @@ describe('LocationService', () => {
 
             expect(fetch).toHaveBeenCalledTimes(3);
             expect(result).toEqual({ id: 1 });
-            // Should fall back to default Paris location
             expect(Location.createLocation).toHaveBeenCalledWith({
                 userId: userId,
                 city: 'Paris',
@@ -688,23 +661,18 @@ describe('LocationService', () => {
             const userId = 1;
             const publicIp = '8.8.8.8';
 
-            // Mock ipify.org API to get public IP
             fetch
                 .mockResolvedValueOnce(new Response(JSON.stringify({ ip: publicIp })))
-                // Mock main API to fail
                 .mockRejectedValueOnce(new Error('Main API error'))
-                // Mock fallback API to succeed but without coordinates
                 .mockResolvedValueOnce(new Response(JSON.stringify({
                     city: 'Toronto',
                     country: 'Canada'
-                    // No latitude/longitude
                 })));
 
             const result = await LocationService.getLocationFromIP(userId);
 
             expect(fetch).toHaveBeenCalledTimes(3);
             expect(result).toEqual({ id: 1 });
-            // Should fall back to default Paris location
             expect(Location.createLocation).toHaveBeenCalledWith({
                 userId: userId,
                 city: 'Paris',
@@ -718,10 +686,8 @@ describe('LocationService', () => {
             const userId = 1;
             const publicIp = '8.8.8.8';
 
-            // Mock ipify.org API to get public IP
             fetch
                 .mockResolvedValueOnce(new Response(JSON.stringify({ ip: publicIp })))
-                // Mock main API to succeed but with missing city
                 .mockResolvedValueOnce(new Response(JSON.stringify({
                     status: 'success',
                     country: 'United States',
@@ -746,10 +712,8 @@ describe('LocationService', () => {
             const userId = 1;
             const publicIp = '8.8.8.8';
 
-            // Mock ipify.org API to get public IP
             fetch
                 .mockResolvedValueOnce(new Response(JSON.stringify({ ip: publicIp })))
-                // Mock main API to succeed but with missing country
                 .mockResolvedValueOnce(new Response(JSON.stringify({
                     status: 'success',
                     city: 'New York',

@@ -566,13 +566,13 @@ describe('UserService', () => {
 
     describe('age calculation edge cases', () => {
         const testCases = [
-            { birthdate: '1990-01-01', expectedAge: 35 }, // Fixed age for 2025
-            { birthdate: '2025-12-31', expectedAge: null }, // Future date
+            { birthdate: '1990-01-01', expectedAge: 35 },
+            { birthdate: '2025-12-31', expectedAge: null },
             { birthdate: null, expectedAge: null },
             { birthdate: undefined, expectedAge: null },
             { birthdate: '', expectedAge: null },
             { birthdate: 'invalid-date', expectedAge: null },
-            { birthdate: '1990-13-40', expectedAge: null } // Invalid date
+            { birthdate: '1990-13-40', expectedAge: null }
         ];
 
         testCases.forEach(({ birthdate, expectedAge }) => {
@@ -723,7 +723,7 @@ describe('UserService', () => {
             InterestsService.updateUserInterests.mockResolvedValue([]);
             LocationService.updateUserLocation.mockResolvedValue(null);
 
-            const result = await UserService.updateUser(emailUpdateReq);
+            await UserService.updateUser(emailUpdateReq);
 
             expect(User.updateUserData).toHaveBeenCalledWith(1,
                 expect.objectContaining({
@@ -736,21 +736,17 @@ describe('UserService', () => {
 
     describe('calculateAge', () => {
         it('should handle invalid date gracefully and return null', async () => {
-            // Mock console.error to verify it's called
             const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => { });
 
-            // Access the calculateAge function indirectly through getUserById
-            // by creating a user with invalid birthdate that causes an error during age calculation
             User.findById.mockResolvedValue({
                 id: 1,
                 first_name: 'Test',
                 last_name: 'User',
                 email: 'test@example.com',
-                birthdate: 'invalid-date', // This will cause Date constructor to throw
+                birthdate: 'invalid-date',
                 status: 'complete'
             });
 
-            // Mock all dependencies that formatUser calls
             const InterestsService = require('../../services/InterestsService.js');
             const UserPictureService = require('../../services/UserPictureService.js');
             const UserInteractionsService = require('../../services/UserInteractionsService.js');
@@ -761,7 +757,6 @@ describe('UserService', () => {
             UserInteractionsService.getLikeCountByUserId = jest.fn().mockResolvedValue(0);
             LocationService.getLocationByUserId = jest.fn().mockRejectedValue(new Error('No location'));
 
-            // Force an error in calculateAge by overriding Date constructor temporarily
             const originalDate = global.Date;
             global.Date = class extends Date {
                 constructor(...args) {
@@ -774,7 +769,6 @@ describe('UserService', () => {
 
             const result = await UserService.getUserById(1);
 
-            // Restore Date constructor
             global.Date = originalDate;
 
             expect(result.age).toBeNull();
@@ -785,18 +779,17 @@ describe('UserService', () => {
 
         it('should return null for future birthdates (negative age prevention)', async () => {
             const futureDate = new Date();
-            futureDate.setFullYear(futureDate.getFullYear() + 1); // Set date one year in the future
+            futureDate.setFullYear(futureDate.getFullYear() + 1);
 
             User.findById.mockResolvedValue({
                 id: 1,
                 first_name: 'Future',
                 last_name: 'User',
                 email: 'future@example.com',
-                birthdate: futureDate.toISOString().split('T')[0], // Future date
+                birthdate: futureDate.toISOString().split('T')[0],
                 status: 'complete'
             });
 
-            // Mock all dependencies
             const InterestsService = require('../../services/InterestsService.js');
             const UserPictureService = require('../../services/UserPictureService.js');
             const UserInteractionsService = require('../../services/UserInteractionsService.js');
@@ -809,7 +802,7 @@ describe('UserService', () => {
 
             const result = await UserService.getUserById(1);
 
-            expect(result.age).toBeNull(); // Should prevent negative ages
+            expect(result.age).toBeNull();
         });
     });
 
@@ -837,14 +830,11 @@ describe('UserService', () => {
                 user: { id: userId }
             };
 
-            // Mock User.findById to return null (no user data to update)
             User.findById.mockResolvedValue(null);
 
-            // Mock the services to not throw errors initially
             InterestsService.updateUserInterests.mockResolvedValue([]);
             LocationService.updateUserLocation.mockResolvedValue(null);
 
-            // This should throw an ApiException because the subsequent operations will fail
             await expect(UserService.updateUser(req))
                 .rejects
                 .toThrow(ApiException);
@@ -859,14 +849,11 @@ describe('UserService', () => {
                 user: { id: userId }
             };
 
-            // Mock User.updateUserData to return null 
             User.updateUserData.mockResolvedValue(null);
 
-            // Mock the services to not throw errors initially
             InterestsService.updateUserInterests.mockResolvedValue([]);
             LocationService.updateUserLocation.mockResolvedValue(null);
 
-            // This should throw an ApiException because the subsequent operations will fail
             await expect(UserService.updateUser(req))
                 .rejects
                 .toThrow(ApiException);
@@ -876,14 +863,79 @@ describe('UserService', () => {
     });
 
     describe('handle userData null case in password deletion check', () => {
+        const createMockUpdateImplementation = () => {
+            return async function (req) {
+                const ApiException = require('../../exceptions/ApiException.js');
+
+                if (!req?.body?.id) {
+                    throw new ApiException(400, 'User ID is required for update');
+                }
+
+                const result = await processUserUpdate(req);
+                return testPasswordDeletionConditions(result);
+            };
+        };
+
+        const processUserUpdate = async (req) => {
+            const User = require('../../models/User/User.js');
+            const InterestsService = require('../../services/InterestsService.js');
+            const LocationService = require('../../services/LocationService.js');
+            const bcrypt = require('bcrypt');
+
+            const result = {};
+            const userData = { ...req.body };
+            const userId = req.user.id;
+            const interests = userData.interests;
+            const location = userData.location;
+
+            delete userData.interests;
+            delete userData.id;
+
+            try {
+                if (userData.password) {
+                    const salt = await bcrypt.genSalt(10);
+                    userData.password = await bcrypt.hash(userData.password, salt);
+                }
+                if (userData.email && !userData.status) userData.status = 'validation';
+
+                if (Object.keys(userData).length > 0) {
+                    result.userData = await User.updateUserData(userId, userData);
+                } else {
+                    result.userData = await User.findById(userId);
+                }
+
+                result.userData.interests = await InterestsService.updateUserInterests(interests, userId);
+                result.userData.location = await LocationService.updateUserLocation(location, userId);
+
+                return result;
+            } catch (error) {
+                console.log('User update error:', error);
+                const ApiException = require('../../exceptions/ApiException.js');
+                throw new ApiException(500, 'Failed to update user');
+            }
+        };
+
+        const testPasswordDeletionConditions = (result) => {
+            const originalUserData = result.userData;
+
+            result.userData = null;
+            if (result.userData) {
+                delete result.userData.password;
+            }
+            result.userData = originalUserData;
+            if (result.userData) {
+                delete result.userData.password;
+            }
+
+            return result;
+        };
+
         it('should handle edge case where result.userData becomes falsy during execution', async () => {
-            // This test uses property descriptors to test the unreachable branch
             const req = {
                 user: { id: 1 },
                 body: { id: 1, first_name: 'Test' }
             };
 
-            // Mock normal responses
             User.updateUserData.mockResolvedValue({
                 id: 1,
                 first_name: 'Test',
@@ -893,78 +945,16 @@ describe('UserService', () => {
             InterestsService.updateUserInterests.mockResolvedValue([]);
             LocationService.updateUserLocation.mockResolvedValue({ latitude: 48.8566, longitude: 2.3522 });
 
-            // Use a more sophisticated approach to test the condition
             const originalUserService = require('../../services/UserService.js');
-
-            // Create a spy on the updateUser method that allows us to intercept execution
             const updateUserSpy = jest.spyOn(originalUserService, 'updateUser');
 
-            updateUserSpy.mockImplementation(async function (req) {
-                // Call the original implementation but intercept at the critical point
-                const User = require('../../models/User/User.js');
-                const InterestsService = require('../../services/InterestsService.js');
-                const LocationService = require('../../services/LocationService.js');
-                const bcrypt = require('bcrypt');
-                const ApiException = require('../../exceptions/ApiException.js');
-
-                if (!req || !req.body || !req.body.id) {
-                    throw new ApiException(400, 'User ID is required for update');
-                }
-                const result = {};
-                const userData = { ...req.body };
-                const userId = req.user.id;
-                const interests = userData.interests;
-                const location = userData.location;
-
-                delete userData.interests;
-                delete userData.id;
-
-                try {
-                    if (userData.password) {
-                        const salt = await bcrypt.genSalt(10);
-                        userData.password = await bcrypt.hash(userData.password, salt);
-                    }
-                    if (userData.email && !userData.status) userData.status = 'validation';
-
-                    if (Object.keys(userData).length > 0) {
-                        result.userData = await User.updateUserData(userId, userData);
-                    } else {
-                        result.userData = await User.findById(userId);
-                    }
-
-                    result.userData.interests = await InterestsService.updateUserInterests(interests, userId);
-                    result.userData.location = await LocationService.updateUserLocation(location, userId);
-
-                    // Here's where we test both branches of the condition
-                    // First, temporarily save the original userData
-                    const originalUserData = result.userData;
-
-                    // Test the falsy branch by setting userData to null momentarily
-                    result.userData = null;
-                    if (result.userData) {
-                        delete result.userData.password; // This branch should NOT execute
-                    }
-
-                    // Restore the original userData and test the truthy branch
-                    result.userData = originalUserData;
-                    if (result.userData) {
-                        delete result.userData.password; // This branch SHOULD execute
-                    }
-
-                    return result;
-                } catch (error) {
-                    console.log('User update error:', error);
-                    result.userError = error.message;
-                    throw new ApiException(500, 'Failed to update user');
-                }
-            });
+            updateUserSpy.mockImplementation(createMockUpdateImplementation());
 
             const result = await UserService.updateUser(req);
 
             expect(result.userData).toBeDefined();
             expect(result.userData.password).toBeUndefined();
 
-            // Clean up
             updateUserSpy.mockRestore();
         });
     });

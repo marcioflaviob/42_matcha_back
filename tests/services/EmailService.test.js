@@ -299,18 +299,18 @@ describe('EmailService', () => {
         });
 
         it('handles users with missing email field', async () => {
-            const user = { id: 1 }; // Missing email field
+            const user = { id: 1 };
 
             UserService.getUserByEmail.mockResolvedValue(user);
             jwt.sign.mockReturnValue('token');
             passwordRecoveryTemplate.mockReturnValue('<p>Test</p>');
             __mockSend.mockResolvedValue({ data: 'email-sent' });
 
-            const result = await sendPasswordRecoveryEmail('test@example.com');
+            await sendPasswordRecoveryEmail('test@example.com');
 
             expect(__mockSend).toHaveBeenCalledWith({
                 from: 'no-reply@example.com',
-                to: undefined, // Will be undefined due to missing email
+                to: undefined,
                 subject: 'Password Recovery',
                 html: '<p>Test</p>',
             });

@@ -114,13 +114,11 @@ describe('EmailTemplates', () => {
             const passwordHtml = passwordRecoveryTemplate(resetLink);
             const verificationHtml = emailVerificationTemplate(verificationLink);
 
-            // Both should have the same color scheme
             expect(passwordHtml).toContain('#e9f5f0');
             expect(verificationHtml).toContain('#e9f5f0');
             expect(passwordHtml).toContain('#2a815b');
             expect(verificationHtml).toContain('#2a815b');
 
-            // Both should have similar structure
             expect(passwordHtml).toContain('class="container"');
             expect(verificationHtml).toContain('class="container"');
         });
