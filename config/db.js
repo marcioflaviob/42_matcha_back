@@ -14,20 +14,22 @@ const pool = new Pool({
   }
 });
 
-pool.connect((err, client, release) => {
-  if (err) {
-    console.error('Error connecting to database:', err.stack);
-  } else {
+async function initDB() {
+  try {
+    const client = await pool.connect();
     console.log('Successfully connected to PostgreSQL database');
-    release();
+    client.release();
+  } catch (err) {
+    console.error('Error connecting to database:', err.stack);
   }
-});
+}
 
 const query = (text, params) => pool.query(text, params);
 
 module.exports = {
   query,
   pool,
+  initDB,
   transaction: async (callback) => {
     const client = await pool.connect();
     try {
