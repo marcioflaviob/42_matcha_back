@@ -16,16 +16,16 @@ exports.createNotification = async (userId, senderId, type, title, message) => {
 	if (await alreadyHaveNotification(userId, message)) {
 		return;
 	}
-	
+
 	const notification = await Notification.createNotification(userId, senderId, type, title, message);
 	await PusherService.sendNotification(notification);
-	
+
 	return notification;
 }
 
 exports.newCallNotification = async (userId, senderId) => {
 	const user = await UserService.getUserById(senderId);
-	
+
 	const notification = {
 		user_id: userId,
 		concerned_user_id: senderId,
@@ -33,15 +33,15 @@ exports.newCallNotification = async (userId, senderId) => {
 		title: 'Incoming Call',
 		message: `${user.first_name} is calling you`,
 	}
-	
+
 	await PusherService.sendNotification(notification);
-	
+
 	return notification;
 }
 
 exports.newStopCallNotification = async (userId, senderId) => {
 	const user = await UserService.getUserById(senderId);
-	
+
 	const notification = {
 		user_id: userId,
 		concerned_user_id: senderId,
@@ -49,15 +49,15 @@ exports.newStopCallNotification = async (userId, senderId) => {
 		title: 'Stop Call',
 		message: `${user.first_name} interrupted the call`,
 	}
-	
+
 	await PusherService.sendNotification(notification);
-	
+
 	return notification;
 }
 
 exports.newRefusedCallNotification = async (userId, senderId) => {
 	const user = await UserService.getUserById(senderId);
-	
+
 	const notification = {
 		user_id: userId,
 		concerned_user_id: senderId,
@@ -65,15 +65,15 @@ exports.newRefusedCallNotification = async (userId, senderId) => {
 		title: 'New Refused Call',
 		message: `${user.first_name} refused your call`,
 	}
-	
+
 	await PusherService.sendNotification(notification);
-	
+
 	return notification;
 }
 
 exports.newMessageNotification = async (userId, senderId) => {
 	const user = await UserService.getUserById(senderId);
-	
+
 	const notification = await this.createNotification(userId, senderId, 'new-message', 'New Message', `You have new messages from ${user.first_name}`);
 	return notification;
 }
@@ -88,31 +88,30 @@ exports.newLikeNotification = async (userId, senderId) => {
 exports.newMatchNotification = async (userId, senderId) => {
 	const sender = await UserService.getUserById(senderId);
 	const user = await UserService.getUserById(userId);
-	
-	// Send notification to both users
+
 	const notification = await this.createNotification(userId, senderId, 'new-match', 'New Match', `You have a new match with ${sender.first_name}`);
 	await Notification.createNotification(senderId, userId, 'new-match', 'New Match', `You have a new match with ${user.first_name}`);
-	
+
 	return notification;
 }
 
 exports.newProfileViewNotification = async (userId, senderId) => {
 	const user = await UserService.getUserById(senderId);
-	
+
 	const notification = await this.createNotification(userId, senderId, 'new-profile-view', 'New Profile View', `${user.first_name} viewed your profile`);
 	return notification;
 }
 
 exports.newSeenNotification = async (userId, senderId) => {
 	const user = await UserService.getUserById(senderId);
-	
+
 	const notification = await this.createNotification(userId, senderId, 'new-seen', 'Your profile was viewed', `${user.first_name} has seen your profile`);
 	return notification;
 }
 
 exports.newBlockNotification = async (userId, senderId) => {
 	const user = await UserService.getUserById(senderId);
-	
+
 	const notification = await this.createNotification(userId, senderId, 'new-block', 'New Block', `${user.first_name} blocked you`);
 	return notification;
 }
@@ -120,7 +119,7 @@ exports.newBlockNotification = async (userId, senderId) => {
 const alreadyHaveNotification = async (userId, message) => {
 	const unreadNotifications = await this.getNotSeenNotificationsByUserId(userId);
 	const notification = unreadNotifications.find(notification => notification.message == message);
-	
+
 	return notification !== undefined;
 }
 
