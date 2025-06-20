@@ -49,7 +49,6 @@ const formatUser = async (data) => {
     const likeCount = await UserInteractionsService.getLikeCountByUserId(data.id);
     const location = await LocationService.getLocationByUserId(data.id).catch(() => null);
 
-    interestsList = await InterestsService.getInterestsListByUserId(data.id);
     pictures.sort((a, b) => (a.is_profile ? -1 : 1));
 
     data.interests = interestsList;
@@ -141,7 +140,6 @@ const updateUser = async (req) => {
             result.userData = await User.findById(userId);
         }
         result.userData.interests = await InterestsService.updateUserInterests(interests, userId);
-        console.log('User updated:', result.userData.interests);
         if (result.userData) delete result.userData.password;
         result.userData.pictures = await UserPictureService.getUserPictures(userId);
         result.userData.location = await LocationService.getLocationByUserId(userId);

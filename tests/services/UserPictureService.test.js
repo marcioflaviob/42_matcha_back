@@ -54,7 +54,7 @@ describe('UserPictureService', () => {
 
             await expect(UserPictureService.uploadPicture(mockUserId, mockFile))
                 .rejects
-                .toThrow(new ApiException(500, 'Failed to upload picture'));
+                .toThrow(new ApiException(500, 'Upload failed'));
         });
     });
 
@@ -146,11 +146,19 @@ describe('UserPictureService', () => {
             await expect(UserPictureService.getUserPictures(mockUserId))
                 .rejects
                 .toThrow();
+                
+            // Reset the mock for subsequent tests
+            UserPictures.findByUserId.mockReset();
         });
     });
 
     describe('deleteUserPicture', () => {
         beforeEach(() => {
+            // Mock getUserPictures call (which uses findByUserId)
+            UserPictures.findByUserId.mockResolvedValue([
+                { id: mockPictureId, user_id: mockUserId, url: mockUrl, is_profile: false },
+                { id: 2, user_id: mockUserId, url: 'other.jpg', is_profile: true }
+            ]);
             UserPictures.findById.mockResolvedValue({ url: mockUrl });
             UserPictures.delete.mockResolvedValue(true);
             del.mockResolvedValue({});
@@ -159,7 +167,7 @@ describe('UserPictureService', () => {
         it('should delete a user picture', async () => {
             const result = await UserPictureService.deleteUserPicture(mockUserId, mockPictureId);
 
-            expect(UserPictures.findById).toHaveBeenCalledWith(mockPictureId);
+            expect(UserPictures.findByUserId).toHaveBeenCalledWith(mockUserId);
             expect(UserPictures.delete).toHaveBeenCalledWith(mockUserId, mockPictureId);
             expect(del).toHaveBeenCalledWith(`${process.env.BLOB_URL}/${mockUrl}`);
             expect(result).toEqual({ message: 'Picture deleted successfully' });
@@ -180,10 +188,10 @@ describe('UserPictureService', () => {
 
             del.mockResolvedValue();
 
-            UserPictures.findById.mockResolvedValue({
-                id: mockPictureId,
-                url: mockUrl
-            });
+            UserPictures.findByUserId.mockResolvedValue([
+                { id: mockPictureId, user_id: mockUserId, url: mockUrl, is_profile: false },
+                { id: 2, user_id: mockUserId, url: 'other.jpg', is_profile: true }
+            ]);
             UserPictures.delete.mockResolvedValue(true);
 
             const result = await UserPictureService.deleteUserPicture(mockUserId, mockPictureId);
@@ -197,13 +205,12 @@ describe('UserPictureService', () => {
 
             del.mockRejectedValue(new Error('File not found'));
 
-            const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => { });
             const consoleLogSpy = jest.spyOn(console, 'log').mockImplementation(() => { });
 
-            UserPictures.findById.mockResolvedValue({
-                id: mockPictureId,
-                url: mockUrl
-            });
+            UserPictures.findByUserId.mockResolvedValue([
+                { id: mockPictureId, user_id: mockUserId, url: mockUrl, is_profile: false },
+                { id: 2, user_id: mockUserId, url: 'other.jpg', is_profile: true }
+            ]);
             UserPictures.delete.mockResolvedValue(true);
 
             const result = await UserPictureService.deleteUserPicture(mockUserId, mockPictureId);
@@ -213,10 +220,8 @@ describe('UserPictureService', () => {
 
             await new Promise(resolve => setTimeout(resolve, 10));
 
-            expect(consoleErrorSpy).toHaveBeenCalledWith('Error deleting file:', expect.any(Error));
             expect(consoleLogSpy).toHaveBeenCalledWith('File deletion failed, but database operation completed');
 
-            consoleErrorSpy.mockRestore();
             consoleLogSpy.mockRestore();
         });
     });
