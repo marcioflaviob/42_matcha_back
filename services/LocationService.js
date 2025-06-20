@@ -2,7 +2,6 @@ const ApiException = require('../exceptions/ApiException.js');
 const Location = require('../models/Location/Location.js');
 const fetch = require('node-fetch');
 
-// Validation helpers
 const validateUserId = (userId) => {
     if (!userId) throw new ApiException(400, 'User ID is required');
 };
@@ -13,7 +12,6 @@ const validateCoordinates = (latitude, longitude) => {
     }
 };
 
-// Location data creation helpers
 const createLocationData = (userId, latitude, longitude, city, country) => {
     return {
         userId,
@@ -28,7 +26,6 @@ const extractCityFromComponents = (components) => {
     return components.city || components.town || components.village || 'Unknown';
 };
 
-// API call helpers
 const fetchGeocodeData = async (latitude, longitude) => {
     const response = await fetch(
         `https://api.opencagedata.com/geocode/v1/json?q=${latitude}+${longitude}&key=${process.env.GEOCODE_API_KEY}`
@@ -132,7 +129,6 @@ const getLocationFromIP = async (userId) => {
     try {
         const publicIp = await fetchPublicIP();
 
-        // Try first API (ip-api.com)
         try {
             const data = await fetchLocationFromIPApi(publicIp);
             if (data.status === 'success') {
@@ -149,7 +145,6 @@ const getLocationFromIP = async (userId) => {
             console.log('ip-api.com failed:', ipApiError.message);
         }
 
-        // Try fallback API (ipapi.co)
         try {
             const fallbackData = await fetchLocationFromFallbackApi(publicIp);
             if (!fallbackData.error && fallbackData.latitude && fallbackData.longitude) {
@@ -166,7 +161,6 @@ const getLocationFromIP = async (userId) => {
             console.log('ipapi.co failed:', ipapiError.message);
         }
 
-        // Final fallback to Paris
         const parisLocationData = createLocationData(
             userId,
             48.8566,

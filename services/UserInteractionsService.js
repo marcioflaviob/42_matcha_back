@@ -1,5 +1,4 @@
 const UserInteractions = require('../models/UserInteractions/UserInteractions.js');
-const UserService = require('./UserService.js');
 const NotificationService = require('./NotificationService.js');
 const ApiException = require('../exceptions/ApiException.js');
 
@@ -30,6 +29,7 @@ exports.getProfileViewsByUserId = async (userId) => {
 	const views = await UserInteractions.getProfileViewsByUserId(userId);
 
 	const users = views.map(async (view) => {
+		const UserService = require('./UserService.js');
 		return await UserService.getUserById(view.user1);
 	});
 
@@ -57,6 +57,7 @@ exports.getMatchesByUserId = async (userId) => {
 exports.getMatchesAsUsersByUserId = async (userId) => {
 	const matchesIds = await this.getMatchesIdsByUserId(userId);
 
+	const UserService = require('./UserService.js');
 	const users = await Promise.all(matchesIds.map(async (id) => {
 		return await UserService.getUserById(id);
 	}));
@@ -75,6 +76,7 @@ exports.getMatchesIdsByUserId = async (userId) => {
 }
 
 exports.getPotentialMatches = async (userId) => {
+	const UserService = require('./UserService.js');
 	const userData = await UserService.getUserById(userId);
 	const validUsers = await UserService.getValidUsers(userId);
 

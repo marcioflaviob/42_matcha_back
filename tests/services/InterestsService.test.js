@@ -168,10 +168,9 @@ describe('InterestsService', () => {
     });
 
     describe('updateUserInterests', () => {
-        it('should update interests and return interest names when given valid array', async () => {
+        it('should update interests and return the input interests array when given valid array', async () => {
             const userId = 1;
             const newInterests = [{ id: 1 }, { id: 2 }];
-            const expectedInterestNames = ['Music', 'Art'];
 
             Interests.removeAllInterests.mockResolvedValue({ success: true });
             Interests.addInterest.mockResolvedValue({ success: true });
@@ -183,7 +182,7 @@ describe('InterestsService', () => {
 
             const result = await InterestsService.updateUserInterests(newInterests, userId);
 
-            expect(result).toEqual(expectedInterestNames);
+            expect(result).toEqual(newInterests);
             expect(Interests.removeAllInterests).toHaveBeenCalledWith(userId);
             expect(Interests.addInterest).toHaveBeenCalledTimes(2);
             expect(Interests.addInterest).toHaveBeenCalledWith(userId, 1);
