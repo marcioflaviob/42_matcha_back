@@ -146,15 +146,13 @@ describe('UserPictureService', () => {
             await expect(UserPictureService.getUserPictures(mockUserId))
                 .rejects
                 .toThrow();
-                
-            // Reset the mock for subsequent tests
+
             UserPictures.findByUserId.mockReset();
         });
     });
 
     describe('deleteUserPicture', () => {
         beforeEach(() => {
-            // Mock getUserPictures call (which uses findByUserId)
             UserPictures.findByUserId.mockResolvedValue([
                 { id: mockPictureId, user_id: mockUserId, url: mockUrl, is_profile: false },
                 { id: 2, user_id: mockUserId, url: 'other.jpg', is_profile: true }

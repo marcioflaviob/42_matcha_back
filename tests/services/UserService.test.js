@@ -26,7 +26,6 @@ beforeEach(() => {
     mockConsole();
     serviceMocks = createServiceMocks();
 
-    // Set up default service mocks
     InterestsService.getInterestsListByUserId = serviceMocks.interestsService.getInterestsListByUserId;
     UserPictureService.getUserPictures = serviceMocks.pictureService.getUserPictures;
     UserInteractionsService.getLikeCountByUserId = serviceMocks.userInteractionsService.getLikeCountByUserId;
