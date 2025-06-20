@@ -28,11 +28,11 @@ const removeAllInterests = async (userId) => {
 const updateInterests = async (userId, interests) => {
 
 	await removeAllInterests(userId);
-
+	
 	for (const interest of interests) {
 		await addInterest(userId, interest.id);
 	}
-
+	
 	return true;
 }
 
@@ -43,7 +43,7 @@ const getInterestsNamesByUserId = async (userId) => {
 		const matchingInterest = allInterests.find(
 			dbInterest => dbInterest.id === interestId
 		);
-
+		
 		if (matchingInterest) {
 			return matchingInterest.name;
 		} else {
@@ -54,29 +54,15 @@ const getInterestsNamesByUserId = async (userId) => {
 	return interestNames;
 }
 
-const updateUserInterests = async (interests, userId) => {
-	if (interests !== undefined) {
-		try {
-			if (Array.isArray(interests)) {
-				await updateInterests(userId, interests);
-				const result = await getInterestsNamesByUserId(userId);
-				return result;
-			}
-		} catch (interestError) {
-			console.log('Interest update error:', interestError);
-			throw new Error(interestError);
-		}
-	}
-}
-
-const getInterestsListByUserId = async (userId) => {
+const getInterestsListByUserId = async (userId) =>
+{
 	const interestIds = await getInterestsByUserId(userId);
 	const allInterests = await getAllInterests();
 	const interestsList = interestIds.map(interestId => {
 		const matchingInterest = allInterests.find(
 			dbInterest => dbInterest.id === interestId
 		);
-
+		
 		if (matchingInterest) {
 			return { id: matchingInterest.id, name: matchingInterest.name };
 		} else {
@@ -95,6 +81,5 @@ module.exports = {
 	addInterest,
 	removeInterest,
 	removeAllInterests,
-	updateInterests,
-	updateUserInterests
+	updateInterests
 };

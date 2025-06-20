@@ -10,8 +10,21 @@ class Dates {
             );
             return result.rows;
         } catch (error) {
-            console.log(error);
+            console.error('Error fetching dates:', error);
             throw new ApiException(500, 'Failed to fetch dates');
+        }
+    }
+
+    static async getDatesByData(receiverId, senderId, scheduledDate, address) {
+        try {
+            const result = await db.query(
+                'SELECT * FROM dates WHERE receiver_id = $1 AND sender_id = $2 AND scheduled_date = $3 AND address = $4',
+                [receiverId, senderId, scheduledDate, address]
+            );
+            return result.rows;
+        } catch (error) {
+            console.error('Error fetching dates:', error);
+            throw new ApiException(500, 'Failed to fetch dates by data');
         }
     }
 
@@ -23,7 +36,7 @@ class Dates {
             );
             return result.rows;
         } catch (error) {
-            console.log(error);
+            console.error('Error fetching dates:', error);
             throw new ApiException(500, 'Failed to fetch unanswered dates');
         }
     }
@@ -31,10 +44,10 @@ class Dates {
     static async createDate(date) {
         try {
             const result = await db.query('INSERT INTO dates (sender_id, receiver_id, scheduled_date, address, latitude, longitude, status) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *',
-                [date.senderId, date.receiverId, date.scheduledDate, date.address, date.latitude, date.longitude, 'pending']);
+            [date.senderId, date.receiverId, date.scheduledDate, date.address, date.latitude, date.longitude, 'pending']);
             return result.rows[0];
         } catch (error) {
-            console.log(error);
+            console.error('Error creating date:', error);
             throw new ApiException(500, 'Failed to create date');
         }
     }
@@ -42,12 +55,10 @@ class Dates {
     static async getDateById(id) {
         try {
             const result = await db.query('SELECT * FROM dates WHERE id = $1',
-                [id]);
-            if (result.rows.length === 0) throw new ApiException(404, 'Date not found');
+            [id]);
             return result.rows[0];
         } catch (error) {
-            if (error instanceof ApiException) throw error;
-            console.log(error);
+            console.error('Error fetching date by composite key:', error);
             throw new ApiException(500, 'Failed to fetch date by ID');
         }
     }
@@ -55,10 +66,10 @@ class Dates {
     static async updateDate(id, status) {
         try {
             const result = await db.query('UPDATE dates SET status = $1 WHERE id = $2 RETURNING *',
-                [status, id]);
+            [status, id]);
             return result.rows[0];
         } catch (error) {
-            console.log(error);
+            console.error('Error accepting date:', error);
             throw new ApiException(500, 'Failed to update date');
         }
     }

@@ -47,6 +47,6 @@ exports.blockUser = async (req, res) => {
 
 exports.getBlockedUsersByUserId = async (req, res) => {
 	const userId = req.user.id;
-	const blockedUsers = await UserInteractionsService.getBlockedUsersIdsByUserId(userId);
+	const blockedUsers = await UserInteractionsService.getBlockedUsersByUserId(userId);
 	res.status(200).send(blockedUsers);
 }
