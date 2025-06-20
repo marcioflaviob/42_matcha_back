@@ -120,10 +120,13 @@ const updateUser = async (req) => {
     const userData = { ...req.body };
     const userId = req.user.id;
     const interests = userData.interests;
-    const location = userData.location;
 
     delete userData.interests;
     delete userData.id;
+    delete userData.like_count;
+    delete userData.age;
+    delete userData.pictures;
+    delete userData.location;
 
     try {
         if (userData.password) {
@@ -138,10 +141,11 @@ const updateUser = async (req) => {
             result.userData = await User.findById(userId);
         }
         result.userData.interests = await InterestsService.updateUserInterests(interests, userId);
-        result.userData.location = await LocationService.updateUserLocation(location, userId);
+        console.log('User updated:', result.userData.interests);
         if (result.userData) delete result.userData.password;
-
-        return result;
+        result.userData.pictures = await UserPictureService.getUserPictures(userId);
+        result.userData.location = await LocationService.getLocationByUserId(userId);
+        return result.userData;
     } catch (error) {
         console.log('User update error:', error);
         result.userError = error.message;

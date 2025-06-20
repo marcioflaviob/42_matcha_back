@@ -331,14 +331,15 @@ describe('LocationService', () => {
 
         it('should handle errors during location update', async () => {
             const error = new Error('Update failed');
+            Location.findByUserId.mockResolvedValue(mockLocationData); // User has existing location
             Location.updateLocation.mockRejectedValue(error);
 
             await expect(LocationService.updateUserLocation(mockLocationData, userId))
                 .rejects
                 .toThrow('Update failed');
 
+            expect(Location.findByUserId).toHaveBeenCalledWith(userId);
             expect(Location.updateLocation).toHaveBeenCalled();
-            expect(Location.findByUserId).not.toHaveBeenCalled();
         });
 
         it('should do nothing when location is falsy', async () => {
