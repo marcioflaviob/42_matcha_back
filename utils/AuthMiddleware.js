@@ -8,11 +8,10 @@ const auth = async (req, res, next) => {
 	if (!token) {
 		return res.status(401).json({ message: 'No token, authorization denied' });
 	}
-  
+
 	try {
 		const decoded = await jwt.verify(token, JWT_SECRET);
 
-		// Add user from payload
 		req.user = decoded;
 		next();
 
