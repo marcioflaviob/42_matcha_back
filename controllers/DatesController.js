@@ -12,6 +12,12 @@ exports.getDatesByUserId = async (req, res) => {
     res.status(200).send(dates);
 }
 
+exports.getUnansweredDatesByReceiverId = async (req, res) => {
+    const userId = req.user.id;
+    const dates = await DatesService.getUnansweredDatesByReceiverId(userId);
+    res.status(200).send(dates);
+}
+
 exports.updateDate = async (req, res) => {
     const dateId = req.body.id;
     const status = req.body.status;
