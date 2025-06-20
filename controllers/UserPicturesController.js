@@ -42,3 +42,12 @@ exports.setProfilePicture = async (req, res) => {
     
     return res.status(200).send(updatedPicture);
 };
+
+exports.uploadPictureFromUrl = async (req, res) => {
+    const userId = req.user.id;
+    const { url } = req.body;
+    if (!url) return res.status(400).send({ error: 'No URL provided' });
+
+    const result = await UserPictureService.uploadAndPersistPictureFromUrl(userId, url);
+    return res.status(201).send(result);
+};

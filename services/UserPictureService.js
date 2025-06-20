@@ -1,6 +1,8 @@
 const { put, del } = require('@vercel/blob');
 const UserPictures = require('../models/User/UserPictures.js');
 const ApiException = require('../exceptions/ApiException.js');
+const fetch = require('node-fetch');
+const path = require('path');
 
 exports.uploadPicture = async (userId, file) => {
     try {
@@ -15,8 +17,7 @@ exports.uploadPicture = async (userId, file) => {
 
         return urlPath;
     } catch (err) {
-        console.error('Error uploading picture:', err);
-        throw new ApiException(500, 'Failed to upload picture');
+        throw new ApiException(500, err.message || 'Failed to upload picture');
     }
 };
 
@@ -44,7 +45,10 @@ exports.uploadAndPersistPicture = async (userId, photo) => {
 };
 
 exports.getUserPictures = async (userId) => {
+    if (!userId) throw new ApiException(400, 'User ID is required');
+
     const pictures = await UserPictures.findByUserId(userId);
+
     return pictures;
 };
 
@@ -53,13 +57,22 @@ async function deleteFile(url) {
         await del(url);
         return true;
     } catch (error) {
-        console.error('Error deleting file:', error);
-        throw new ApiException(500, 'Failed to delete file');
+        throw new ApiException(500, error.message || 'Failed to delete file');
     }
 }
 
 exports.deleteUserPicture = async (userId, pictureId) => {
-    const picture = await UserPictures.findById(pictureId);
+    const userPictures = await this.getUserPictures(userId);
+    const picture = userPictures.find(pic => pic.id == pictureId);
+    if (!picture) throw new ApiException(404, 'Picture not found');
+    if (picture.user_id != userId) throw new ApiException(403, 'You do not have permission to delete this picture');
+    if (userPictures.length <= 1) throw new ApiException(400, 'You must have at least one picture');
+
+    if (picture.is_profile) {
+        const anotherPicture = userPictures.find(pic => pic.id !== pictureId);
+        this.setProfilePicture(userId, anotherPicture.id);
+    }
+
     const deleted = await UserPictures.delete(userId, pictureId);
     const filename = `${process.env.BLOB_URL}/${picture.url}`;
 
@@ -82,4 +95,51 @@ exports.setProfilePicture = async (userId, pictureId) => {
     if (!updatedPicture) throw new ApiException(500, 'Failed to set picture as profile');
 
     return updatedPicture;
+};
+
+exports.uploadAndPersistPictureFromUrl = async (userId, url) => {
+    const userPictures = await exports.getUserPictures(userId);
+    if (userPictures.length >= 5) {
+        throw new ApiException(400, 'You can only upload up to 5 pictures');
+    }
+    let response;
+
+    let parsedUrl;
+    try {
+        parsedUrl = new URL(url);
+    } catch (err) {
+        throw new ApiException(400, err.message || 'Invalid URL format');
+    }
+
+    try {
+        response = await fetch(parsedUrl, { method: 'GET', timeout: 10000 });
+    } catch (err) {
+        throw new ApiException(500, err.message || 'Failed to fetch image from URL');
+    }
+    if (!response.ok) {
+        if (response.status === 404) {
+            throw new ApiException(404, 'Image not found at URL');
+        }
+        throw new ApiException(500, 'Failed to fetch image from URL');
+    }
+    const contentType = response.headers.get('content-type');
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    if (!allowedTypes.includes(contentType)) {
+        throw new ApiException(400, 'URL does not point to a valid web image');
+    }
+    const buffer = await response.buffer();
+    if (buffer.length > 5 * 1024 * 1024) {
+        throw new ApiException(400, 'Image exceeds 5MB size limit');
+    }
+    const filename = path.basename(url.split('?')[0]) || `image_${Date.now()}`;
+    const file = {
+        originalname: filename,
+        mimetype: contentType,
+        buffer: buffer
+    };
+    const photo = {
+        file,
+        isProfilePicture: false
+    };
+    return await exports.uploadAndPersistPicture(userId, photo);
 };
