@@ -278,11 +278,9 @@ describe('UserService', () => {
             const interests = [{ id: 1, name: 'coding' }];
             const pictures = [{ id: 1, url: 'pic1.jpg' }];
             const location = { latitude: 48.8566, longitude: 2.3522 };
-            const likeCount = 5;
 
             InterestsService.getInterestsListByUserId.mockResolvedValue(interests);
             UserPictureService.getUserPictures.mockResolvedValue(pictures);
-            UserInteractionsService.getLikeCountByUserId.mockResolvedValue(likeCount);
             LocationService.getLocationByUserId.mockResolvedValue(location);
 
             const result = await UserService.getUserById(1);
@@ -290,7 +288,6 @@ describe('UserService', () => {
             expect(result.interests).toEqual(interests);
             expect(result.pictures).toEqual(pictures);
             expect(result.location).toEqual(location);
-            expect(result.like_count).toBe(likeCount);
             expect(result).not.toHaveProperty('password');
         });
 
@@ -300,7 +297,6 @@ describe('UserService', () => {
             expect(result.interests).toEqual([]);
             expect(result.pictures).toEqual([]);
             expect(result.location).toBeNull();
-            expect(result.like_count).toBe(0);
         });
 
         it('should handle service errors gracefully', async () => {

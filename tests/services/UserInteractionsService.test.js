@@ -2,16 +2,23 @@ const UserInteractionsService = require('../../services/UserInteractionsService.
 const UserInteractions = require('../../models/UserInteractions/UserInteractions.js');
 const UserService = require('../../services/UserService.js');
 const NotificationService = require('../../services/NotificationService.js');
+const UserDataAccess = require('../../utils/UserDataAccess.js');
+const LocationService = require('../../services/LocationService.js');
 const ApiException = require('../../exceptions/ApiException.js');
 
 jest.mock('../../models/UserInteractions/UserInteractions.js');
 jest.mock('../../services/UserService.js');
 jest.mock('../../services/NotificationService.js');
+jest.mock('../../utils/UserDataAccess.js');
+jest.mock('../../services/LocationService.js');
 
 describe('UserInteractionsService', () => {
     beforeEach(() => {
         jest.clearAllMocks();
         jest.restoreAllMocks();
+
+        // Mock LocationService.calculateDistance to return a distance within 10km
+        LocationService.calculateDistance.mockReturnValue(5); // 5km, within the 10km limit
     });
 
     const mockUserService = {
@@ -26,6 +33,33 @@ describe('UserInteractionsService', () => {
         },
         mockGetValidUsers: (users) => {
             UserService.getValidUsers.mockResolvedValue(users);
+        }
+    };
+
+    const mockUserDataAccess = {
+        mockGetBasicUserById: (users) => {
+            UserDataAccess.getBasicUserById.mockImplementation((id) => {
+                const user = users.find(u => u.id === id);
+                if (!user) {
+                    throw new ApiException(404, 'User not found');
+                }
+                return Promise.resolve(user);
+            });
+        },
+        mockGetBasicUsersByIds: (users) => {
+            UserDataAccess.getBasicUsersByIds.mockImplementation((ids) => {
+                const foundUsers = ids.map(id => users.find(u => u.id === id)).filter(Boolean);
+                return Promise.resolve(foundUsers);
+            });
+        },
+        mockAddFameRating: () => {
+            UserDataAccess.addFameRating.mockResolvedValue(true);
+        },
+        mockGetValidUsersForMatching: (users) => {
+            UserDataAccess.getValidUsersForMatching.mockResolvedValue(users);
+        },
+        mockGetUserForMatching: (user) => {
+            UserDataAccess.getUserForMatching.mockResolvedValue(user);
         }
     };
 
@@ -77,11 +111,13 @@ describe('UserInteractionsService', () => {
             const mockLike = { id: 1, user1: 1, user2: 2, interaction_type: 'like' };
             UserInteractions.likeUser.mockResolvedValue(mockLike);
             UserInteractions.getLikesReceivedByUserId.mockResolvedValue([]);
+            mockUserDataAccess.mockAddFameRating();
 
             const result = await UserInteractionsService.likeUser(1, 2);
 
             expect(UserInteractions.likeUser).toHaveBeenCalledWith(1, 2);
             expect(NotificationService.newLikeNotification).toHaveBeenCalledWith(2, 1);
+            expect(UserDataAccess.addFameRating).toHaveBeenCalledWith(2, 10);
             expect(result).toEqual(mockLike);
         });
 
@@ -94,12 +130,14 @@ describe('UserInteractionsService', () => {
                 { id: 3, user1: 2, user2: 1, interaction_type: 'like' }
             ]);
             UserInteractions.matchUsers.mockResolvedValue(mockMatch);
+            mockUserDataAccess.mockAddFameRating();
 
             const result = await UserInteractionsService.likeUser(1, 2);
 
             expect(UserInteractions.likeUser).toHaveBeenCalledWith(1, 2);
             expect(UserInteractions.matchUsers).toHaveBeenCalledWith(1, 2);
             expect(NotificationService.newMatchNotification).toHaveBeenCalledWith(1, 2);
+            expect(UserDataAccess.addFameRating).toHaveBeenCalledWith(2, 10);
             expect(result).toEqual(mockMatch);
         });
     });
@@ -122,13 +160,13 @@ describe('UserInteractionsService', () => {
             ];
 
             UserInteractions.getProfileViewsByUserId.mockResolvedValue(mockViews);
-            mockUserService.mockGetUserById(mockUsers);
+            mockUserDataAccess.mockGetBasicUserById(mockUsers);
 
             const result = await Promise.all(await UserInteractionsService.getProfileViewsByUserId(1));
 
             expect(UserInteractions.getProfileViewsByUserId).toHaveBeenCalledWith(1);
-            expect(UserService.getUserById).toHaveBeenCalledWith(2);
-            expect(UserService.getUserById).toHaveBeenCalledWith(3);
+            expect(UserDataAccess.getBasicUserById).toHaveBeenCalledWith(2);
+            expect(UserDataAccess.getBasicUserById).toHaveBeenCalledWith(3);
             expect(result).toEqual(mockUsers);
         });
     });
@@ -195,11 +233,13 @@ describe('UserInteractionsService', () => {
         it('should create block and notification', async () => {
             const mockBlock = { id: 1, user1: 1, user2: 2, interaction_type: 'block' };
             UserInteractions.blockUser.mockResolvedValue(mockBlock);
+            mockUserDataAccess.mockAddFameRating();
 
             const result = await UserInteractionsService.blockUser(1, 2);
 
             expect(UserInteractions.blockUser).toHaveBeenCalledWith(1, 2);
             expect(NotificationService.newBlockNotification).toHaveBeenCalledWith(2, 1);
+            expect(UserDataAccess.addFameRating).toHaveBeenCalledWith(2, -10);
             expect(result).toEqual(mockBlock);
         });
     });
@@ -210,31 +250,39 @@ describe('UserInteractionsService', () => {
                 id: 1,
                 gender: 'Male',
                 sexual_interest: 'Female',
-                interests: [{ id: 1, name: 'Music' }, { id: 2, name: 'Art' }]
+                interests: [{ id: 1, name: 'Music' }, { id: 2, name: 'Art' }],
+                min_desired_rating: 0,
+                location: { latitude: 48.8566, longitude: 2.3522 }
             };
             const mockValidUsers = [
                 {
                     id: 2,
                     gender: 'Female',
                     sexual_interest: 'Male',
-                    interests: [{ id: 1, name: 'Music' }]
+                    interests: [{ id: 1, name: 'Music' }],
+                    rating: 5,
+                    location: { latitude: 48.8566, longitude: 2.3522 }
                 },
                 {
                     id: 3,
                     gender: 'Female',
                     sexual_interest: 'Female',
-                    interests: [{ id: 1, name: 'Music' }]
+                    interests: [{ id: 1, name: 'Music' }],
+                    rating: 5,
+                    location: { latitude: 48.8566, longitude: 2.3522 }
                 },
                 {
                     id: 4,
                     gender: 'Female',
                     sexual_interest: 'Male',
-                    interests: [{ id: 3, name: 'Sports' }]
+                    interests: [{ id: 3, name: 'Sports' }],
+                    rating: 5,
+                    location: { latitude: 48.8566, longitude: 2.3522 }
                 }
             ];
 
-            mockUserService.mockGetUserByIdSingle(mockUser);
-            mockUserService.mockGetValidUsers(mockValidUsers);
+            UserDataAccess.getUserForMatching.mockResolvedValue(mockUser);
+            mockUserDataAccess.mockGetValidUsersForMatching(mockValidUsers);
             mockInteractionService.mockLikedProfiles();
             mockInteractionService.mockBlockedUsers();
             UserInteractions.getLikesReceivedByUserId.mockResolvedValue([]);
@@ -252,7 +300,9 @@ describe('UserInteractionsService', () => {
                 id: mockUserId,
                 sexual_interest: 'Female',
                 gender: 'Male',
-                interests: [{ id: 1, name: 'coding' }]
+                interests: [{ id: 1, name: 'coding' }],
+                min_desired_rating: 0,
+                location: { latitude: 48.8566, longitude: 2.3522 }
             };
 
             const mockValidUsers = [
@@ -260,12 +310,14 @@ describe('UserInteractionsService', () => {
                     id: 2,
                     sexual_interest: 'Male',
                     gender: 'Female',
-                    interests: [{ id: 1, name: 'coding' }]
+                    interests: [{ id: 1, name: 'coding' }],
+                    rating: 5,
+                    location: { latitude: 48.8566, longitude: 2.3522 }
                 }
             ];
 
-            mockUserService.mockGetUserByIdSingle(mockUserData);
-            mockUserService.mockGetValidUsers(mockValidUsers);
+            UserDataAccess.getUserForMatching.mockResolvedValue(mockUserData);
+            mockUserDataAccess.mockGetValidUsersForMatching(mockValidUsers);
             mockInteractionService.mockLikedProfiles();
             mockInteractionService.mockBlockedUsers();
 
@@ -281,7 +333,9 @@ describe('UserInteractionsService', () => {
                 id: mockUserId,
                 sexual_interest: 'Any',
                 gender: 'Male',
-                interests: [{ id: 1, name: 'coding' }]
+                interests: [{ id: 1, name: 'coding' }],
+                min_desired_rating: 0,
+                location: { latitude: 48.8566, longitude: 2.3522 }
             };
 
             const mockValidUsers = [
@@ -289,24 +343,30 @@ describe('UserInteractionsService', () => {
                     id: 2,
                     sexual_interest: 'Male',
                     gender: 'Female',
-                    interests: [{ id: 1, name: 'coding' }]
+                    interests: [{ id: 1, name: 'coding' }],
+                    rating: 5,
+                    location: { latitude: 48.8566, longitude: 2.3522 }
                 },
                 {
                     id: 3,
                     sexual_interest: 'Male',
                     gender: 'Male',
-                    interests: [{ id: 1, name: 'coding' }]
+                    interests: [{ id: 1, name: 'coding' }],
+                    rating: 5,
+                    location: { latitude: 48.8566, longitude: 2.3522 }
                 },
                 {
                     id: 4,
                     sexual_interest: 'Male',
                     gender: 'Other',
-                    interests: [{ id: 1, name: 'coding' }]
+                    interests: [{ id: 1, name: 'coding' }],
+                    rating: 5,
+                    location: { latitude: 48.8566, longitude: 2.3522 }
                 }
             ];
 
-            mockUserService.mockGetUserByIdSingle(mockUserData);
-            mockUserService.mockGetValidUsers(mockValidUsers);
+            UserDataAccess.getUserForMatching.mockResolvedValue(mockUserData);
+            mockUserDataAccess.mockGetValidUsersForMatching(mockValidUsers);
             mockInteractionService.mockLikedProfiles();
             mockInteractionService.mockBlockedUsers();
 
@@ -326,13 +386,12 @@ describe('UserInteractionsService', () => {
             ];
 
             mockInteractionService.mockMatchIds(mockMatchIds);
-            mockUserService.mockGetUserById(mockUsers);
+            mockUserDataAccess.mockGetBasicUsersByIds(mockUsers);
 
             const result = await UserInteractionsService.getMatchesAsUsersByUserId(1);
 
             expect(result).toEqual(mockUsers);
-            expect(UserService.getUserById).toHaveBeenCalledWith(2);
-            expect(UserService.getUserById).toHaveBeenCalledWith(3);
+            expect(UserDataAccess.getBasicUsersByIds).toHaveBeenCalledWith(mockMatchIds);
         });
     });
 

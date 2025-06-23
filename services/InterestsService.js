@@ -56,7 +56,7 @@ const getInterestsNamesByUserId = async (userId) => {
 }
 
 const updateUserInterests = async (interests, userId) => {
-	if (!interests) throw ApiException(400, 'Interests are required');
+	if (!interests) throw new ApiException(400, 'Interests are required');
 	if (Array.isArray(interests)) {
 		await updateInterests(userId, interests);
 		return interests;

@@ -2,12 +2,14 @@ const DatesService = require('../../services/DatesService');
 const Dates = require('../../models/Dates/Dates');
 const NotificationService = require('../../services/NotificationService');
 const MessagesService = require('../../services/MessagesService');
+const UserDataAccess = require('../../utils/UserDataAccess');
 const ApiException = require('../../exceptions/ApiException');
 const { mockConsole, restoreConsole } = require('../utils/testSetup');
 
 jest.mock('../../models/Dates/Dates');
 jest.mock('../../services/NotificationService');
 jest.mock('../../services/MessagesService');
+jest.mock('../../utils/UserDataAccess');
 
 beforeEach(() => {
     mockConsole();
@@ -48,12 +50,14 @@ describe('DatesService.createDate', () => {
         Dates.createDate.mockResolvedValue(expectedDate);
         NotificationService.newDateNotification.mockResolvedValue();
         MessagesService.createDateMessage.mockResolvedValue();
+        UserDataAccess.addFameRating.mockResolvedValue();
 
         const result = await DatesService.createDate(1, date);
 
         expect(Dates.createDate).toHaveBeenCalledWith(date);
         expect(NotificationService.newDateNotification).toHaveBeenCalledWith(1, 2);
         expect(MessagesService.createDateMessage).toHaveBeenCalledWith(1, 2, 'Date', 1);
+        expect(UserDataAccess.addFameRating).toHaveBeenCalledWith(2, 10);
         expect(result).toEqual(expectedDate);
     });
 
@@ -137,13 +141,16 @@ describe("DatesService.updateDate", () => {
         const newStatus = "accepted";
         const date = {
             id: 1,
+            sender_id: 2,
             status: "accepted"
         }
         Dates.updateDate.mockResolvedValue(date);
+        UserDataAccess.addFameRating.mockResolvedValue();
 
         const result = await DatesService.updateDate(id, newStatus);
 
         expect(Dates.updateDate).toHaveBeenCalledWith(id, newStatus);
+        expect(UserDataAccess.addFameRating).toHaveBeenCalledWith(2, 10);
         expect(result).toEqual(date);
     })
 })

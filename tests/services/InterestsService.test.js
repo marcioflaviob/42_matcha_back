@@ -189,13 +189,14 @@ describe('InterestsService', () => {
             expect(Interests.addInterest).toHaveBeenCalledWith(userId, 2);
         });
 
-        it('should return undefined when interests parameter is undefined', async () => {
+        it('should throw error when interests parameter is undefined', async () => {
             const userId = 1;
             const interests = undefined;
 
-            const result = await InterestsService.updateUserInterests(interests, userId);
+            await expect(InterestsService.updateUserInterests(interests, userId))
+                .rejects
+                .toThrow('Interests are required');
 
-            expect(result).toBeUndefined();
             expect(Interests.removeAllInterests).not.toHaveBeenCalled();
             expect(Interests.addInterest).not.toHaveBeenCalled();
         });

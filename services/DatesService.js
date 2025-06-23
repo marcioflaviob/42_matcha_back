@@ -2,6 +2,7 @@ const Dates = require('../models/Dates/Dates.js');
 const NotificationService = require('./NotificationService.js');
 const MessagesService = require('./MessagesService.js');
 const ApiException = require('../exceptions/ApiException.js');
+const UserDataAccess = require('../utils/UserDataAccess.js');
 
 exports.createDate = async (userId, date) => {
     if (userId !== date.senderId)
@@ -9,7 +10,7 @@ exports.createDate = async (userId, date) => {
     const newDate = await Dates.createDate(date);
     await NotificationService.newDateNotification(date.senderId, date.receiverId);
     await MessagesService.createDateMessage(userId, date.receiverId, "Date", newDate.id);
-    await UserService.addFameRating(date.receiverId, 10);
+    await UserDataAccess.addFameRating(date.receiverId, 10);
     return newDate;
 }
 
@@ -29,6 +30,6 @@ exports.getDateById = async (id) => {
 exports.updateDate = async (dateId, status) => {
     const date = await Dates.updateDate(dateId, status);
     if (date.status === 'accepted')
-        await UserService.addFameRating(date.sender_id, 10);
+        await UserDataAccess.addFameRating(date.sender_id, 10);
     return date;
 }
