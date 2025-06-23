@@ -1,3 +1,4 @@
+const ApiException = require('../exceptions/ApiException.js');
 const Interests = require('../models/Interests/Interests.js');
 
 const getAllInterests = async () => {
@@ -55,18 +56,13 @@ const getInterestsNamesByUserId = async (userId) => {
 }
 
 const updateUserInterests = async (interests, userId) => {
-	if (interests !== undefined) {
-		try {
-			if (Array.isArray(interests)) {
-				await updateInterests(userId, interests);
-				return interests;
-			}
-		} catch (interestError) {
-			console.log('Interest update error:', interestError);
-			throw new Error(interestError);
-		}
+	if (!interests) throw ApiException(400, 'Interests are required');
+	if (Array.isArray(interests)) {
+		await updateInterests(userId, interests);
+		return interests;
 	}
 }
+
 
 const getInterestsListByUserId = async (userId) => {
 	const interestIds = await getInterestsByUserId(userId);
