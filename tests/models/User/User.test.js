@@ -152,7 +152,7 @@ describe('User Model', () => {
     describe('updateUserData', () => {
         it('should update user data successfully', async () => {
             const userId = 1;
-            const updateData = { name: 'Updated Name', email: 'updated@test.com' };
+            const updateData = { first_name: 'Updated', email: 'updated@test.com' };
             const mockUpdatedUser = { id: userId, ...updateData };
 
             db.query.mockResolvedValue({ rows: [mockUpdatedUser] });
@@ -161,14 +161,14 @@ describe('User Model', () => {
 
             expect(db.query).toHaveBeenCalledWith(
                 expect.stringContaining('UPDATE users'),
-                expect.arrayContaining([userId, 'Updated Name', 'updated@test.com'])
+                expect.arrayContaining([userId, 'Updated', 'updated@test.com'])
             );
             expect(result).toEqual(mockUpdatedUser);
         });
 
         it('should return existing user when no update data provided', async () => {
             const userId = 1;
-            const mockUser = { id: userId, name: 'Existing User' };
+            const mockUser = { id: userId, first_name: 'Existing User' };
 
             db.query.mockResolvedValue({ rows: [mockUser] });
 
@@ -180,7 +180,7 @@ describe('User Model', () => {
 
         it('should throw ApiException when user not found', async () => {
             const userId = 999;
-            const updateData = { name: 'Updated Name' };
+            const updateData = { first_name: 'Updated Name' };
 
             db.query.mockResolvedValue({ rows: [] });
 

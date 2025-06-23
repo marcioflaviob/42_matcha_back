@@ -1,7 +1,8 @@
 const UserInteractions = require('../models/UserInteractions/UserInteractions.js');
-const UserService = require('./UserService.js');
 const NotificationService = require('./NotificationService.js');
 const ApiException = require('../exceptions/ApiException.js');
+const LocationService = require('./LocationService.js');
+const UserDataAccess = require('../utils/UserDataAccess.js');
 
 exports.getLikeCountByUserId = async (userId) => {
 	const likeCount = await UserInteractions.getLikeCountByUserId(userId);
@@ -14,7 +15,7 @@ exports.likeUser = async (userId, user2Id) => {
 	if (userId == user2Id) throw new ApiException(400, 'You cannot like yourself');
 
 	const like = await UserInteractions.likeUser(userId, user2Id);
-
+	await UserDataAccess.addFameRating(user2Id, 10);
 	if (await isUserAlreadyLiked(userId, user2Id)) {
 		return await this.matchUsers(userId, user2Id);
 	}
@@ -30,7 +31,7 @@ exports.getProfileViewsByUserId = async (userId) => {
 	const views = await UserInteractions.getProfileViewsByUserId(userId);
 
 	const users = views.map(async (view) => {
-		return await UserService.getUserById(view.user1);
+		return await UserDataAccess.getBasicUserById(view.user1);
 	});
 
 	return users;
@@ -57,9 +58,7 @@ exports.getMatchesByUserId = async (userId) => {
 exports.getMatchesAsUsersByUserId = async (userId) => {
 	const matchesIds = await this.getMatchesIdsByUserId(userId);
 
-	const users = await Promise.all(matchesIds.map(async (id) => {
-		return await UserService.getUserById(id);
-	}));
+	const users = await UserDataAccess.getBasicUsersByIds(matchesIds);
 
 	return users;
 }
@@ -75,8 +74,8 @@ exports.getMatchesIdsByUserId = async (userId) => {
 }
 
 exports.getPotentialMatches = async (userId) => {
-	const userData = await UserService.getUserById(userId);
-	const validUsers = await UserService.getValidUsers(userId);
+	const userData = await UserDataAccess.getUserForMatching(userId);
+	const validUsers = await UserDataAccess.getValidUsersForMatching(userId);
 
 	const likedProfiles = await this.getLikedProfilesIdsByUserId(userId);
 	const blockedBySet = await this.getBlockedUsersIdsByUserId(userId);
@@ -94,16 +93,28 @@ exports.getPotentialMatches = async (userId) => {
 		const isInterestedInMyGender = match.sexual_interest == 'Any' ||
 			match.sexual_interest == userData.gender;
 
+		const isFameRatingSufficient = match.rating >= userData.min_desired_rating;
+
+		const isWithinRadius = userData.location && match.location ?
+			LocationService.calculateDistance(
+				userData.location.latitude,
+				userData.location.longitude,
+				match.location.latitude,
+				match.location.longitude
+			) <= 10 : false;
+
 		return !unwantedMatches.has(match.id) &&
 			interested_genders.includes(match.gender) &&
-			hasCommonInterest && isInterestedInMyGender;
+			hasCommonInterest &&
+			isInterestedInMyGender &&
+			isFameRatingSufficient &&
+			isWithinRadius;
 	});
 
 	const filteredMatches = await Promise.all(filteredUsers.map(async (match) => {
 		match.liked_me = await isUserAlreadyLiked(userId, match.id);
 		return match;
 	}));
-
 	return filteredMatches;
 }
 
@@ -114,6 +125,7 @@ exports.blockUser = async (userId, user2Id) => {
 
 	const block = await UserInteractions.blockUser(userId, user2Id);
 	await NotificationService.newBlockNotification(user2Id, userId);
+	await UserDataAccess.addFameRating(user2Id, -10);
 	return block;
 }
 

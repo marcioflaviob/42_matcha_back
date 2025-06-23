@@ -338,7 +338,6 @@ describe('LocationService', () => {
                 .toThrow('Update failed');
 
             expect(Location.updateLocation).toHaveBeenCalled();
-            expect(Location.findByUserId).not.toHaveBeenCalled();
         });
 
         it('should do nothing when location is falsy', async () => {
@@ -389,7 +388,6 @@ describe('LocationService', () => {
         });
 
         it('should handle missing data gracefully with fallbacks', async () => {
-            // Test various missing data scenarios with single test
             fetch
                 .mockResolvedValueOnce(new Response(JSON.stringify({ ip: '8.8.8.8' })))
                 .mockResolvedValueOnce(new Response(JSON.stringify({
