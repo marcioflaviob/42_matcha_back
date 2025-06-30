@@ -1,12 +1,10 @@
 const Notification = require('../../models/Notification/Notification');
 const UserService = require('../../services/UserService');
-const UserDataAccess = require('../../utils/UserDataAccess');
 const PusherService = require('../../services/PusherService');
 const NotificationService = require('../../services/NotificationService');
 
 jest.mock('../../models/Notification/Notification');
 jest.mock('../../services/UserService');
-jest.mock('../../utils/UserDataAccess');
 jest.mock('../../services/PusherService');
 
 const originalGetNotSeenNotificationsByUserId = NotificationService.getNotSeenNotificationsByUserId;
@@ -98,13 +96,13 @@ describe('NotificationService', () => {
 
     describe('newMessageNotification', () => {
         it('should create a new message notification', async () => {
-            UserDataAccess.getBasicUserById.mockResolvedValue(mockUser);
+            UserService.getUserById.mockResolvedValue(mockUser);
             const mockNotification = { id: 1, type: 'new-message' };
             NotificationService.createNotification = jest.fn().mockResolvedValue(mockNotification);
 
             const result = await NotificationService.newMessageNotification(2, 1);
 
-            expect(UserDataAccess.getBasicUserById).toHaveBeenCalledWith(1);
+            expect(UserService.getUserById).toHaveBeenCalledWith(1);
             expect(NotificationService.createNotification).toHaveBeenCalledWith(
                 2,
                 1,
@@ -119,7 +117,7 @@ describe('NotificationService', () => {
     describe('newMatchNotification', () => {
         it('should create match notifications for both users', async () => {
             const mockUser2 = { id: 2, first_name: 'Jane' };
-            UserDataAccess.getBasicUserById
+            UserService.getUserById
                 .mockResolvedValueOnce(mockUser2)
                 .mockResolvedValueOnce(mockUser);
 
@@ -129,8 +127,8 @@ describe('NotificationService', () => {
 
             const result = await NotificationService.newMatchNotification(1, 2);
 
-            expect(UserDataAccess.getBasicUserById).toHaveBeenCalledWith(2);
-            expect(UserDataAccess.getBasicUserById).toHaveBeenCalledWith(1);
+            expect(UserService.getUserById).toHaveBeenCalledWith(2);
+            expect(UserService.getUserById).toHaveBeenCalledWith(1);
             expect(NotificationService.createNotification).toHaveBeenCalledWith(
                 1,
                 2,
@@ -151,12 +149,12 @@ describe('NotificationService', () => {
 
     describe('newCallNotification', () => {
         it('should create and send a call notification', async () => {
-            UserDataAccess.getBasicUserById.mockResolvedValue(mockUser);
+            UserService.getUserById.mockResolvedValue(mockUser);
             PusherService.sendNotification.mockResolvedValue(true);
 
             const result = await NotificationService.newCallNotification(2, 1);
 
-            expect(UserDataAccess.getBasicUserById).toHaveBeenCalledWith(1);
+            expect(UserService.getUserById).toHaveBeenCalledWith(1);
             expect(PusherService.sendNotification).toHaveBeenCalledWith({
                 user_id: 2,
                 concerned_user_id: 1,
@@ -176,12 +174,12 @@ describe('NotificationService', () => {
 
     describe('newStopCallNotification', () => {
         it('should create and send a stop call notification', async () => {
-            UserDataAccess.getBasicUserById.mockResolvedValue(mockUser);
+            UserService.getUserById.mockResolvedValue(mockUser);
             PusherService.sendNotification.mockResolvedValue(true);
 
             const result = await NotificationService.newStopCallNotification(2, 1);
 
-            expect(UserDataAccess.getBasicUserById).toHaveBeenCalledWith(1);
+            expect(UserService.getUserById).toHaveBeenCalledWith(1);
             expect(PusherService.sendNotification).toHaveBeenCalledWith({
                 user_id: 2,
                 concerned_user_id: 1,
@@ -201,12 +199,12 @@ describe('NotificationService', () => {
 
     describe('newRefusedCallNotification', () => {
         it('should create and send a refused call notification', async () => {
-            UserDataAccess.getBasicUserById.mockResolvedValue(mockUser);
+            UserService.getUserById.mockResolvedValue(mockUser);
             PusherService.sendNotification.mockResolvedValue(true);
 
             const result = await NotificationService.newRefusedCallNotification(2, 1);
 
-            expect(UserDataAccess.getBasicUserById).toHaveBeenCalledWith(1);
+            expect(UserService.getUserById).toHaveBeenCalledWith(1);
             expect(PusherService.sendNotification).toHaveBeenCalledWith({
                 user_id: 2,
                 concerned_user_id: 1,
@@ -226,13 +224,13 @@ describe('NotificationService', () => {
 
     describe('newLikeNotification', () => {
         it('should create a new like notification', async () => {
-            UserDataAccess.getBasicUserById.mockResolvedValue(mockUser);
+            UserService.getUserById.mockResolvedValue(mockUser);
             const mockNotification = { id: 1, type: 'new-like' };
             NotificationService.createNotification = jest.fn().mockResolvedValue(mockNotification);
 
             const result = await NotificationService.newLikeNotification(2, 1);
 
-            expect(UserDataAccess.getBasicUserById).toHaveBeenCalledWith(1);
+            expect(UserService.getUserById).toHaveBeenCalledWith(1);
             expect(NotificationService.createNotification).toHaveBeenCalledWith(
                 2,
                 1,
@@ -246,13 +244,13 @@ describe('NotificationService', () => {
 
     describe('newProfileViewNotification', () => {
         it('should create a new profile view notification', async () => {
-            UserDataAccess.getBasicUserById.mockResolvedValue(mockUser);
+            UserService.getUserById.mockResolvedValue(mockUser);
             const mockNotification = { id: 1, type: 'new-profile-view' };
             NotificationService.createNotification = jest.fn().mockResolvedValue(mockNotification);
 
             const result = await NotificationService.newProfileViewNotification(2, 1);
 
-            expect(UserDataAccess.getBasicUserById).toHaveBeenCalledWith(1);
+            expect(UserService.getUserById).toHaveBeenCalledWith(1);
             expect(NotificationService.createNotification).toHaveBeenCalledWith(
                 2,
                 1,
@@ -266,13 +264,13 @@ describe('NotificationService', () => {
 
     describe('newSeenNotification', () => {
         it('should create a new seen notification', async () => {
-            UserDataAccess.getBasicUserById.mockResolvedValue(mockUser);
+            UserService.getUserById.mockResolvedValue(mockUser);
             const mockNotification = { id: 1, type: 'new-seen' };
             NotificationService.createNotification = jest.fn().mockResolvedValue(mockNotification);
 
             const result = await NotificationService.newSeenNotification(2, 1);
 
-            expect(UserDataAccess.getBasicUserById).toHaveBeenCalledWith(1);
+            expect(UserService.getUserById).toHaveBeenCalledWith(1);
             expect(NotificationService.createNotification).toHaveBeenCalledWith(
                 2,
                 1,
@@ -286,13 +284,13 @@ describe('NotificationService', () => {
 
     describe('newBlockNotification', () => {
         it('should create a new block notification', async () => {
-            UserDataAccess.getBasicUserById.mockResolvedValue(mockUser);
+            UserService.getUserById.mockResolvedValue(mockUser);
             const mockNotification = { id: 1, type: 'new-block' };
             NotificationService.createNotification = jest.fn().mockResolvedValue(mockNotification);
 
             const result = await NotificationService.newBlockNotification(2, 1);
 
-            expect(UserDataAccess.getBasicUserById).toHaveBeenCalledWith(1);
+            expect(UserService.getUserById).toHaveBeenCalledWith(1);
             expect(NotificationService.createNotification).toHaveBeenCalledWith(
                 2,
                 1,
@@ -306,13 +304,13 @@ describe('NotificationService', () => {
 
     describe('newDateNotification', () => {
         it('should create a new date notification', async () => {
-            UserDataAccess.getBasicUserById.mockResolvedValue(mockUser);
+            UserService.getUserById.mockResolvedValue(mockUser);
             const mockNotification = { id: 1, type: 'new-date' };
             NotificationService.createNotification = jest.fn().mockResolvedValue(mockNotification);
 
             const result = await NotificationService.newDateNotification(1, 2);
 
-            expect(UserDataAccess.getBasicUserById).toHaveBeenCalledWith(1);
+            expect(UserService.getUserById).toHaveBeenCalledWith(1);
             expect(NotificationService.createNotification).toHaveBeenCalledWith(
                 2,
                 1,
@@ -361,7 +359,7 @@ describe('NotificationService', () => {
 
         it('should handle UserService errors in notification functions', async () => {
             const error = new Error('User not found');
-            UserDataAccess.getBasicUserById.mockRejectedValue(error);
+            UserService.getUserById.mockRejectedValue(error);
 
             await expect(NotificationService.newMessageNotification(2, 1))
                 .rejects
@@ -377,7 +375,7 @@ describe('NotificationService', () => {
         });
 
         it('should handle PusherService errors in call notifications', async () => {
-            UserDataAccess.getBasicUserById.mockResolvedValue(mockUser);
+            UserService.getUserById.mockResolvedValue(mockUser);
             const error = new Error('Pusher error');
             PusherService.sendNotification.mockRejectedValue(error);
 
@@ -403,7 +401,7 @@ describe('NotificationService', () => {
 
         it('should handle null/undefined user data', async () => {
             const nullUser = { id: 1, first_name: null };
-            UserDataAccess.getBasicUserById.mockResolvedValue(nullUser);
+            UserService.getUserById.mockResolvedValue(nullUser);
             const mockNotification = { id: 1, type: 'new-like' };
 
             NotificationService.createNotification = jest.fn().mockResolvedValue(mockNotification);

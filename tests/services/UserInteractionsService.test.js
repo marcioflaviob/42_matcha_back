@@ -2,14 +2,12 @@ const UserInteractionsService = require('../../services/UserInteractionsService.
 const UserInteractions = require('../../models/UserInteractions/UserInteractions.js');
 const UserService = require('../../services/UserService.js');
 const NotificationService = require('../../services/NotificationService.js');
-const UserDataAccess = require('../../utils/UserDataAccess.js');
 const LocationService = require('../../services/LocationService.js');
 const ApiException = require('../../exceptions/ApiException.js');
 
 jest.mock('../../models/UserInteractions/UserInteractions.js');
-jest.mock('../../services/UserService.js');
 jest.mock('../../services/NotificationService.js');
-jest.mock('../../utils/UserDataAccess.js');
+jest.mock('../../services/UserService.js');
 jest.mock('../../services/LocationService.js');
 
 describe('UserInteractionsService', () => {
@@ -17,28 +15,12 @@ describe('UserInteractionsService', () => {
         jest.clearAllMocks();
         jest.restoreAllMocks();
 
-        // Mock LocationService.calculateDistance to return a distance within 10km
         LocationService.calculateDistance.mockReturnValue(5); // 5km, within the 10km limit
     });
 
-    const mockUserService = {
-        mockGetUserById: (users) => {
-            UserService.getUserById.mockImplementation((id) => {
-                const user = users.find(u => u.id === id);
-                return Promise.resolve(user);
-            });
-        },
-        mockGetUserByIdSingle: (user) => {
-            UserService.getUserById.mockResolvedValue(user);
-        },
-        mockGetValidUsers: (users) => {
-            UserService.getValidUsers.mockResolvedValue(users);
-        }
-    };
-
     const mockUserDataAccess = {
         mockGetBasicUserById: (users) => {
-            UserDataAccess.getBasicUserById.mockImplementation((id) => {
+            UserService.getUserById.mockImplementation((id) => {
                 const user = users.find(u => u.id === id);
                 if (!user) {
                     throw new ApiException(404, 'User not found');
@@ -47,19 +29,22 @@ describe('UserInteractionsService', () => {
             });
         },
         mockGetBasicUsersByIds: (users) => {
-            UserDataAccess.getBasicUsersByIds.mockImplementation((ids) => {
-                const foundUsers = ids.map(id => users.find(u => u.id === id)).filter(Boolean);
-                return Promise.resolve(foundUsers);
+            UserService.getUserById.mockImplementation((id) => {
+                const user = users.find(u => u.id === id);
+                if (!user) {
+                    throw new ApiException(404, 'User not found');
+                }
+                return Promise.resolve(user);
             });
         },
         mockAddFameRating: () => {
-            UserDataAccess.addFameRating.mockResolvedValue(true);
+            UserService.addFameRating.mockResolvedValue(true);
         },
         mockGetValidUsersForMatching: (users) => {
-            UserDataAccess.getValidUsersForMatching.mockResolvedValue(users);
+            UserService.getValidUsers.mockResolvedValue(users);
         },
         mockGetUserForMatching: (user) => {
-            UserDataAccess.getUserForMatching.mockResolvedValue(user);
+            UserService.getUserById.mockResolvedValue(user);
         }
     };
 
@@ -117,7 +102,7 @@ describe('UserInteractionsService', () => {
 
             expect(UserInteractions.likeUser).toHaveBeenCalledWith(1, 2);
             expect(NotificationService.newLikeNotification).toHaveBeenCalledWith(2, 1);
-            expect(UserDataAccess.addFameRating).toHaveBeenCalledWith(2, 10);
+            expect(UserService.addFameRating).toHaveBeenCalledWith(2, 10);
             expect(result).toEqual(mockLike);
         });
 
@@ -137,7 +122,7 @@ describe('UserInteractionsService', () => {
             expect(UserInteractions.likeUser).toHaveBeenCalledWith(1, 2);
             expect(UserInteractions.matchUsers).toHaveBeenCalledWith(1, 2);
             expect(NotificationService.newMatchNotification).toHaveBeenCalledWith(1, 2);
-            expect(UserDataAccess.addFameRating).toHaveBeenCalledWith(2, 10);
+            expect(UserService.addFameRating).toHaveBeenCalledWith(2, 10);
             expect(result).toEqual(mockMatch);
         });
     });
@@ -162,11 +147,11 @@ describe('UserInteractionsService', () => {
             UserInteractions.getProfileViewsByUserId.mockResolvedValue(mockViews);
             mockUserDataAccess.mockGetBasicUserById(mockUsers);
 
-            const result = await Promise.all(await UserInteractionsService.getProfileViewsByUserId(1));
+            const result = await UserInteractionsService.getProfileViewsByUserId(1);
 
             expect(UserInteractions.getProfileViewsByUserId).toHaveBeenCalledWith(1);
-            expect(UserDataAccess.getBasicUserById).toHaveBeenCalledWith(2);
-            expect(UserDataAccess.getBasicUserById).toHaveBeenCalledWith(3);
+            expect(UserService.getUserById).toHaveBeenCalledWith(2);
+            expect(UserService.getUserById).toHaveBeenCalledWith(3);
             expect(result).toEqual(mockUsers);
         });
     });
@@ -239,7 +224,7 @@ describe('UserInteractionsService', () => {
 
             expect(UserInteractions.blockUser).toHaveBeenCalledWith(1, 2);
             expect(NotificationService.newBlockNotification).toHaveBeenCalledWith(2, 1);
-            expect(UserDataAccess.addFameRating).toHaveBeenCalledWith(2, -10);
+            expect(UserService.addFameRating).toHaveBeenCalledWith(2, -10);
             expect(result).toEqual(mockBlock);
         });
     });
@@ -281,7 +266,7 @@ describe('UserInteractionsService', () => {
                 }
             ];
 
-            UserDataAccess.getUserForMatching.mockResolvedValue(mockUser);
+            UserService.getUserById.mockResolvedValue(mockUser);
             mockUserDataAccess.mockGetValidUsersForMatching(mockValidUsers);
             mockInteractionService.mockLikedProfiles();
             mockInteractionService.mockBlockedUsers();
@@ -316,7 +301,7 @@ describe('UserInteractionsService', () => {
                 }
             ];
 
-            UserDataAccess.getUserForMatching.mockResolvedValue(mockUserData);
+            UserService.getUserById.mockResolvedValue(mockUserData);
             mockUserDataAccess.mockGetValidUsersForMatching(mockValidUsers);
             mockInteractionService.mockLikedProfiles();
             mockInteractionService.mockBlockedUsers();
@@ -365,7 +350,7 @@ describe('UserInteractionsService', () => {
                 }
             ];
 
-            UserDataAccess.getUserForMatching.mockResolvedValue(mockUserData);
+            UserService.getUserById.mockResolvedValue(mockUserData);
             mockUserDataAccess.mockGetValidUsersForMatching(mockValidUsers);
             mockInteractionService.mockLikedProfiles();
             mockInteractionService.mockBlockedUsers();
@@ -391,7 +376,7 @@ describe('UserInteractionsService', () => {
             const result = await UserInteractionsService.getMatchesAsUsersByUserId(1);
 
             expect(result).toEqual(mockUsers);
-            expect(UserDataAccess.getBasicUsersByIds).toHaveBeenCalledWith(mockMatchIds);
+            expect(UserService.getUserById).toHaveBeenCalledTimes(mockMatchIds.length);
         });
     });
 

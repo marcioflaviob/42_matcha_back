@@ -2,14 +2,14 @@ const DatesService = require('../../services/DatesService');
 const Dates = require('../../models/Dates/Dates');
 const NotificationService = require('../../services/NotificationService');
 const MessagesService = require('../../services/MessagesService');
-const UserDataAccess = require('../../utils/UserDataAccess');
+const UserService = require('../../services/UserService');
 const ApiException = require('../../exceptions/ApiException');
 const { mockConsole, restoreConsole } = require('../utils/testSetup');
 
 jest.mock('../../models/Dates/Dates');
 jest.mock('../../services/NotificationService');
 jest.mock('../../services/MessagesService');
-jest.mock('../../utils/UserDataAccess');
+jest.mock('../../services/UserService');
 
 beforeEach(() => {
     mockConsole();
@@ -50,14 +50,14 @@ describe('DatesService.createDate', () => {
         Dates.createDate.mockResolvedValue(expectedDate);
         NotificationService.newDateNotification.mockResolvedValue();
         MessagesService.createDateMessage.mockResolvedValue();
-        UserDataAccess.addFameRating.mockResolvedValue();
+        UserService.addFameRating.mockResolvedValue();
 
         const result = await DatesService.createDate(1, date);
 
         expect(Dates.createDate).toHaveBeenCalledWith(date);
         expect(NotificationService.newDateNotification).toHaveBeenCalledWith(1, 2);
         expect(MessagesService.createDateMessage).toHaveBeenCalledWith(1, 2, 'Date', 1);
-        expect(UserDataAccess.addFameRating).toHaveBeenCalledWith(2, 10);
+        expect(UserService.addFameRating).toHaveBeenCalledWith(2, 10);
         expect(result).toEqual(expectedDate);
     });
 
@@ -145,12 +145,12 @@ describe("DatesService.updateDate", () => {
             status: "accepted"
         }
         Dates.updateDate.mockResolvedValue(date);
-        UserDataAccess.addFameRating.mockResolvedValue();
+        UserService.addFameRating.mockResolvedValue();
 
         const result = await DatesService.updateDate(id, newStatus);
 
         expect(Dates.updateDate).toHaveBeenCalledWith(id, newStatus);
-        expect(UserDataAccess.addFameRating).toHaveBeenCalledWith(2, 10);
+        expect(UserService.addFameRating).toHaveBeenCalledWith(2, 10);
         expect(result).toEqual(date);
     })
 })
