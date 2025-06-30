@@ -1,0 +1,30 @@
+name: Run Unit Tests
+
+on:
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    environment: Production
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Use Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '22.15.0'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run Jest tests
+        run: npx jest
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          EMAIL_API_KEY: ${{ secrets.EMAIL_API_KEY }}
+
