@@ -11,118 +11,140 @@ jest.mock('../../services/UserService.js');
 jest.mock('../../services/LocationService.js');
 
 describe('UserInteractionsService', () => {
+    // Test utilities and helpers
+    const testUtils = {
+        // Common error test helper
+        expectApiExceptionForMissingIds: async (serviceMethod, ...args) => {
+            await expect(serviceMethod(...args.map((_, i) => i === 0 ? undefined : args[i])))
+                .rejects.toThrow(ApiException);
+            await expect(serviceMethod(...args.map((_, i) => i === 1 ? undefined : args[i])))
+                .rejects.toThrow(ApiException);
+        },
+
+        // Common self-action error test
+        expectSelfActionError: async (serviceMethod, errorMessage) => {
+            await expect(serviceMethod(1, 1))
+                .rejects.toThrow(errorMessage);
+        },
+
+        // Common service call expectation helper
+        expectServiceCall: (mockFn, methodName, args) => {
+            expect(mockFn).toHaveBeenCalledWith(...args);
+        },
+
+        // Create mock user data
+        createMockUser: (overrides = {}) => ({
+            id: 1,
+            gender: 'Male',
+            sexual_interest: 'Female',
+            interests: [{ id: 1, name: 'Music' }],
+            min_desired_rating: 0,
+            location: { latitude: 48.8566, longitude: 2.3522 },
+            ...overrides
+        }),
+
+        // Create mock interaction data
+        createMockInteraction: (type, overrides = {}) => ({
+            id: 1,
+            user1: 1,
+            user2: 2,
+            interaction_type: type,
+            ...overrides
+        })
+    };
+
+    const mockSetup = {
+        // Consolidated user service mocking
+        userService: {
+            mockUserById: (users) => {
+                UserService.getUserById.mockImplementation((id) => {
+                    const user = Array.isArray(users) ? users.find(u => u.id === id) : users;
+                    if (!user) {
+                        throw new ApiException(404, 'User not found');
+                    }
+                    return Promise.resolve(user);
+                });
+            },
+            mockAddFameRating: () => UserService.addFameRating.mockResolvedValue(true),
+            mockValidUsers: (users) => UserService.getValidUsers.mockResolvedValue(users)
+        },
+
+        // Consolidated interaction service mocking
+        interactions: {
+            mockMethod: (method, returnValue) => UserInteractions[method].mockResolvedValue(returnValue),
+            mockSpyMethod: (method, returnValue) => jest.spyOn(UserInteractionsService, method).mockResolvedValue(returnValue)
+        },
+
+        // Common setup for matching scenarios
+        setupMatchingScenario: (user, validUsers, options = {}) => {
+            mockSetup.userService.mockUserById(user);
+            mockSetup.userService.mockValidUsers(validUsers);
+            mockSetup.interactions.mockSpyMethod('getLikedProfilesIdsByUserId', options.likedIds || new Set());
+            mockSetup.interactions.mockSpyMethod('getBlockedUsersIdsByUserId', options.blockedIds || new Set());
+            if (options.receivedLikes) {
+                mockSetup.interactions.mockMethod('getLikesReceivedByUserId', options.receivedLikes);
+            }
+        }
+    };
+
     beforeEach(() => {
         jest.clearAllMocks();
         jest.restoreAllMocks();
-
         LocationService.calculateDistance.mockReturnValue(5); // 5km, within the 10km limit
     });
-
-    const mockUserDataAccess = {
-        mockGetBasicUserById: (users) => {
-            UserService.getUserById.mockImplementation((id) => {
-                const user = users.find(u => u.id === id);
-                if (!user) {
-                    throw new ApiException(404, 'User not found');
-                }
-                return Promise.resolve(user);
-            });
-        },
-        mockGetBasicUsersByIds: (users) => {
-            UserService.getUserById.mockImplementation((id) => {
-                const user = users.find(u => u.id === id);
-                if (!user) {
-                    throw new ApiException(404, 'User not found');
-                }
-                return Promise.resolve(user);
-            });
-        },
-        mockAddFameRating: () => {
-            UserService.addFameRating.mockResolvedValue(true);
-        },
-        mockGetValidUsersForMatching: (users) => {
-            UserService.getValidUsers.mockResolvedValue(users);
-        },
-        mockGetUserForMatching: (user) => {
-            UserService.getUserById.mockResolvedValue(user);
-        }
-    };
-
-    const mockInteractionService = {
-        mockLikedProfiles: (ids = new Set()) => {
-            jest.spyOn(UserInteractionsService, 'getLikedProfilesIdsByUserId').mockResolvedValue(ids);
-        },
-        mockBlockedUsers: (ids = new Set()) => {
-            jest.spyOn(UserInteractionsService, 'getBlockedUsersIdsByUserId').mockResolvedValue(ids);
-        },
-        mockMatches: (matches) => {
-            jest.spyOn(UserInteractionsService, 'getMatchesByUserId').mockResolvedValue(matches);
-        },
-        mockMatchIds: (ids) => {
-            jest.spyOn(UserInteractionsService, 'getMatchesIdsByUserId').mockResolvedValue(ids);
-        }
-    };
 
     describe('getLikeCountByUserId', () => {
         it('should return like count for a user', async () => {
             const mockCount = 5;
-            UserInteractions.getLikeCountByUserId.mockResolvedValue(mockCount);
+            mockSetup.interactions.mockMethod('getLikeCountByUserId', mockCount);
 
             const result = await UserInteractionsService.getLikeCountByUserId(1);
 
-            expect(UserInteractions.getLikeCountByUserId).toHaveBeenCalledWith(1);
+            testUtils.expectServiceCall(UserInteractions.getLikeCountByUserId, 'getLikeCountByUserId', [1]);
             expect(result).toBe(mockCount);
         });
     });
 
     describe('likeUser', () => {
         it('should throw error if user IDs are missing', async () => {
-            await expect(UserInteractionsService.likeUser(undefined, 2))
-                .rejects
-                .toThrow(ApiException);
-
-            await expect(UserInteractionsService.likeUser(1, undefined))
-                .rejects
-                .toThrow(ApiException);
+            await testUtils.expectApiExceptionForMissingIds(UserInteractionsService.likeUser, 1, 2);
         });
 
         it('should throw error if user tries to like themselves', async () => {
-            await expect(UserInteractionsService.likeUser(1, 1))
-                .rejects
-                .toThrow('You cannot like yourself');
+            await testUtils.expectSelfActionError(UserInteractionsService.likeUser, 'You cannot like yourself');
         });
 
         it('should create like and notification if not already liked', async () => {
-            const mockLike = { id: 1, user1: 1, user2: 2, interaction_type: 'like' };
-            UserInteractions.likeUser.mockResolvedValue(mockLike);
-            UserInteractions.getLikesReceivedByUserId.mockResolvedValue([]);
-            mockUserDataAccess.mockAddFameRating();
+            const mockLike = testUtils.createMockInteraction('like');
+            mockSetup.interactions.mockMethod('likeUser', mockLike);
+            mockSetup.interactions.mockMethod('getLikesReceivedByUserId', []);
+            mockSetup.userService.mockAddFameRating();
 
             const result = await UserInteractionsService.likeUser(1, 2);
 
-            expect(UserInteractions.likeUser).toHaveBeenCalledWith(1, 2);
-            expect(NotificationService.newLikeNotification).toHaveBeenCalledWith(2, 1);
-            expect(UserService.addFameRating).toHaveBeenCalledWith(2, 10);
+            testUtils.expectServiceCall(UserInteractions.likeUser, 'likeUser', [1, 2]);
+            testUtils.expectServiceCall(NotificationService.newLikeNotification, 'newLikeNotification', [2, 1]);
+            testUtils.expectServiceCall(UserService.addFameRating, 'addFameRating', [2, 10]);
             expect(result).toEqual(mockLike);
         });
 
         it('should create match if users like each other', async () => {
-            const mockLike = { id: 1, user1: 1, user2: 2, interaction_type: 'like' };
-            const mockMatch = { id: 2, user1: 1, user2: 2, interaction_type: 'match' };
+            const mockLike = testUtils.createMockInteraction('like');
+            const mockMatch = testUtils.createMockInteraction('match', { id: 2 });
 
-            UserInteractions.likeUser.mockResolvedValue(mockLike);
-            UserInteractions.getLikesReceivedByUserId.mockResolvedValue([
-                { id: 3, user1: 2, user2: 1, interaction_type: 'like' }
+            mockSetup.interactions.mockMethod('likeUser', mockLike);
+            mockSetup.interactions.mockMethod('getLikesReceivedByUserId', [
+                testUtils.createMockInteraction('like', { id: 3, user1: 2, user2: 1 })
             ]);
-            UserInteractions.matchUsers.mockResolvedValue(mockMatch);
-            mockUserDataAccess.mockAddFameRating();
+            mockSetup.interactions.mockMethod('matchUsers', mockMatch);
+            mockSetup.userService.mockAddFameRating();
 
             const result = await UserInteractionsService.likeUser(1, 2);
 
-            expect(UserInteractions.likeUser).toHaveBeenCalledWith(1, 2);
-            expect(UserInteractions.matchUsers).toHaveBeenCalledWith(1, 2);
-            expect(NotificationService.newMatchNotification).toHaveBeenCalledWith(1, 2);
-            expect(UserService.addFameRating).toHaveBeenCalledWith(2, 10);
+            testUtils.expectServiceCall(UserInteractions.likeUser, 'likeUser', [1, 2]);
+            testUtils.expectServiceCall(UserInteractions.matchUsers, 'matchUsers', [1, 2]);
+            testUtils.expectServiceCall(NotificationService.newMatchNotification, 'newMatchNotification', [1, 2]);
+            testUtils.expectServiceCall(UserService.addFameRating, 'addFameRating', [2, 10]);
             expect(result).toEqual(mockMatch);
         });
     });
@@ -136,35 +158,35 @@ describe('UserInteractionsService', () => {
 
         it('should return list of users who viewed the profile', async () => {
             const mockViews = [
-                { id: 1, user1: 2, user2: 1, interaction_type: 'view' },
-                { id: 2, user1: 3, user2: 1, interaction_type: 'view' }
+                testUtils.createMockInteraction('view', { user1: 2, user2: 1 }),
+                testUtils.createMockInteraction('view', { id: 2, user1: 3, user2: 1 })
             ];
             const mockUsers = [
                 { id: 2, name: 'User 2' },
                 { id: 3, name: 'User 3' }
             ];
 
-            UserInteractions.getProfileViewsByUserId.mockResolvedValue(mockViews);
-            mockUserDataAccess.mockGetBasicUserById(mockUsers);
+            mockSetup.interactions.mockMethod('getProfileViewsByUserId', mockViews);
+            mockSetup.userService.mockUserById(mockUsers);
 
             const result = await UserInteractionsService.getProfileViewsByUserId(1);
 
-            expect(UserInteractions.getProfileViewsByUserId).toHaveBeenCalledWith(1);
-            expect(UserService.getUserById).toHaveBeenCalledWith(2);
-            expect(UserService.getUserById).toHaveBeenCalledWith(3);
+            testUtils.expectServiceCall(UserInteractions.getProfileViewsByUserId, 'getProfileViewsByUserId', [1]);
+            testUtils.expectServiceCall(UserService.getUserById, 'getUserById', [2]);
+            testUtils.expectServiceCall(UserService.getUserById, 'getUserById', [3]);
             expect(result).toEqual(mockUsers);
         });
     });
 
     describe('matchUsers', () => {
         it('should create match and notification', async () => {
-            const mockMatch = { id: 1, user1: 1, user2: 2, interaction_type: 'match' };
-            UserInteractions.matchUsers.mockResolvedValue(mockMatch);
+            const mockMatch = testUtils.createMockInteraction('match');
+            mockSetup.interactions.mockMethod('matchUsers', mockMatch);
 
             const result = await UserInteractionsService.matchUsers(1, 2);
 
-            expect(UserInteractions.matchUsers).toHaveBeenCalledWith(1, 2);
-            expect(NotificationService.newMatchNotification).toHaveBeenCalledWith(1, 2);
+            testUtils.expectServiceCall(UserInteractions.matchUsers, 'matchUsers', [1, 2]);
+            testUtils.expectServiceCall(NotificationService.newMatchNotification, 'newMatchNotification', [1, 2]);
             expect(result).toEqual(mockMatch);
         });
     });
@@ -178,99 +200,70 @@ describe('UserInteractionsService', () => {
 
         it('should return filtered matches excluding blocked users', async () => {
             const mockMatches = [
-                { id: 1, user1: 1, user2: 2, interaction_type: 'match' },
-                { id: 2, user1: 3, user2: 1, interaction_type: 'match' },
-                { id: 3, user1: 1, user2: 4, interaction_type: 'match' }
+                testUtils.createMockInteraction('match'),
+                testUtils.createMockInteraction('match', { id: 2, user1: 3, user2: 1 }),
+                testUtils.createMockInteraction('match', { id: 3, user2: 4 })
             ];
             const mockBlockedIds = new Set([3]);
 
-            UserInteractions.getMatchesByUserId.mockResolvedValue(mockMatches);
-            mockInteractionService.mockBlockedUsers(mockBlockedIds);
+            mockSetup.interactions.mockMethod('getMatchesByUserId', mockMatches);
+            mockSetup.interactions.mockSpyMethod('getBlockedUsersIdsByUserId', mockBlockedIds);
 
             const result = await UserInteractionsService.getMatchesByUserId(1);
 
-            expect(UserInteractions.getMatchesByUserId).toHaveBeenCalledWith(1);
+            testUtils.expectServiceCall(UserInteractions.getMatchesByUserId, 'getMatchesByUserId', [1]);
             expect(result).toHaveLength(2);
             expect(result).toEqual([
-                { id: 1, user1: 1, user2: 2, interaction_type: 'match' },
-                { id: 3, user1: 1, user2: 4, interaction_type: 'match' }
+                testUtils.createMockInteraction('match'),
+                testUtils.createMockInteraction('match', { id: 3, user2: 4 })
             ]);
         });
     });
 
     describe('blockUser', () => {
         it('should throw error if user IDs are missing', async () => {
-            await expect(UserInteractionsService.blockUser(undefined, 2))
-                .rejects
-                .toThrow(ApiException);
-
-            await expect(UserInteractionsService.blockUser(1, undefined))
-                .rejects
-                .toThrow(ApiException);
+            await testUtils.expectApiExceptionForMissingIds(UserInteractionsService.blockUser, 1, 2);
         });
 
         it('should throw error if user tries to block themselves', async () => {
-            await expect(UserInteractionsService.blockUser(1, 1))
-                .rejects
-                .toThrow('You cannot block yourself');
+            await testUtils.expectSelfActionError(UserInteractionsService.blockUser, 'You cannot block yourself');
         });
 
         it('should create block and notification', async () => {
-            const mockBlock = { id: 1, user1: 1, user2: 2, interaction_type: 'block' };
-            UserInteractions.blockUser.mockResolvedValue(mockBlock);
-            mockUserDataAccess.mockAddFameRating();
+            const mockBlock = testUtils.createMockInteraction('block');
+            mockSetup.interactions.mockMethod('blockUser', mockBlock);
+            mockSetup.userService.mockAddFameRating();
 
             const result = await UserInteractionsService.blockUser(1, 2);
 
-            expect(UserInteractions.blockUser).toHaveBeenCalledWith(1, 2);
-            expect(NotificationService.newBlockNotification).toHaveBeenCalledWith(2, 1);
-            expect(UserService.addFameRating).toHaveBeenCalledWith(2, -10);
+            testUtils.expectServiceCall(UserInteractions.blockUser, 'blockUser', [1, 2]);
+            testUtils.expectServiceCall(NotificationService.newBlockNotification, 'newBlockNotification', [2, 1]);
+            testUtils.expectServiceCall(UserService.addFameRating, 'addFameRating', [2, -10]);
             expect(result).toEqual(mockBlock);
         });
     });
 
     describe('getPotentialMatches', () => {
+        const createMatchingUser = (id, gender, sexualInterest, interests = [{ id: 1, name: 'Music' }]) =>
+            testUtils.createMockUser({
+                id,
+                gender,
+                sexual_interest: sexualInterest,
+                interests,
+                rating: 5
+            });
+
         it('should return filtered potential matches', async () => {
-            const mockUser = {
-                id: 1,
-                gender: 'Male',
-                sexual_interest: 'Female',
-                interests: [{ id: 1, name: 'Music' }, { id: 2, name: 'Art' }],
-                min_desired_rating: 0,
-                location: { latitude: 48.8566, longitude: 2.3522 }
-            };
+            const mockUser = testUtils.createMockUser({
+                interests: [{ id: 1, name: 'Music' }, { id: 2, name: 'Art' }]
+            });
             const mockValidUsers = [
-                {
-                    id: 2,
-                    gender: 'Female',
-                    sexual_interest: 'Male',
-                    interests: [{ id: 1, name: 'Music' }],
-                    rating: 5,
-                    location: { latitude: 48.8566, longitude: 2.3522 }
-                },
-                {
-                    id: 3,
-                    gender: 'Female',
-                    sexual_interest: 'Female',
-                    interests: [{ id: 1, name: 'Music' }],
-                    rating: 5,
-                    location: { latitude: 48.8566, longitude: 2.3522 }
-                },
-                {
-                    id: 4,
-                    gender: 'Female',
-                    sexual_interest: 'Male',
-                    interests: [{ id: 3, name: 'Sports' }],
-                    rating: 5,
-                    location: { latitude: 48.8566, longitude: 2.3522 }
-                }
+                createMatchingUser(2, 'Female', 'Male'),
+                createMatchingUser(3, 'Female', 'Female'),
+                createMatchingUser(4, 'Female', 'Male', [{ id: 3, name: 'Sports' }])
             ];
 
-            UserService.getUserById.mockResolvedValue(mockUser);
-            mockUserDataAccess.mockGetValidUsersForMatching(mockValidUsers);
-            mockInteractionService.mockLikedProfiles();
-            mockInteractionService.mockBlockedUsers();
-            UserInteractions.getLikesReceivedByUserId.mockResolvedValue([]);
+            mockSetup.setupMatchingScenario(mockUser, mockValidUsers, { receivedLikes: [] });
 
             const result = await UserInteractionsService.getPotentialMatches(1);
 
@@ -280,82 +273,28 @@ describe('UserInteractionsService', () => {
         });
 
         it('should handle specific sexual preference (not Any)', async () => {
-            const mockUserId = 1;
-            const mockUserData = {
-                id: mockUserId,
-                sexual_interest: 'Female',
-                gender: 'Male',
-                interests: [{ id: 1, name: 'coding' }],
-                min_desired_rating: 0,
-                location: { latitude: 48.8566, longitude: 2.3522 }
-            };
+            const mockUser = testUtils.createMockUser({ sexual_interest: 'Female' });
+            const mockValidUsers = [createMatchingUser(2, 'Female', 'Male')];
 
-            const mockValidUsers = [
-                {
-                    id: 2,
-                    sexual_interest: 'Male',
-                    gender: 'Female',
-                    interests: [{ id: 1, name: 'coding' }],
-                    rating: 5,
-                    location: { latitude: 48.8566, longitude: 2.3522 }
-                }
-            ];
+            mockSetup.setupMatchingScenario(mockUser, mockValidUsers);
 
-            UserService.getUserById.mockResolvedValue(mockUserData);
-            mockUserDataAccess.mockGetValidUsersForMatching(mockValidUsers);
-            mockInteractionService.mockLikedProfiles();
-            mockInteractionService.mockBlockedUsers();
-
-            const result = await UserInteractionsService.getPotentialMatches(mockUserId);
+            const result = await UserInteractionsService.getPotentialMatches(1);
 
             expect(result).toHaveLength(1);
             expect(result[0].id).toBe(2);
         });
 
         it('should handle "Any" sexual preference', async () => {
-            const mockUserId = 1;
-            const mockUserData = {
-                id: mockUserId,
-                sexual_interest: 'Any',
-                gender: 'Male',
-                interests: [{ id: 1, name: 'coding' }],
-                min_desired_rating: 0,
-                location: { latitude: 48.8566, longitude: 2.3522 }
-            };
-
+            const mockUser = testUtils.createMockUser({ sexual_interest: 'Any' });
             const mockValidUsers = [
-                {
-                    id: 2,
-                    sexual_interest: 'Male',
-                    gender: 'Female',
-                    interests: [{ id: 1, name: 'coding' }],
-                    rating: 5,
-                    location: { latitude: 48.8566, longitude: 2.3522 }
-                },
-                {
-                    id: 3,
-                    sexual_interest: 'Male',
-                    gender: 'Male',
-                    interests: [{ id: 1, name: 'coding' }],
-                    rating: 5,
-                    location: { latitude: 48.8566, longitude: 2.3522 }
-                },
-                {
-                    id: 4,
-                    sexual_interest: 'Male',
-                    gender: 'Other',
-                    interests: [{ id: 1, name: 'coding' }],
-                    rating: 5,
-                    location: { latitude: 48.8566, longitude: 2.3522 }
-                }
+                createMatchingUser(2, 'Female', 'Male'),
+                createMatchingUser(3, 'Male', 'Male'),
+                createMatchingUser(4, 'Other', 'Male')
             ];
 
-            UserService.getUserById.mockResolvedValue(mockUserData);
-            mockUserDataAccess.mockGetValidUsersForMatching(mockValidUsers);
-            mockInteractionService.mockLikedProfiles();
-            mockInteractionService.mockBlockedUsers();
+            mockSetup.setupMatchingScenario(mockUser, mockValidUsers);
 
-            const result = await UserInteractionsService.getPotentialMatches(mockUserId);
+            const result = await UserInteractionsService.getPotentialMatches(1);
 
             expect(result).toHaveLength(3);
             expect(result.map(u => u.id)).toEqual(expect.arrayContaining([2, 3, 4]));
@@ -370,8 +309,8 @@ describe('UserInteractionsService', () => {
                 { id: 3, name: 'User 3' }
             ];
 
-            mockInteractionService.mockMatchIds(mockMatchIds);
-            mockUserDataAccess.mockGetBasicUsersByIds(mockUsers);
+            mockSetup.interactions.mockSpyMethod('getMatchesIdsByUserId', mockMatchIds);
+            mockSetup.userService.mockUserById(mockUsers);
 
             const result = await UserInteractionsService.getMatchesAsUsersByUserId(1);
 
@@ -389,18 +328,21 @@ describe('UserInteractionsService', () => {
 
         it('should return set of liked user IDs', async () => {
             const mockLikes = [
-                { user1: 1, user2: 2 },
-                { user1: 1, user2: 3 }
+                { user1: 2, user2: 3 },  // Other users' likes
+                { user1: 4, user2: 5 }   // Other users' likes
             ];
 
-            UserInteractions.getLikesGivenByUserId.mockResolvedValue(mockLikes);
+            mockSetup.interactions.mockMethod('getLikesGivenByUserId', mockLikes);
 
             const result = await UserInteractionsService.getLikedProfilesIdsByUserId(1);
 
-            expect(UserInteractions.getLikesGivenByUserId).toHaveBeenCalledWith(1);
+            testUtils.expectServiceCall(UserInteractions.getLikesGivenByUserId, 'getLikesGivenByUserId', [1]);
             expect(result instanceof Set).toBe(true);
             expect(result.has(2)).toBe(true);
             expect(result.has(3)).toBe(true);
+            expect(result.has(4)).toBe(true);
+            expect(result.has(5)).toBe(true);
+            expect(result.has(1)).toBe(false);
         });
     });
 
@@ -412,16 +354,16 @@ describe('UserInteractionsService', () => {
         });
 
         it('should return set of blocked user IDs', async () => {
-            const mockBlocks = [
-                { user1: 1, user2: 2 },
-                { user1: 3, user2: 1 }
+            const mockBlocked = [
+                { user1: 1, user2: 2 },  // User 1 blocked User 2
+                { user1: 3, user2: 1 }   // User 3 blocked User 1
             ];
 
-            UserInteractions.getBlockedUsersByUserId.mockResolvedValue(mockBlocks);
+            mockSetup.interactions.mockMethod('getBlockedUsersByUserId', mockBlocked);
 
             const result = await UserInteractionsService.getBlockedUsersIdsByUserId(1);
 
-            expect(UserInteractions.getBlockedUsersByUserId).toHaveBeenCalledWith(1);
+            testUtils.expectServiceCall(UserInteractions.getBlockedUsersByUserId, 'getBlockedUsersByUserId', [1]);
             expect(result instanceof Set).toBe(true);
             expect(result.has(2)).toBe(true);
             expect(result.has(3)).toBe(true);
@@ -430,61 +372,47 @@ describe('UserInteractionsService', () => {
     });
 
     describe('getMatchesIdsByUserId', () => {
-        it('should return array of user IDs from matches where current user is user1', async () => {
-            const userId = 1;
-            const mockMatches = [
-                { user1: 1, user2: 2 },
-                { user1: 1, user2: 3 }
-            ];
+        const testMatchesScenario = (scenario, userId, mockMatches, expectedIds) => {
+            it(scenario, async () => {
+                mockSetup.interactions.mockSpyMethod('getMatchesByUserId', mockMatches);
 
-            mockInteractionService.mockMatches(mockMatches);
+                const result = await UserInteractionsService.getMatchesIdsByUserId(userId);
 
-            const result = await UserInteractionsService.getMatchesIdsByUserId(userId);
+                expect(result).toEqual(expectedIds);
+                expect(UserInteractionsService.getMatchesByUserId).toHaveBeenCalledWith(userId);
+            });
+        };
 
-            expect(result).toEqual([2, 3]);
-            expect(UserInteractionsService.getMatchesByUserId).toHaveBeenCalledWith(userId);
-        });
+        testMatchesScenario(
+            'should return array of user IDs from matches where current user is user1',
+            1,
+            [{ user1: 1, user2: 2 }, { user1: 1, user2: 3 }],
+            [2, 3]
+        );
 
-        it('should return array of user IDs from matches where current user is user2', async () => {
-            const userId = 2;
-            const mockMatches = [
-                { user1: 1, user2: 2 },
-                { user1: 3, user2: 2 }
-            ];
+        testMatchesScenario(
+            'should return array of user IDs from matches where current user is user2',
+            2,
+            [{ user1: 1, user2: 2 }, { user1: 3, user2: 2 }],
+            [1, 3]
+        );
 
-            mockInteractionService.mockMatches(mockMatches);
+        testMatchesScenario(
+            'should return empty array when no matches found',
+            1,
+            [],
+            []
+        );
 
-            const result = await UserInteractionsService.getMatchesIdsByUserId(userId);
-
-            expect(result).toEqual([1, 3]);
-            expect(UserInteractionsService.getMatchesByUserId).toHaveBeenCalledWith(userId);
-        });
-
-        it('should return empty array when no matches found', async () => {
-            const userId = 1;
-
-            mockInteractionService.mockMatches([]);
-
-            const result = await UserInteractionsService.getMatchesIdsByUserId(userId);
-
-            expect(result).toEqual([]);
-            expect(UserInteractionsService.getMatchesByUserId).toHaveBeenCalledWith(userId);
-        });
-
-        it('should handle mixed matches correctly', async () => {
-            const userId = 2;
-            const mockMatches = [
+        testMatchesScenario(
+            'should handle mixed matches correctly',
+            2,
+            [
                 { user1: 1, user2: 2 },
                 { user1: 2, user2: 3 },
                 { user1: 4, user2: 2 }
-            ];
-
-            mockInteractionService.mockMatches(mockMatches);
-
-            const result = await UserInteractionsService.getMatchesIdsByUserId(userId);
-
-            expect(result).toEqual([1, 3, 4]);
-            expect(UserInteractionsService.getMatchesByUserId).toHaveBeenCalledWith(userId);
-        });
+            ],
+            [1, 3, 4]
+        );
     });
 });
