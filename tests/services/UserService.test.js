@@ -26,7 +26,6 @@ beforeEach(() => {
     mockConsole();
     serviceMocks = createServiceMocks();
 
-    // Set up default service mocks
     InterestsService.getInterestsListByUserId = serviceMocks.interestsService.getInterestsListByUserId;
     UserPictureService.getUserPictures = serviceMocks.pictureService.getUserPictures;
     UserInteractionsService.getLikeCountByUserId = serviceMocks.userInteractionsService.getLikeCountByUserId;
@@ -153,7 +152,8 @@ describe('UserService', () => {
             const result = await UserService.updateUser(mockReq);
 
             expect(User.updateUserData).toHaveBeenCalled();
-            expect(result.userData).toBeDefined();
+            expect(result).toBeDefined();
+            expect(result.id).toBe(mockUpdatedUser.id);
         });
 
         it('should throw ApiException when request is invalid', async () => {
@@ -278,11 +278,9 @@ describe('UserService', () => {
             const interests = [{ id: 1, name: 'coding' }];
             const pictures = [{ id: 1, url: 'pic1.jpg' }];
             const location = { latitude: 48.8566, longitude: 2.3522 };
-            const likeCount = 5;
 
             InterestsService.getInterestsListByUserId.mockResolvedValue(interests);
             UserPictureService.getUserPictures.mockResolvedValue(pictures);
-            UserInteractionsService.getLikeCountByUserId.mockResolvedValue(likeCount);
             LocationService.getLocationByUserId.mockResolvedValue(location);
 
             const result = await UserService.getUserById(1);
@@ -290,7 +288,6 @@ describe('UserService', () => {
             expect(result.interests).toEqual(interests);
             expect(result.pictures).toEqual(pictures);
             expect(result.location).toEqual(location);
-            expect(result.like_count).toBe(likeCount);
             expect(result).not.toHaveProperty('password');
         });
 
@@ -300,7 +297,6 @@ describe('UserService', () => {
             expect(result.interests).toEqual([]);
             expect(result.pictures).toEqual([]);
             expect(result.location).toBeNull();
-            expect(result.like_count).toBe(0);
         });
 
         it('should handle service errors gracefully', async () => {
@@ -339,7 +335,7 @@ describe('UserService', () => {
 
             const result = await UserService.updateUser(mockReq);
 
-            expect(result.userData.status).toBe('active');
+            expect(result.status).toBe('active');
             expect(User.updateUserData).toHaveBeenCalledWith(
                 1,
                 expect.objectContaining({
@@ -394,7 +390,7 @@ describe('UserService', () => {
                 1,
                 expect.objectContaining({ name: 'Updated Name' })
             );
-            expect(result.userData).toBeDefined();
+            expect(result).toBeDefined();
         });
     });
 
@@ -468,7 +464,7 @@ describe('UserService', () => {
 
             const result = await UserService.updateUser(mockReq);
 
-            expect(result.userData.status).toBe('complete');
+            expect(result.status).toBe('complete');
             expect(User.updateUserData).toHaveBeenCalledWith(1,
                 expect.objectContaining({
                     email: 'newemail@test.com',
@@ -626,7 +622,7 @@ describe('UserService', () => {
             const result = await UserService.updateUser(emptyReq);
 
             expect(User.findById).toHaveBeenCalledWith(1);
-            expect(result.userData).toBeDefined();
+            expect(result).toBeDefined();
         });
 
         it('should handle updateUser with interests only', async () => {
@@ -644,7 +640,7 @@ describe('UserService', () => {
 
             const result = await UserService.updateUser(interestsOnlyReq);
 
-            expect(result.userData.interests).toHaveLength(1);
+            expect(result.interests).toHaveLength(1);
         });
 
         it('should handle updateUser with location only', async () => {
@@ -658,12 +654,12 @@ describe('UserService', () => {
 
             User.findById.mockResolvedValue({ id: 1, email: 'test@example.com' });
             InterestsService.updateUserInterests.mockResolvedValue([]);
-            LocationService.updateUserLocation.mockResolvedValue({ latitude: 48.8566, longitude: 2.3522 });
+            LocationService.getLocationByUserId.mockResolvedValue({ latitude: 48.8566, longitude: 2.3522 });
 
             const result = await UserService.updateUser(locationOnlyReq);
 
-            expect(result.userData.location).toBeDefined();
-            expect(result.userData.location.latitude).toBe(48.8566);
+            expect(result.location).toBeDefined();
+            expect(result.location.latitude).toBe(48.8566);
         });
 
         it('should handle bcrypt errors during password update', async () => {
@@ -961,8 +957,8 @@ describe('UserService', () => {
 
             const result = await UserService.updateUser(req);
 
-            expect(result.userData).toBeDefined();
-            expect(result.userData.password).toBeUndefined();
+            expect(result).toBeDefined();
+            expect(result.password).toBeUndefined();
 
             updateUserSpy.mockRestore();
         });

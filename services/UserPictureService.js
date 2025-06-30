@@ -76,9 +76,7 @@ exports.deleteUserPicture = async (userId, pictureId) => {
     const deleted = await UserPictures.delete(userId, pictureId);
     const filename = `${process.env.BLOB_URL}/${picture.url}`;
 
-    // Call deleteFile but don't let it crash the main operation
     deleteFile(filename).catch(error => {
-        // Error is already logged in deleteFile function
         console.log('File deletion failed, but database operation completed');
     });
 
