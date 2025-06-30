@@ -53,25 +53,25 @@ const jwt = require('jsonwebtoken');
     return res.status(200).json({ message: "Token is valid", user: decoded });
   }
 
-  exports.googleAuth = passport.authenticate('google', {
-    scope: ['profile', 'email']
-  })
-  
-  exports.googleCallback = (req, res, next) => {
-    passport.authenticate('google', { session: false }, (err, user) => {
-      if (err) {
-        console.error("Google authentication error:", err);
-        return res.redirect(`${process.env.FRONTEND_URL}/login?error=auth_failed`);
-      }
-      
-      if (!user) {
-        return res.redirect(`${process.env.FRONTEND_URL}/login?error=user_not_found`);
-      }
-  
-      const token = jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET, {
-        expiresIn: "24h",
-      });
-  
-      res.redirect(`${process.env.FRONTEND_URL}/auth/google/callback?token=${token}`);
-    })(req, res, next);
-  }
+exports.googleAuth = passport.authenticate('google', {
+  scope: ['profile', 'email']
+})
+
+exports.googleCallback = (req, res, next) => {
+  passport.authenticate('google', { session: false }, (err, user) => {
+    if (err) {
+      console.error("Google authentication error:", err);
+      return res.redirect(`${process.env.FRONTEND_URL}/login?error=auth_failed`);
+    }
+
+    if (!user) {
+      return res.redirect(`${process.env.FRONTEND_URL}/login?error=user_not_found`);
+    }
+
+    const token = jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET, {
+      expiresIn: "24h",
+    });
+
+    res.redirect(`${process.env.FRONTEND_URL}/auth/google/callback?token=${token}`);
+  })(req, res, next);
+}
