@@ -151,6 +151,22 @@ class User {
             throw new ApiException(500, 'Failed to validate user');
         }
     }
+
+    static async addFameRating(userId, rating) {
+        try {
+            const result = await db.query(
+                'UPDATE users SET rating = rating + $1 WHERE id = $2 RETURNING *',
+                [rating, userId]
+            );
+
+            if (result.rows.length === 0) throw new ApiException(404, 'User not found');
+
+            return result.rows[0];
+        } catch (error) {
+            console.log(error);
+            throw new ApiException(500, 'Failed to add fame rating');
+        }
+    }
 }
 
 module.exports = User;
