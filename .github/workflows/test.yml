@@ -21,12 +21,13 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Print env for debugging
+        run: echo "DATABASE_URL is $DATABASE_URL"
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          
       - name: Run Jest tests
         run: npx jest
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
-      - name: Print env for debugging
-        run: echo "DATABASE_URL is $DATABASE_URL"
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
