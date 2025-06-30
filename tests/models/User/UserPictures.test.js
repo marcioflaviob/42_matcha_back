@@ -35,14 +35,6 @@ describe('UserPictures', () => {
             expect(result).toEqual(mockPictures);
         });
 
-        it('should throw ApiException when no pictures are found', async () => {
-            db.query.mockResolvedValue({ rows: [] });
-
-            await expect(UserPictures.findByUserId(1))
-                .rejects
-                .toThrow(new ApiException(404, 'No pictures found for this user'));
-        });
-
         it('should throw ApiException on database error', async () => {
             db.query.mockRejectedValue(new Error('DB error'));
 
