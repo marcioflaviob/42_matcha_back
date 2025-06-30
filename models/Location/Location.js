@@ -6,7 +6,7 @@ class Location {
     static async createLocation(locationData) {
         try {
             const result = await db.query(
-                'INSERT INTO location (user_id, longitude, latitude, city, country) VALUES ($1, $2, $3, $4, $5) RETURNING user_id',
+                'INSERT INTO locations (user_id, longitude, latitude, city, country) VALUES ($1, $2, $3, $4, $5) RETURNING user_id',
                 [locationData.userId, locationData.longitude, locationData.latitude, locationData.city, locationData.country]
             );
             return result.rows[0].user_id;
@@ -19,7 +19,7 @@ class Location {
     static async findByUserId(userId) {
         try {
             const result = await db.query(
-                'SELECT * FROM location WHERE user_id = $1',
+                'SELECT * FROM locations WHERE user_id = $1',
                 [userId]
             );
             if (result.rows.length === 0)
@@ -35,7 +35,7 @@ class Location {
     static async updateLocation(locationData) {
         try {
             const result = await db.query(
-                'UPDATE location SET longitude = $1, latitude = $2, city = $3, country = $4 WHERE user_id = $5 RETURNING *',
+                'UPDATE locations SET longitude = $1, latitude = $2, city = $3, country = $4 WHERE user_id = $5 RETURNING *',
                 [locationData.longitude, locationData.latitude, locationData.city, locationData.country, locationData.userId]
             );
             if (result.rows.length === 0)
