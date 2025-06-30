@@ -11,7 +11,7 @@ describe('EmailTemplates', () => {
             const html = passwordRecoveryTemplate(resetLink);
 
             expect(html).toContain('<!DOCTYPE html>');
-            expect(html).toContain('Password Recovery');
+            expect(html).toContain('Matcha Password Recovery');
             expect(html).toContain(resetLink);
             expect(html).toContain('Reset Password');
             expect(html).toContain('We received a request to reset your password');
@@ -23,7 +23,7 @@ describe('EmailTemplates', () => {
             const html = passwordRecoveryTemplate(resetLink);
 
             expect(html).toContain('<!DOCTYPE html>');
-            expect(html).toContain('Password Recovery');
+            expect(html).toContain('Matcha Password Recovery');
             expect(html).toContain('href=""');
         });
 
@@ -48,6 +48,18 @@ describe('EmailTemplates', () => {
             expect(html).toContain('<body>');
             expect(html).toContain('</body>');
         });
+
+        it('should include proper styling and branding', () => {
+            const resetLink = 'https://example.com/reset-password?token=abc123';
+
+            const html = passwordRecoveryTemplate(resetLink);
+
+            expect(html).toContain('font-family: Arial, sans-serif');
+            expect(html).toContain('background-color: #f9f9f9');
+            expect(html).toContain('color: #333333');
+            expect(html).toContain('background-color: #007bff');
+            expect(html).toMatch(/\.button:hover\s*{\s*background-color:\s*#0056b3;\s*}/);
+        });
     });
 
     describe('emailVerificationTemplate', () => {
@@ -57,7 +69,7 @@ describe('EmailTemplates', () => {
             const html = emailVerificationTemplate(verificationLink);
 
             expect(html).toContain('<!DOCTYPE html>');
-            expect(html).toContain('Email Verification');
+            expect(html).toContain('Matcha Email Verification');
             expect(html).toContain(verificationLink);
             expect(html).toContain('Verify Email');
             expect(html).toContain('Thank you for signing up');
@@ -69,7 +81,7 @@ describe('EmailTemplates', () => {
             const html = emailVerificationTemplate(verificationLink);
 
             expect(html).toContain('<!DOCTYPE html>');
-            expect(html).toContain('Email Verification');
+            expect(html).toContain('Matcha Email Verification');
             expect(html).toContain('href=""');
         });
 
@@ -101,8 +113,10 @@ describe('EmailTemplates', () => {
             const html = emailVerificationTemplate(verificationLink);
 
             expect(html).toContain('font-family: Arial, sans-serif');
-            expect(html).toContain('background-color: #e9f5f0');
-            expect(html).toContain('color: #2a815b');
+            expect(html).toContain('background-color: #f9f9f9');
+            expect(html).toContain('color: #333333');
+            expect(html).toContain('background-color: #007bff');
+            expect(html).toMatch(/\.button:hover\s*{\s*background-color:\s*#0056b3;\s*}/);
         });
     });
 
@@ -114,10 +128,10 @@ describe('EmailTemplates', () => {
             const passwordHtml = passwordRecoveryTemplate(resetLink);
             const verificationHtml = emailVerificationTemplate(verificationLink);
 
-            expect(passwordHtml).toContain('#e9f5f0');
-            expect(verificationHtml).toContain('#e9f5f0');
-            expect(passwordHtml).toContain('#2a815b');
-            expect(verificationHtml).toContain('#2a815b');
+            expect(passwordHtml).toContain('#f9f9f9');
+            expect(verificationHtml).toContain('#f9f9f9');
+            expect(passwordHtml).toContain('#333333');
+            expect(verificationHtml).toContain('#333333');
 
             expect(passwordHtml).toContain('class="container"');
             expect(verificationHtml).toContain('class="container"');
