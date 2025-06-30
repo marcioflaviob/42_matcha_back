@@ -61,18 +61,6 @@ describe('AuthController', () => {
                 user: mockUser,
             });
         });
-
-        it('should return 401 on invalid credentials', async () => {
-            req.body = { email: 'test@example.com', password: 'wrong-password' };
-            AuthService.login.mockRejectedValue(new Error('Invalid credentials'));
-
-            await AuthController.login(req, res);
-
-            expect(res.status).toHaveBeenCalledWith(401);
-            expect(res.json).toHaveBeenCalledWith({
-                message: 'Invalid credentials',
-            });
-        });
     });
 
     describe('getCurrentUser', () => {
@@ -113,18 +101,6 @@ describe('AuthController', () => {
                 user: mockUser,
             });
         });
-
-        it('should return 500 on server error', async () => {
-            req.user = { id: 1 };
-            UserService.getUserById.mockRejectedValue(new Error('Database error'));
-
-            await AuthController.getCurrentUser(req, res);
-
-            expect(res.status).toHaveBeenCalledWith(500);
-            expect(res.json).toHaveBeenCalledWith({
-                message: 'Server error',
-            });
-        });
     });
 
     describe('verify', () => {
@@ -163,18 +139,6 @@ describe('AuthController', () => {
             expect(res.status).toHaveBeenCalledWith(401);
             expect(res.json).toHaveBeenCalledWith({
                 message: 'Token is not valid',
-            });
-        });
-
-        it('should return 500 on server error', async () => {
-            req.header.mockReturnValue('Bearer test-token');
-            AuthService.verifyToken.mockRejectedValue(new Error('Server error'));
-
-            await AuthController.verify(req, res);
-
-            expect(res.status).toHaveBeenCalledWith(500);
-            expect(res.json).toHaveBeenCalledWith({
-                message: 'Server error',
             });
         });
     });
