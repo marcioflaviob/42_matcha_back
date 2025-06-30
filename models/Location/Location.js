@@ -23,7 +23,7 @@ class Location {
                 [userId]
             );
             if (result.rows.length === 0)
-                throw new ApiException(404, 'Location not found for the given user ID');
+                 throw new ApiException(404, 'Location not found for the given user ID');
             return result.rows[0];
         } catch (error) {
             if (error instanceof ApiException) throw error;
