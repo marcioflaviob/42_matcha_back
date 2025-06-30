@@ -9,8 +9,6 @@ class UserPictures {
                 [userId]
             );
 
-            if (result.rows.length === 0) throw new ApiException(404, 'No pictures found for this user');
-
             return result.rows;
         } catch (error) {
             if (error instanceof ApiException) throw error;
