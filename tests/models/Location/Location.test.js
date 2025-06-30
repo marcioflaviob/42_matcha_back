@@ -64,12 +64,12 @@ describe('Location model', () => {
             expect(result).toEqual(mockLocation);
         });
 
-        it('should throw 404 if no location is found', async () => {
+        it('should return undefined if no location is found', async () => {
             db.query.mockResolvedValue({ rows: [] });
 
-            await expect(Location.findByUserId(1))
-                .rejects
-                .toThrow(new ApiException(404, 'Location not found for the given user ID'));
+            const result = await Location.findByUserId(1);
+
+            expect(result).toBeUndefined();
         });
 
         it('should throw ApiException on DB error', async () => {
