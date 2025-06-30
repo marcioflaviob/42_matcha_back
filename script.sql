@@ -168,7 +168,7 @@ INSERT INTO user_pictures (user_id, url, is_profile)
 VALUES
 (10001, 'celeb/tony_stark-y3mb9ujAuOtnL5mQzEIYYBDmF8YfPk.jpg', TRUE),
 (10002, 'celeb/diana_prince-xB11HbDg5EsLn83OdiJ8sha9N6ismQ.jpg', TRUE),
-(10003, 'celeb/bruce_wayne-Vx6t4lL6iibqs2mIMgUeJuiXagxXrJ.jpg', TRUE),
+(10003, 'celeb/bruce_wayne-kawhQTDjdEyUh44Qh9EsHP5hv4WeAk.jpg', TRUE),
 (10004, 'celeb/hermione_granger-IWOlccshoU5AYRnXaE8AXD4juOoSUO.jpg', TRUE),
 (10006, 'celeb/oprah_winfrey-BZ8xCdEgWOtExWBp3n1dQha0QvjpF2.jpg', TRUE),
 (10007, 'celeb/harley_quinn-iCGz5lltV5Ueis3fev64VfycEqn2fZ.jpg', TRUE),

@@ -68,7 +68,7 @@ const getValidUsers = async (userId) => {
 };
 
 const updateUser = async (req) => {
-    if (!req || !req.body || !req.body.id) {
+    if (!req || !req.body || !req.body.id || !req.user || !req.user.id) {
         throw new ApiException(400, 'User ID is required for update');
     }
     const result = {};
