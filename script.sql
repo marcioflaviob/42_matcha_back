@@ -58,28 +58,6 @@ CREATE TABLE IF NOT EXISTS notifications (
 	FOREIGN KEY (concerned_user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
-CREATE TABLE IF NOT EXISTS messages (
-	id SERIAL PRIMARY KEY,
-	sender_id INT NOT NULL,
-	receiver_id INT NOT NULL,
-	date_id INT,
-	content TEXT NOT NULL,
-	timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-	is_read BOOLEAN DEFAULT FALSE,
-	FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE,
-	FOREIGN KEY (receiver_id) REFERENCES users(id) ON DELETE CASCADE,
-	FOREIGN KEY (date_id) REFERENCES dates(id) ON DELETE CASCADE,
-);
-
-CREATE TABLE IF NOT EXISTS location (
-    user_id INT PRIMARY KEY,
-    longitude DECIMAL(11, 7) NOT NULL,
-    latitude DECIMAL(10, 7) NOT NULL,
-    city VARCHAR(255) NOT NULL,
-    country VARCHAR(255) NOT NULL,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-);
-
 CREATE TABLE IF NOT EXISTS dates (
 	id SERIAL PRIMARY KEY,
 	sender_id INT NOT NULL,
@@ -91,6 +69,28 @@ CREATE TABLE IF NOT EXISTS dates (
 	status VARCHAR(255) NOT NULL,
 	FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE,
 	FOREIGN KEY (receiver_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS messages (
+	id SERIAL PRIMARY KEY,
+	sender_id INT NOT NULL,
+	receiver_id INT NOT NULL,
+	date_id INT,
+	content TEXT NOT NULL,
+	timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+	is_read BOOLEAN DEFAULT FALSE,
+	FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE,
+	FOREIGN KEY (receiver_id) REFERENCES users(id) ON DELETE CASCADE,
+	FOREIGN KEY (date_id) REFERENCES dates(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS locations (
+    user_id INT PRIMARY KEY,
+    longitude DECIMAL(11, 7) NOT NULL,
+    latitude DECIMAL(10, 7) NOT NULL,
+    city VARCHAR(255) NOT NULL,
+    country VARCHAR(255) NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 ALTER TABLE users DISABLE ROW LEVEL SECURITY;
@@ -196,7 +196,7 @@ VALUES
 (30009, 'celeb/olivia_rodrigo-dyg3podOlz36WQuFHtl8O4ChgGouiK.jpg', TRUE),
 (30010, 'celeb/charlie_puth-jCnlXGIeOSOF4WLQcPKFHx0Sws9Rao.jpg', TRUE);
 
-INSERT INTO location (user_id, longitude, latitude, city, country) VALUES
+INSERT INTO locations (user_id, longitude, latitude, city, country) VALUES
 -- Superheroes and Characters
 (10001, 2.3522, 48.8566, 'Paris', 'France'),                    -- Tony Stark (8th arrondissement)
 (10002, 2.2945, 48.8584, 'Paris', 'France'),                    -- Diana Prince (16th arrondissement)
