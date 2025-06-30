@@ -68,7 +68,7 @@ const getValidUsers = async (userId) => {
 };
 
 const updateUser = async (req) => {
-    if (!req || !req.body || !req.body.id || !req.user || !req.user.id) {
+    if ((req && req.body && !req.body.id) && (!req.user || !req.user.id)) {
         throw new ApiException(400, 'User ID is required for update');
     }
     const result = {};
@@ -95,7 +95,7 @@ const updateUser = async (req) => {
         } else {
             result.userData = await User.findById(userId);
         }
-        result.userData.interests = await InterestsService.updateUserInterests(interests, userId);
+        if (interests) result.userData.interests = await InterestsService.updateUserInterests(interests, userId);
         if (result.userData) delete result.userData.password;
         result.userData.pictures = await UserPictureService.getUserPictures(userId);
         result.userData.location = await LocationService.getLocationByUserId(userId);
