@@ -8,8 +8,6 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
-    env:
-      DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
     steps:
       - name: Checkout code
@@ -25,3 +23,5 @@ jobs:
 
       - name: Run Jest tests
         run: npx jest
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
