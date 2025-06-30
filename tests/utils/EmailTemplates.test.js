@@ -11,9 +11,10 @@ describe('EmailTemplates', () => {
             const html = passwordRecoveryTemplate(resetLink);
 
             expect(html).toContain('<!DOCTYPE html>');
-            expect(html).toContain('Matcha Password Recovery');
+            expect(html).toContain('Password Recovery');
+            expect(html).toContain('Matcha');
             expect(html).toContain(resetLink);
-            expect(html).toContain('Reset Password');
+            expect(html).toContain('Reset My Password');
             expect(html).toContain('We received a request to reset your password');
         });
 
@@ -23,7 +24,8 @@ describe('EmailTemplates', () => {
             const html = passwordRecoveryTemplate(resetLink);
 
             expect(html).toContain('<!DOCTYPE html>');
-            expect(html).toContain('Matcha Password Recovery');
+            expect(html).toContain('Password Recovery');
+            expect(html).toContain('Matcha');
             expect(html).toContain('href=""');
         });
 
@@ -33,7 +35,7 @@ describe('EmailTemplates', () => {
             const html = passwordRecoveryTemplate(resetLink);
 
             expect(html).toContain(resetLink);
-            expect(html).toContain('Reset Password');
+            expect(html).toContain('Reset My Password');
         });
 
         it('should generate valid HTML structure', () => {
@@ -54,11 +56,11 @@ describe('EmailTemplates', () => {
 
             const html = passwordRecoveryTemplate(resetLink);
 
-            expect(html).toContain('font-family: Arial, sans-serif');
-            expect(html).toContain('background-color: #f9f9f9');
+            expect(html).toContain('font-family: -apple-system, BlinkMacSystemFont');
+            expect(html).toContain('background-color: #f8faf9');
             expect(html).toContain('color: #333333');
-            expect(html).toContain('background-color: #007bff');
-            expect(html).toMatch(/\.button:hover\s*{\s*background-color:\s*#0056b3;\s*}/);
+            expect(html).toContain('background-color: #2a815b');
+            expect(html).toContain('background-color: #3a9970');
         });
     });
 
@@ -69,10 +71,11 @@ describe('EmailTemplates', () => {
             const html = emailVerificationTemplate(verificationLink);
 
             expect(html).toContain('<!DOCTYPE html>');
-            expect(html).toContain('Matcha Email Verification');
+            expect(html).toContain('Welcome to Matcha!');
+            expect(html).toContain('Email Verification');
             expect(html).toContain(verificationLink);
-            expect(html).toContain('Verify Email');
-            expect(html).toContain('Thank you for signing up');
+            expect(html).toContain('Verify My Email');
+            expect(html).toContain('Thank you for joining Matcha');
         });
 
         it('should handle empty verification link', () => {
@@ -81,7 +84,8 @@ describe('EmailTemplates', () => {
             const html = emailVerificationTemplate(verificationLink);
 
             expect(html).toContain('<!DOCTYPE html>');
-            expect(html).toContain('Matcha Email Verification');
+            expect(html).toContain('Welcome to Matcha!');
+            expect(html).toContain('Email Verification');
             expect(html).toContain('href=""');
         });
 
@@ -91,7 +95,7 @@ describe('EmailTemplates', () => {
             const html = emailVerificationTemplate(verificationLink);
 
             expect(html).toContain(verificationLink);
-            expect(html).toContain('Verify Email');
+            expect(html).toContain('Verify My Email');
         });
 
         it('should generate valid HTML structure', () => {
@@ -112,11 +116,11 @@ describe('EmailTemplates', () => {
 
             const html = emailVerificationTemplate(verificationLink);
 
-            expect(html).toContain('font-family: Arial, sans-serif');
-            expect(html).toContain('background-color: #f9f9f9');
+            expect(html).toContain('font-family: -apple-system, BlinkMacSystemFont');
+            expect(html).toContain('background-color: #f8faf9');
             expect(html).toContain('color: #333333');
-            expect(html).toContain('background-color: #007bff');
-            expect(html).toMatch(/\.button:hover\s*{\s*background-color:\s*#0056b3;\s*}/);
+            expect(html).toContain('background-color: #2a815b');
+            expect(html).toContain('background-color: #3a9970');
         });
     });
 
@@ -128,8 +132,8 @@ describe('EmailTemplates', () => {
             const passwordHtml = passwordRecoveryTemplate(resetLink);
             const verificationHtml = emailVerificationTemplate(verificationLink);
 
-            expect(passwordHtml).toContain('#f9f9f9');
-            expect(verificationHtml).toContain('#f9f9f9');
+            expect(passwordHtml).toContain('#f8faf9');
+            expect(verificationHtml).toContain('#f8faf9');
             expect(passwordHtml).toContain('#333333');
             expect(verificationHtml).toContain('#333333');
 
