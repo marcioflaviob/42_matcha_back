@@ -157,7 +157,7 @@ describe('UserService', () => {
         });
 
         it('should throw ApiException when request is invalid', async () => {
-            await expect(UserService.updateUser({}))
+            await expect(UserService.updateUser({ body: {} }))
                 .rejects
                 .toThrow('User ID is required for update');
         });
@@ -699,7 +699,8 @@ describe('UserService', () => {
                 user: { id: 1 },
                 body: {
                     id: 1,
-                    name: 'Test'
+                    name: 'Test',
+                    interests: [{ id: 1, name: 'coding' }]
                 }
             };
 
