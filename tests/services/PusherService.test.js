@@ -80,7 +80,7 @@ describe('PusherService', () => {
 
             await expect(PusherService.sendMessage(messageData))
                 .rejects
-                .toThrow(new ApiException('Failed to send message', 500));
+                .toThrow(new ApiException(500, 'Failed to send message'));
         });
     });
 
@@ -122,7 +122,7 @@ describe('PusherService', () => {
 
             await expect(PusherService.sendNotification(notificationData))
                 .rejects
-                .toThrow(new ApiException('Failed to send message', 500));
+                .toThrow(new ApiException(500, 'Failed to send notification'));
         });
     });
 
@@ -151,7 +151,7 @@ describe('PusherService', () => {
 
             await expect(PusherService.sendStatusChange(1, 2, 'online'))
                 .rejects
-                .toThrow(new ApiException('Failed to send message', 500));
+                .toThrow(new ApiException(500, 'Failed to send status change'));
         });
     });
 
@@ -182,7 +182,7 @@ describe('PusherService', () => {
 
             await expect(PusherService.requestStatus(userId))
                 .rejects
-                .toThrow(new ApiException('Failed to send message', 500));
+                .toThrow(new ApiException(500, 'Failed to request status'));
         });
     });
 
