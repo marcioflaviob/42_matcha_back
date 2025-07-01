@@ -3,6 +3,7 @@ const db = require('../../../config/db.js');
 const ApiException = require('../../../exceptions/ApiException.js');
 const { mockConsole, restoreConsole } = require('../../utils/testSetup');
 
+
 jest.mock('../../../config/db.js');
 
 beforeEach(() => {
