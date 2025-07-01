@@ -9,8 +9,8 @@ exports.getMessagesByUserId = async (userId, friendId) => {
 	return messages;
 }
 
-exports.createMessage = async (senderId, receiverId, content) => {
-	const message = await Messages.createMessage(senderId, receiverId, content, null);
+exports.createMessage = async (senderId, receiverId, content, timestamp) => {
+	const message = await Messages.createMessage(senderId, receiverId, content, null, timestamp);
 	await PusherService.sendMessage(message);
 	await NotificationService.newMessageNotification(receiverId, senderId);
 

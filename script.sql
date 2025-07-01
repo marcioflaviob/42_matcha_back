@@ -12,7 +12,8 @@ CREATE TABLE IF NOT EXISTS users (
 	rating INT DEFAULT 0,
 	min_desired_rating INT DEFAULT 0,
 	age_range_min INT DEFAULT 0,
-	age_range_max INT DEFAULT 100
+	age_range_max INT DEFAULT 100,
+	last_connection TIMESTAMPTZ DEFAULT NOW()
 );
 
 CREATE TABLE IF NOT EXISTS interests (
@@ -77,7 +78,7 @@ CREATE TABLE IF NOT EXISTS messages (
 	receiver_id INT NOT NULL,
 	date_id INT,
 	content TEXT NOT NULL,
-	timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+	timestamp TIMESTAMPTZ DEFAULT NOW(),
 	is_read BOOLEAN DEFAULT FALSE,
 	FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE,
 	FOREIGN KEY (receiver_id) REFERENCES users(id) ON DELETE CASCADE,

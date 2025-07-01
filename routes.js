@@ -38,7 +38,7 @@ router.put('/update-user', Authenticate, ValidateUser, asyncHandler(UserControll
 router.patch('/users/reset-password', Authenticate, asyncHandler(UserController.resetPassword));
 
 // User Pictures
-router.post('/upload/single/', Authenticate, upload.single('picture'), asyncHandler(UserPicturesController.uploadPicture));
+router.post('/upload/single', Authenticate, upload.single('picture'), asyncHandler(UserPicturesController.uploadPicture));
 router.get('/pictures/:userId', asyncHandler(UserPicturesController.getUserPictures));
 router.delete('/pictures/:userId/:pictureId', asyncHandler(UserPicturesController.deleteUserPicture));
 router.put('/pictures/:userId/:pictureId/profile', asyncHandler(UserPicturesController.setProfilePicture));
@@ -47,7 +47,7 @@ router.post('/pictures/upload-from-url', Authenticate, asyncHandler(UserPictures
 // User Interactions
 router.post('/like/:id', Authenticate, asyncHandler(UserInteractionsController.likeUser));
 router.get('/seen/', Authenticate, asyncHandler(UserInteractionsController.getProfileViewsByUserId));
-router.get('/matches/', Authenticate, asyncHandler(UserInteractionsController.getMatchesByUserId));
+router.get('/matches', Authenticate, asyncHandler(UserInteractionsController.getMatchesByUserId));
 router.get('/matches/potential', Authenticate, asyncHandler(UserInteractionsController.getPotentialMatches));
 router.post('/block/:id', Authenticate, asyncHandler(UserInteractionsController.blockUser));
 
@@ -56,13 +56,13 @@ router.get('/interests', asyncHandler(InterestsController.getAllInterests));
 router.get('/interests/:userId', asyncHandler(InterestsController.getInterestsByUserId));
 
 // Messages
-router.post('/messages/', Authenticate, asyncHandler(MessagesController.createMessage));
+router.post('/messages', Authenticate, asyncHandler(MessagesController.createMessage));
 router.get('/messages/:id', Authenticate, asyncHandler(MessagesController.getMessagesByUserId));
 router.patch('/messages/read/:id', Authenticate, asyncHandler(MessagesController.readAllMessages));
 
 // Notification
 router.get('/notifications', Authenticate, asyncHandler(NotificationController.getNotSeenNotificationsByUserId));
-router.patch('/notifications/', Authenticate, asyncHandler(NotificationController.markNotificationAsSeen));
+router.patch('/notifications', Authenticate, asyncHandler(NotificationController.markNotificationAsSeen));
 router.post('/call/:id', Authenticate, asyncHandler(NotificationController.sendNewCallNotification));
 router.post('/seen/:id', Authenticate, asyncHandler(NotificationController.sendSeenNotification));
 router.post('/refuse-call/:id', Authenticate, asyncHandler(NotificationController.sendRefuseCallNotification));
