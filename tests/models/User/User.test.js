@@ -1,11 +1,9 @@
 const User = require('../../../models/User/User.js');
 const db = require('../../../config/db.js');
-const bcrypt = require('bcrypt');
 const ApiException = require('../../../exceptions/ApiException.js');
 const { mockConsole, restoreConsole } = require('../../utils/testSetup');
 
 jest.mock('../../../config/db.js');
-jest.mock('bcrypt');
 
 beforeEach(() => {
     mockConsole();
@@ -91,6 +89,34 @@ describe('User Model', () => {
         });
     });
 
+    describe('checkUserExists', () => {
+        it('should return true when user exists', async () => {
+            const mockUser = { id: 1, email: 'existing@test.com' };
+            db.query.mockResolvedValue({ rows: [mockUser] });
+
+            const result = await User.checkUserExists('existing@test.com');
+
+            expect(db.query).toHaveBeenCalledWith('SELECT * FROM users WHERE email = $1', ['existing@test.com']);
+            expect(result).toBe(true);
+        });
+
+        it('should return false when user does not exist', async () => {
+            db.query.mockResolvedValue({ rows: [] });
+
+            const result = await User.checkUserExists('nonexistent@test.com');
+
+            expect(db.query).toHaveBeenCalledWith('SELECT * FROM users WHERE email = $1', ['nonexistent@test.com']);
+            expect(result).toBe(false);
+        });
+
+        it('should throw ApiException on database error', async () => {
+            db.query.mockRejectedValue(new Error('Database error'));
+
+            await expect(User.checkUserExists('test@example.com')).rejects.toThrow(ApiException);
+            await expect(User.checkUserExists('test@example.com')).rejects.toThrow('Failed to check if user exists');
+        });
+    });
+
     describe('findAllValidUsers', () => {
         it('should return all valid users except the given user', async () => {
             const mockUsers = [
@@ -117,42 +143,59 @@ describe('User Model', () => {
     });
 
     describe('create', () => {
-        it('should create user with hashed password', async () => {
+        it('should create user successfully', async () => {
             const userData = {
                 email: 'new@test.com',
-                password: 'password123'
+                password: 'hashedPassword123',
+                first_name: 'John',
+                last_name: 'Doe'
             };
-            const hashedPassword = 'hashedPassword123';
-            const mockUser = { ...userData, id: 1, password: hashedPassword };
+            const mockUser = { ...userData, id: 1 };
 
-            bcrypt.genSalt.mockResolvedValue('salt');
-            bcrypt.hash.mockResolvedValue(hashedPassword);
             db.query.mockResolvedValue({ rows: [mockUser] });
 
             const result = await User.create(userData);
 
-            expect(bcrypt.genSalt).toHaveBeenCalledWith(10);
-            expect(bcrypt.hash).toHaveBeenCalledWith('password123', 'salt');
             expect(db.query).toHaveBeenCalledWith(
                 expect.stringContaining('INSERT INTO users'),
-                expect.arrayContaining([userData.email, hashedPassword])
+                expect.arrayContaining([userData.email, userData.password, userData.first_name, userData.last_name])
             );
             expect(result).toEqual(mockUser);
         });
 
-        it('should throw ApiException when creation fails', async () => {
-            const userData = { email: 'new@test.com' };
+        it('should throw ApiException when creation fails due to empty result', async () => {
+            const userData = { email: 'new@test.com', password: 'hashedPassword' };
             db.query.mockResolvedValue({ rows: [] });
 
             await expect(User.create(userData)).rejects.toThrow(ApiException);
             await expect(User.create(userData)).rejects.toThrow('Failed to create user');
         });
 
-        it('should throw another exception when creation fails', async () => {
-            const userData = { email: 'new@test.com', password: 'password123' };
+        it('should throw ApiException when database query fails', async () => {
+            const userData = { email: 'new@test.com', password: 'hashedPassword' };
             db.query.mockRejectedValue(new Error('Database error'));
+
             await expect(User.create(userData)).rejects.toThrow(ApiException);
             await expect(User.create(userData)).rejects.toThrow('Failed to create user');
+        });
+
+        it('should handle userData with varying number of fields', async () => {
+            const userData = {
+                email: 'test@example.com',
+                password: 'hashedPassword',
+                status: 'pending'
+            };
+            const mockUser = { ...userData, id: 1 };
+
+            db.query.mockResolvedValue({ rows: [mockUser] });
+
+            const result = await User.create(userData);
+
+            expect(db.query).toHaveBeenCalledWith(
+                expect.stringContaining('INSERT INTO users (email, password, status)'),
+                expect.arrayContaining([userData.email, userData.password, userData.status])
+            );
+            expect(result).toEqual(mockUser);
         });
     });
 
@@ -219,18 +262,13 @@ describe('User Model', () => {
     describe('resetPassword', () => {
         it('should reset password successfully', async () => {
             const userId = 1;
-            const newPassword = 'newPassword123';
             const hashedPassword = 'hashedNewPassword123';
             const mockUser = { id: userId, password: hashedPassword };
 
-            bcrypt.genSalt.mockResolvedValue('salt');
-            bcrypt.hash.mockResolvedValue(hashedPassword);
             db.query.mockResolvedValue({ rows: [mockUser] });
 
-            const result = await User.resetPassword(userId, newPassword);
+            const result = await User.resetPassword(userId, hashedPassword);
 
-            expect(bcrypt.genSalt).toHaveBeenCalledWith(10);
-            expect(bcrypt.hash).toHaveBeenCalledWith(newPassword, 'salt');
             expect(db.query).toHaveBeenCalledWith(
                 'UPDATE users SET password = $1 WHERE id = $2 RETURNING *',
                 [hashedPassword, userId]
@@ -238,16 +276,28 @@ describe('User Model', () => {
             expect(result).toEqual(mockUser);
         });
 
+        it('should throw ApiException when userId is missing', async () => {
+            const newPassword = 'hashedPassword123';
+
+            await expect(User.resetPassword(null, newPassword)).rejects.toThrow(ApiException);
+            await expect(User.resetPassword(null, newPassword)).rejects.toThrow('User ID and new password are required');
+        });
+
+        it('should throw ApiException when password is missing', async () => {
+            const userId = 1;
+
+            await expect(User.resetPassword(userId, null)).rejects.toThrow(ApiException);
+            await expect(User.resetPassword(userId, null)).rejects.toThrow('User ID and new password are required');
+        });
+
         it('should throw ApiException when user not found', async () => {
             const userId = 999;
-            const newPassword = 'newPassword123';
+            const hashedPassword = 'hashedPassword123';
 
-            bcrypt.genSalt.mockResolvedValue('salt');
-            bcrypt.hash.mockResolvedValue('hashedPassword');
             db.query.mockResolvedValue({ rows: [] });
 
-            await expect(User.resetPassword(userId, newPassword)).rejects.toThrow(ApiException);
-            await expect(User.resetPassword(userId, newPassword)).rejects.toThrow('User not found');
+            await expect(User.resetPassword(userId, hashedPassword)).rejects.toThrow(ApiException);
+            await expect(User.resetPassword(userId, hashedPassword)).rejects.toThrow('User not found');
         });
     });
 
@@ -322,11 +372,9 @@ describe('User Model', () => {
 
     describe('resetPassword error handling', () => {
         it('should throw ApiException on database error', async () => {
-            bcrypt.genSalt.mockResolvedValue('salt');
-            bcrypt.hash.mockResolvedValue('hashedPassword');
             db.query.mockRejectedValue(new Error('DB error'));
-            await expect(User.resetPassword(1, 'pass')).rejects.toThrow(ApiException);
-            await expect(User.resetPassword(1, 'pass')).rejects.toThrow('Failed to reset password');
+            await expect(User.resetPassword(1, 'hashedPassword')).rejects.toThrow(ApiException);
+            await expect(User.resetPassword(1, 'hashedPassword')).rejects.toThrow('Failed to reset password');
         });
     });
 

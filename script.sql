@@ -13,7 +13,8 @@ CREATE TABLE IF NOT EXISTS users (
 	min_desired_rating INT DEFAULT 0,
 	age_range_min INT DEFAULT 0,
 	age_range_max INT DEFAULT 100,
-	last_connection TIMESTAMPTZ DEFAULT NOW()
+	last_connection TIMESTAMPTZ DEFAULT NOW(),
+	location_range INT DEFAULT 20
 );
 
 CREATE TABLE IF NOT EXISTS interests (
