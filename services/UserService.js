@@ -61,11 +61,10 @@ const getUserByEmail = async (email) => {
     return await getUserByEmailAndFormat(email);
 };
 
-const getValidUsers = async (userId) => {
-    validateUserId(userId);
-    const users = await User.findAllValidUsers(userId);
-    return await formatUsers(users);
-};
+const getPotentialMatches = async (userId, filters) => {
+    const potentialMatches = await User.findPotentialMatches(userId, filters);
+    return await formatUsers(potentialMatches);
+}
 
 const updateUser = async (req) => {
     if ((req && req.body && !req.body.id) && (!req.user || !req.user.id)) {
@@ -198,7 +197,6 @@ module.exports = {
     createUser,
     getUserById,
     getUserByEmail,
-    getValidUsers,
     updateUser,
     deleteUser,
     getUserByEmailWithPassword,
@@ -206,4 +204,5 @@ module.exports = {
     validateUser,
     addFameRating,
     getUserAndFormat,
+    getPotentialMatches
 };

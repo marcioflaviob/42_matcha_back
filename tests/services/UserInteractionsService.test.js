@@ -66,7 +66,7 @@ describe('UserInteractionsService', () => {
                 });
             },
             mockAddFameRating: () => UserService.addFameRating.mockResolvedValue(true),
-            mockValidUsers: (users) => UserService.getValidUsers.mockResolvedValue(users)
+            mockPotentialMatches: (users) => UserService.getPotentialMatches.mockResolvedValue(users)
         },
 
         // Consolidated interaction service mocking
@@ -78,12 +78,14 @@ describe('UserInteractionsService', () => {
         // Common setup for matching scenarios
         setupMatchingScenario: (user, validUsers, options = {}) => {
             mockSetup.userService.mockUserById(user);
-            mockSetup.userService.mockValidUsers(validUsers);
+            mockSetup.userService.mockPotentialMatches(validUsers);
             mockSetup.interactions.mockSpyMethod('getLikedProfilesIdsByUserId', options.likedIds || new Set());
             mockSetup.interactions.mockSpyMethod('getBlockedUsersIdsByUserId', options.blockedIds || new Set());
             if (options.receivedLikes) {
                 mockSetup.interactions.mockMethod('getLikesReceivedByUserId', options.receivedLikes);
             }
+            // Note: LocationService.getLocationByUserId is no longer called in the current implementation
+            // Location data is expected to come directly from UserService.getPotentialMatches
         }
     };
 
@@ -244,48 +246,98 @@ describe('UserInteractionsService', () => {
     });
 
     describe('getPotentialMatches', () => {
-        const createMatchingUser = (id, gender, sexualInterest, interests = [{ id: 1, name: 'Music' }]) =>
+        const createMatchingUser = (id, gender, sexualInterest, interests = [{ id: 1, name: 'Music' }], location = { latitude: 48.8566, longitude: 2.3522 }) =>
             testUtils.createMockUser({
                 id,
                 gender,
                 sexual_interest: sexualInterest,
                 interests,
-                rating: 5
+                rating: 5,
+                location
             });
 
-        it('should return filtered potential matches', async () => {
+        it('should return filtered potential matches with location filtering', async () => {
             const mockUser = testUtils.createMockUser({
-                interests: [{ id: 1, name: 'Music' }, { id: 2, name: 'Art' }]
+                interests: [{ id: 1, name: 'Music' }, { id: 2, name: 'Art' }],
+                location: { latitude: 48.8566, longitude: 2.3522 }
             });
             const mockValidUsers = [
-                createMatchingUser(2, 'Female', 'Male'),
-                createMatchingUser(3, 'Female', 'Female'),
-                createMatchingUser(4, 'Female', 'Male', [{ id: 3, name: 'Sports' }])
+                createMatchingUser(2, 'Female', 'Male', [{ id: 1, name: 'Music' }], { latitude: 48.8567, longitude: 2.3523 }), // Close location
+                createMatchingUser(3, 'Female', 'Female', [{ id: 1, name: 'Music' }], { latitude: 48.8566, longitude: 2.3522 }), // Same location  
+                createMatchingUser(4, 'Female', 'Male', [{ id: 1, name: 'Music' }], null) // No location
             ];
 
             mockSetup.setupMatchingScenario(mockUser, mockValidUsers, { receivedLikes: [] });
 
             const result = await UserInteractionsService.getPotentialMatches(1);
 
-            expect(result).toHaveLength(1);
-            expect(result[0].id).toBe(2);
+            expect(UserService.getPotentialMatches).toHaveBeenCalledWith(1, {
+                sexual_interest: ['Female'],
+                min_desired_rating: 0,
+                gender: 'Male'
+            });
+            // LocationService.getLocationByUserId is no longer called - location comes from UserService
+            expect(LocationService.calculateDistance).toHaveBeenCalledTimes(2); // Only for users with location
+            expect(result).toHaveLength(2); // Users 2 and 3 have location and are within radius
+            expect(result.map(u => u.id)).toEqual(expect.arrayContaining([2, 3]));
             expect(result[0].liked_me).toBe(false);
         });
 
+        it('should handle users without location data', async () => {
+            const mockUser = testUtils.createMockUser({
+                location: { latitude: 48.8566, longitude: 2.3522 }
+            });
+            const mockValidUsers = [
+                createMatchingUser(2, 'Female', 'Male', [{ id: 1, name: 'Music' }], null), // No location
+            ];
+
+            mockSetup.setupMatchingScenario(mockUser, mockValidUsers, { receivedLikes: [] });
+
+            const result = await UserInteractionsService.getPotentialMatches(1);
+
+            expect(result).toHaveLength(0); // Users without location are filtered out
+        });
+
+        it('should handle current user without location', async () => {
+            const mockUser = testUtils.createMockUser({
+                location: null // No location for current user
+            });
+            const mockValidUsers = [
+                createMatchingUser(2, 'Female', 'Male', [{ id: 1, name: 'Music' }], { latitude: 48.8566, longitude: 2.3522 }),
+            ];
+
+            mockSetup.setupMatchingScenario(mockUser, mockValidUsers, { receivedLikes: [] });
+
+            const result = await UserInteractionsService.getPotentialMatches(1);
+
+            expect(result).toHaveLength(0); // No matches when current user has no location
+        });
+
         it('should handle specific sexual preference (not Any)', async () => {
-            const mockUser = testUtils.createMockUser({ sexual_interest: 'Female' });
+            const mockUser = testUtils.createMockUser({
+                sexual_interest: 'Female',
+                location: { latitude: 48.8566, longitude: 2.3522 }
+            });
             const mockValidUsers = [createMatchingUser(2, 'Female', 'Male')];
 
             mockSetup.setupMatchingScenario(mockUser, mockValidUsers);
 
             const result = await UserInteractionsService.getPotentialMatches(1);
 
+            expect(UserService.getPotentialMatches).toHaveBeenCalledWith(1, {
+                sexual_interest: ['Female'],
+                min_desired_rating: 0,
+                gender: 'Male'
+            });
             expect(result).toHaveLength(1);
             expect(result[0].id).toBe(2);
         });
 
         it('should handle "Any" sexual preference', async () => {
-            const mockUser = testUtils.createMockUser({ sexual_interest: 'Any' });
+            const mockUser = testUtils.createMockUser({
+                sexual_interest: 'Any',
+                location: { latitude: 48.8566, longitude: 2.3522 }
+            });
             const mockValidUsers = [
                 createMatchingUser(2, 'Female', 'Male'),
                 createMatchingUser(3, 'Male', 'Male'),
@@ -296,6 +348,11 @@ describe('UserInteractionsService', () => {
 
             const result = await UserInteractionsService.getPotentialMatches(1);
 
+            expect(UserService.getPotentialMatches).toHaveBeenCalledWith(1, {
+                sexual_interest: ['Female', 'Male', 'Other'],
+                min_desired_rating: 0,
+                gender: 'Male'
+            });
             expect(result).toHaveLength(3);
             expect(result.map(u => u.id)).toEqual(expect.arrayContaining([2, 3, 4]));
         });

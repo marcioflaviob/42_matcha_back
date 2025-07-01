@@ -167,6 +167,51 @@ class User {
             throw new ApiException(500, 'Failed to add fame rating');
         }
     }
+
+    static async findPotentialMatches(userId, filters) {
+        try {
+            const query = `
+                SELECT DISTINCT u.*, 
+                    COALESCE(u.rating, 0) as rating
+                FROM users u
+                WHERE u.id != $1 
+                    AND u.status = 'complete'
+                    AND u.gender = ANY($2::text[])
+                    AND COALESCE(u.rating, 0) >= $3
+                    AND (u.sexual_interest = 'Any' OR u.sexual_interest = $4)
+                    AND u.id NOT IN (
+                        SELECT CASE WHEN user1 = $1 THEN user2 ELSE user1 END 
+                        FROM user_interactions 
+                        WHERE (user1 = $1 OR user2 = $1) AND interaction_type = 'like'
+                    )
+                    AND u.id NOT IN (
+                        SELECT CASE WHEN user1 = $1 THEN user2 ELSE user1 END 
+                        FROM user_interactions 
+                        WHERE (user1 = $1 OR user2 = $1) AND interaction_type = 'block'
+                    )
+                    AND EXISTS (
+                        SELECT 1 FROM user_interests ui1
+                        JOIN user_interests ui2 ON ui1.interest_id = ui2.interest_id
+                        WHERE ui1.user_id = $1 AND ui2.user_id = u.id
+                    )
+                ORDER BY 
+                    COALESCE(u.rating, 0) DESC
+            `;
+
+            const params = [
+                userId,
+                filters.sexual_interest,
+                filters.min_desired_rating || 0,
+                filters.gender,
+            ];
+
+            const result = await db.query(query, params);
+            return result.rows;
+        } catch (error) {
+            console.error('Error finding potential matches:', error);
+            throw new ApiException(500, 'Failed to find potential matches');
+        }
+    }
 }
 
 module.exports = User;

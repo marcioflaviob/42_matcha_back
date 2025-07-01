@@ -3,6 +3,7 @@ const NotificationService = require('./NotificationService.js');
 const ApiException = require('../exceptions/ApiException.js');
 const LocationService = require('./LocationService.js');
 const UserService = require('./UserService.js');
+const User = require('../models/User/User.js');
 
 exports.getLikeCountByUserId = async (userId) => {
 	const likeCount = await UserInteractions.getLikeCountByUserId(userId);
@@ -74,48 +75,45 @@ exports.getMatchesIdsByUserId = async (userId) => {
 }
 
 exports.getPotentialMatches = async (userId) => {
-	const userData = await UserService.getUserById(userId);
-	const validUsers = await UserService.getValidUsers(userId);
+	try {
+		const userData = await UserService.getUserById(userId);
+		const filters = {
+			sexual_interest: userData.sexual_interest === 'Any'
+				? ['Female', 'Male', 'Other']
+				: [userData.sexual_interest],
+			min_desired_rating: userData.min_desired_rating || 0,
+			gender: userData.gender,
+		};
 
-	const likedProfiles = await this.getLikedProfilesIdsByUserId(userId);
-	const blockedBySet = await this.getBlockedUsersIdsByUserId(userId);
-	const unwantedMatches = new Set([...blockedBySet, ...likedProfiles]);
+		const validUsers = await UserService.getPotentialMatches(userId, filters);
 
-	const interested_genders = userData.sexual_interest == 'Any'
-		? ['Female', 'Male', 'Other']
-		: [userData.sexual_interest];
+		const filteredUsers = [];
 
-	const filteredUsers = validUsers.filter(match => {
-		const hasCommonInterest = match.interests.some(interest =>
-			userData.interests.some(userInterest => userInterest.id === interest.id)
-		);
+		for (const match of validUsers) {
 
-		const isInterestedInMyGender = match.sexual_interest == 'Any' ||
-			match.sexual_interest == userData.gender;
+			const isWithinRadius = userData.location && match.location ?
+				LocationService.calculateDistance(
+					userData.location.latitude,
+					userData.location.longitude,
+					match.location.latitude,
+					match.location.longitude
+				) <= 10 : false;
 
-		const isFameRatingSufficient = match.rating >= userData.min_desired_rating;
+			if (isWithinRadius) {
+				filteredUsers.push(match);
+			}
+		}
 
-		const isWithinRadius = userData.location && match.location ?
-			LocationService.calculateDistance(
-				userData.location.latitude,
-				userData.location.longitude,
-				match.location.latitude,
-				match.location.longitude
-			) <= 10 : false;
+		const filteredMatches = await Promise.all(filteredUsers.map(async (match) => {
+			match.liked_me = await isUserAlreadyLiked(userId, match.id);
+			return match;
+		}));
 
-		return !unwantedMatches.has(match.id) &&
-			interested_genders.includes(match.gender) &&
-			hasCommonInterest &&
-			isInterestedInMyGender &&
-			isFameRatingSufficient &&
-			isWithinRadius;
-	});
-
-	const filteredMatches = await Promise.all(filteredUsers.map(async (match) => {
-		match.liked_me = await isUserAlreadyLiked(userId, match.id);
-		return match;
-	}));
-	return filteredMatches;
+		return filteredMatches;
+	} catch (error) {
+		console.error('Error in getPotentialMatches:', error);
+		throw new ApiException(500, 'Failed to get potential matches');
+	}
 }
 
 exports.blockUser = async (userId, user2Id) => {
