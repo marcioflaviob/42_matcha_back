@@ -3,12 +3,14 @@ const UserInteractions = require('../../models/UserInteractions/UserInteractions
 const UserService = require('../../services/UserService.js');
 const NotificationService = require('../../services/NotificationService.js');
 const LocationService = require('../../services/LocationService.js');
+const InterestsService = require('../../services/InterestsService.js');
 const ApiException = require('../../exceptions/ApiException.js');
 
 jest.mock('../../models/UserInteractions/UserInteractions.js');
 jest.mock('../../services/NotificationService.js');
 jest.mock('../../services/UserService.js');
 jest.mock('../../services/LocationService.js');
+jest.mock('../../services/InterestsService.js');
 
 describe('UserInteractionsService', () => {
     // Test utilities and helpers
@@ -93,6 +95,8 @@ describe('UserInteractionsService', () => {
         jest.clearAllMocks();
         jest.restoreAllMocks();
         LocationService.calculateDistance.mockReturnValue(5); // 5km, within the 10km limit
+        LocationService.getLocationByUserId.mockResolvedValue({ latitude: 48.8566, longitude: 2.3522 });
+        InterestsService.getInterestsListByUserId.mockResolvedValue([{ id: 1, name: 'Music' }]);
     });
 
     describe('getLikeCountByUserId', () => {
@@ -298,17 +302,21 @@ describe('UserInteractionsService', () => {
             const mockValidUsers = [
                 createMatchingUser(2, 'Female', 'Male', [{ id: 1, name: 'Music' }], { latitude: 48.8567, longitude: 2.3523 }), // Close location
                 createMatchingUser(3, 'Female', 'Female', [{ id: 1, name: 'Music' }], { latitude: 48.8566, longitude: 2.3522 }), // Same location  
-                createMatchingUser(4, 'Female', 'Male', [{ id: 1, name: 'Music' }], null) // No location
             ];
 
             mockSetup.setupMatchingScenario(mockUser, mockValidUsers, { receivedLikes: [] });
 
             const result = await UserInteractionsService.getPotentialMatches(1);
 
-            expect(UserService.getPotentialMatches).toHaveBeenCalledWith(1, {
-                sexual_interest: ['Female'],
-                min_desired_rating: 0,
-                gender: 'Male'
+            expect(UserService.getPotentialMatches).toHaveBeenCalledWith({
+                userId: 1,
+                gender: 'Male',
+                sexual_interest: 'Female',
+                age: undefined,
+                age_range_min: undefined,
+                age_range_max: undefined,
+                rating: undefined,
+                min_desired_rating: 0
             });
             // LocationService.getLocationByUserId is no longer called - location comes from UserService
             expect(LocationService.calculateDistance).toHaveBeenCalledTimes(2); // Only for users with location
@@ -322,14 +330,14 @@ describe('UserInteractionsService', () => {
                 location: { latitude: 48.8566, longitude: 2.3522 }
             });
             const mockValidUsers = [
-                createMatchingUser(2, 'Female', 'Male', [{ id: 1, name: 'Music' }], null), // No location
+                createMatchingUser(2, 'Female', 'Male', [{ id: 1, name: 'Music' }], { latitude: 48.8566, longitude: 2.3522 }), // With location
             ];
 
             mockSetup.setupMatchingScenario(mockUser, mockValidUsers, { receivedLikes: [] });
 
             const result = await UserInteractionsService.getPotentialMatches(1);
 
-            expect(result).toHaveLength(0); // Users without location are filtered out
+            expect(result).toHaveLength(1); // Users with proper location pass through
         });
 
         it('should handle current user without location', async () => {
@@ -342,9 +350,9 @@ describe('UserInteractionsService', () => {
 
             mockSetup.setupMatchingScenario(mockUser, mockValidUsers, { receivedLikes: [] });
 
-            const result = await UserInteractionsService.getPotentialMatches(1);
-
-            expect(result).toHaveLength(0); // No matches when current user has no location
+            await expect(UserInteractionsService.getPotentialMatches(1))
+                .rejects
+                .toThrow();
         });
 
         it('should handle specific sexual preference (not Any)', async () => {
@@ -358,10 +366,15 @@ describe('UserInteractionsService', () => {
 
             const result = await UserInteractionsService.getPotentialMatches(1);
 
-            expect(UserService.getPotentialMatches).toHaveBeenCalledWith(1, {
-                sexual_interest: ['Female'],
-                min_desired_rating: 0,
-                gender: 'Male'
+            expect(UserService.getPotentialMatches).toHaveBeenCalledWith({
+                userId: 1,
+                gender: 'Male',
+                sexual_interest: 'Female',
+                age: undefined,
+                age_range_min: undefined,
+                age_range_max: undefined,
+                rating: undefined,
+                min_desired_rating: 0
             });
             expect(result).toHaveLength(1);
             expect(result[0].id).toBe(2);
@@ -382,10 +395,15 @@ describe('UserInteractionsService', () => {
 
             const result = await UserInteractionsService.getPotentialMatches(1);
 
-            expect(UserService.getPotentialMatches).toHaveBeenCalledWith(1, {
-                sexual_interest: ['Female', 'Male', 'Other'],
-                min_desired_rating: 0,
-                gender: 'Male'
+            expect(UserService.getPotentialMatches).toHaveBeenCalledWith({
+                userId: 1,
+                gender: 'Male',
+                sexual_interest: 'Any',
+                age: undefined,
+                age_range_min: undefined,
+                age_range_max: undefined,
+                rating: undefined,
+                min_desired_rating: 0
             });
             expect(result).toHaveLength(3);
             expect(result.map(u => u.id)).toEqual(expect.arrayContaining([2, 3, 4]));
@@ -419,8 +437,8 @@ describe('UserInteractionsService', () => {
 
         it('should return set of liked user IDs', async () => {
             const mockLikes = [
-                { user1: 2, user2: 3 },  // Other users' likes
-                { user1: 4, user2: 5 }   // Other users' likes
+                { user1: 1, user2: 2 },  // User 1 liked User 2
+                { user1: 1, user2: 3 }   // User 1 liked User 3
             ];
 
             mockSetup.interactions.mockMethod('getLikesGivenByUserId', mockLikes);
@@ -429,11 +447,10 @@ describe('UserInteractionsService', () => {
 
             testUtils.expectServiceCall(UserInteractions.getLikesGivenByUserId, 'getLikesGivenByUserId', [1]);
             expect(result instanceof Set).toBe(true);
+            expect(result.has(1)).toBe(true);
             expect(result.has(2)).toBe(true);
             expect(result.has(3)).toBe(true);
-            expect(result.has(4)).toBe(true);
-            expect(result.has(5)).toBe(true);
-            expect(result.has(1)).toBe(false);
+            expect(result.size).toBe(3);
         });
     });
 

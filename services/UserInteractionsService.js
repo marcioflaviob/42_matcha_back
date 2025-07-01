@@ -2,6 +2,7 @@ const UserInteractions = require('../models/UserInteractions/UserInteractions.js
 const NotificationService = require('./NotificationService.js');
 const ApiException = require('../exceptions/ApiException.js');
 const LocationService = require('./LocationService.js');
+const InterestsService = require('./InterestsService.js');
 const UserService = require('./UserService.js');
 
 exports.getLikeCountByUserId = async (userId) => {
@@ -75,38 +76,49 @@ exports.getMatchesIdsByUserId = async (userId) => {
 exports.getPotentialMatches = async (userId) => {
 	const userData = await UserService.getUserById(userId);
 	const filters = {
-		sexual_interest: userData.sexual_interest === 'Any'
-			? ['Female', 'Male', 'Other']
-			: [userData.sexual_interest],
-		min_desired_rating: userData.min_desired_rating || 0,
+		userId: userId,
 		gender: userData.gender,
+		sexual_interest: userData.sexual_interest,
+		age: userData.age,
+		age_range_min: userData.age_range_min,
+		age_range_max: userData.age_range_max,
+		rating: userData.rating,
+		min_desired_rating: userData.min_desired_rating,
 	};
 
-	const validUsers = await UserService.getPotentialMatches(userId, filters);
+	const validUsers = await UserService.getPotentialMatches(filters);
+	const formattedUsers = await formatFilteredUsers(validUsers);
 
-	const filteredUsers = [];
+	const blockedUserIds = await this.getBlockedUsersIdsByUserId(userId);
+	const likedUserIds = await this.getLikedProfilesIdsByUserId(userId);
 
-	for (const match of validUsers) {
+	const potentialMatches = formattedUsers.filter(user =>
+		!blockedUserIds.has(user.id) && !likedUserIds.has(user.id)
+	);
 
-		const isWithinRadius = userData.location && match.location ?
-			LocationService.calculateDistance(
-				userData.location.latitude,
-				userData.location.longitude,
-				match.location.latitude,
-				match.location.longitude
-			) <= 10 : false;
+	const usersWithMatchingInterests = potentialMatches.filter(user =>
+		user.interests.some(userInterest =>
+			userData.interests.some(dataInterest => dataInterest.id === userInterest.id)
+		)
+	);
 
-		if (isWithinRadius) {
-			filteredUsers.push(match);
-		}
-	}
+	const filteredMatches = usersWithMatchingInterests.filter(user => {
+		const distance = LocationService.calculateDistance(
+			userData.location.latitude,
+			userData.location.longitude,
+			user.location.latitude,
+			user.location.longitude
+		);
+		return distance <= 20;
+	});
 
-	const filteredMatches = await Promise.all(filteredUsers.map(async (match) => {
+
+	const finalMatches = await Promise.all(filteredMatches.map(async (match) => {
 		match.liked_me = await isUserAlreadyLiked(userId, match.id);
 		return match;
 	}));
 
-	return filteredMatches;
+	return finalMatches;
 }
 
 exports.blockUser = async (userId, user2Id) => {
@@ -120,20 +132,20 @@ exports.blockUser = async (userId, user2Id) => {
 }
 
 exports.reportUser = async (userId, user2Id) => {
-	
+
 	if (!userId || !user2Id) throw new ApiException(400, 'User IDs are required');
 	if (userId == user2Id) throw new ApiException(400, 'You cannot report yourself');
-	
+
 	const block = await UserInteractions.blockUser(userId, user2Id);
 	await UserService.addFameRating(user2Id, -15);
 	return block;
 }
 
 exports.unlikeUser = async (userId, user2Id) => {
-	
+
 	if (!userId || !user2Id) throw new ApiException(400, 'User IDs are required');
 	if (userId == user2Id) throw new ApiException(400, 'You cannot unlike yourself');
-	
+
 	await UserInteractions.unlikeUser(userId, user2Id);
 	await NotificationService.newUnlikeNotification(user2Id, userId);
 	await UserService.addFameRating(user2Id, -10);
@@ -170,4 +182,16 @@ const isUserAlreadyLiked = async (userId, user2Id) => {
 	const isLiked = like.some(like => like.user1 == user2Id);
 
 	return isLiked ? true : false;
+}
+
+const formatFilteredUser = async (data) => {
+	const interestsList = await InterestsService.getInterestsListByUserId(data.id);
+	const location = await LocationService.getLocationByUserId(data.id).catch(() => null);
+	data.interests = interestsList;
+	data.location = location || null;
+	return data;
+}
+
+const formatFilteredUsers = async (users) => {
+	return await Promise.all(users.map(user => formatFilteredUser(user)));
 }

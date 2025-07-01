@@ -109,6 +109,11 @@ ALTER TABLE notifications DISABLE ROW LEVEL SECURITY;
 
 ALTER TABLE messages DISABLE ROW LEVEL SECURITY;
 
+CREATE INDEX CONCURRENTLY idx_users_status_gender ON users(status, gender);
+CREATE INDEX CONCURRENTLY idx_users_sexual_interest ON users(sexual_interest);
+CREATE INDEX CONCURRENTLY idx_users_rating ON users(rating);
+CREATE INDEX CONCURRENTLY idx_users_min_desired_rating ON users(min_desired_rating);
+
 INSERT INTO interests (name) VALUES
 ('Sports'),
 ('Music'),

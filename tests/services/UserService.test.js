@@ -770,11 +770,11 @@ describe('UserService', () => {
 
         it('should return formatted potential matches', async () => {
             const userId = 1;
-            User.findPotentialMatches.mockResolvedValue(mockRawMatches);
+            User.getPotentialMatches.mockResolvedValue(mockRawMatches);
 
-            const result = await UserService.getPotentialMatches(userId, mockFilters);
+            const result = await UserService.getPotentialMatches(mockFilters);
 
-            expect(User.findPotentialMatches).toHaveBeenCalledWith(userId, mockFilters);
+            expect(User.getPotentialMatches).toHaveBeenCalledWith(mockFilters);
             expect(result).toHaveLength(2);
             expect(result[0]).not.toHaveProperty('password');
             expect(result[0]).toHaveProperty('age');
@@ -784,35 +784,35 @@ describe('UserService', () => {
             expect(result[0]).toHaveProperty('location');
         });
 
-        it('should handle empty results from User.findPotentialMatches', async () => {
+        it('should handle empty results from User.getPotentialMatches', async () => {
             const userId = 1;
-            User.findPotentialMatches.mockResolvedValue([]);
+            User.getPotentialMatches.mockResolvedValue([]);
 
-            const result = await UserService.getPotentialMatches(userId, mockFilters);
+            const result = await UserService.getPotentialMatches(mockFilters);
 
-            expect(User.findPotentialMatches).toHaveBeenCalledWith(userId, mockFilters);
+            expect(User.getPotentialMatches).toHaveBeenCalledWith(mockFilters);
             expect(result).toEqual([]);
         });
 
-        it('should pass filters correctly to User.findPotentialMatches', async () => {
+        it('should pass filters correctly to User.getPotentialMatches', async () => {
             const userId = 1;
             const customFilters = {
                 sexual_interest: ['non-binary'],
                 min_desired_rating: 10,
                 gender: 'non-binary'
             };
-            User.findPotentialMatches.mockResolvedValue([]);
+            User.getPotentialMatches.mockResolvedValue([]);
 
-            await UserService.getPotentialMatches(userId, customFilters);
+            await UserService.getPotentialMatches(customFilters);
 
-            expect(User.findPotentialMatches).toHaveBeenCalledWith(userId, customFilters);
+            expect(User.getPotentialMatches).toHaveBeenCalledWith(customFilters);
         });
 
         it('should format each user with all required properties', async () => {
             const userId = 1;
-            User.findPotentialMatches.mockResolvedValue([mockRawMatches[0]]);
+            User.getPotentialMatches.mockResolvedValue([mockRawMatches[0]]);
 
-            const result = await UserService.getPotentialMatches(userId, mockFilters);
+            const result = await UserService.getPotentialMatches(mockFilters);
 
             expect(result[0]).toEqual(
                 expect.objectContaining({
@@ -839,7 +839,7 @@ describe('UserService', () => {
                 status: 'complete'
             };
 
-            User.findPotentialMatches.mockResolvedValue([userWithMissingData]);
+            User.getPotentialMatches.mockResolvedValue([userWithMissingData]);
 
             // Reset mocks and set up for minimal user
             InterestsService.getInterestsListByUserId.mockReset().mockResolvedValue([]);
@@ -848,7 +848,7 @@ describe('UserService', () => {
             mockUserInteractions.getLikeCountByUserId = jest.fn().mockResolvedValue(0);
             LocationService.getLocationByUserId.mockReset().mockResolvedValue(null);
 
-            const result = await UserService.getPotentialMatches(userId, mockFilters);
+            const result = await UserService.getPotentialMatches(mockFilters);
 
             expect(result[0]).toEqual(
                 expect.objectContaining({
@@ -865,12 +865,12 @@ describe('UserService', () => {
 
         it('should handle service errors during formatting', async () => {
             const userId = 1;
-            User.findPotentialMatches.mockResolvedValue([mockRawMatches[0]]);
+            User.getPotentialMatches.mockResolvedValue([mockRawMatches[0]]);
 
             // Mock a service error
             InterestsService.getInterestsListByUserId.mockReset().mockRejectedValue(new Error('Service error'));
 
-            await expect(UserService.getPotentialMatches(userId, mockFilters))
+            await expect(UserService.getPotentialMatches(mockFilters))
                 .rejects
                 .toThrow('Service error');
         });
@@ -879,7 +879,7 @@ describe('UserService', () => {
             const userId = 1;
             const userWithMultiplePictures = { ...mockRawMatches[0] };
 
-            User.findPotentialMatches.mockResolvedValue([userWithMultiplePictures]);
+            User.getPotentialMatches.mockResolvedValue([userWithMultiplePictures]);
 
             // Reset mocks
             InterestsService.getInterestsListByUserId.mockReset().mockResolvedValue([]);
@@ -895,7 +895,7 @@ describe('UserService', () => {
             ];
             UserPictureService.getUserPictures.mockReset().mockResolvedValue(mockPictures);
 
-            const result = await UserService.getPotentialMatches(userId, mockFilters);
+            const result = await UserService.getPotentialMatches(mockFilters);
 
             expect(result[0].pictures[0].is_profile).toBe(true);
             expect(result[0].pictures[0].url).toBe('profile.jpg');
@@ -909,7 +909,7 @@ describe('UserService', () => {
                 birthdate: `${currentYear - 25}-06-15`
             };
 
-            User.findPotentialMatches.mockResolvedValue([userWith25Years]);
+            User.getPotentialMatches.mockResolvedValue([userWith25Years]);
 
             // Reset mocks for single user
             InterestsService.getInterestsListByUserId.mockReset().mockResolvedValue([]);
@@ -918,7 +918,7 @@ describe('UserService', () => {
             mockUserInteractions.getLikeCountByUserId = jest.fn().mockResolvedValue(0);
             LocationService.getLocationByUserId.mockReset().mockResolvedValue(null);
 
-            const result = await UserService.getPotentialMatches(userId, mockFilters);
+            const result = await UserService.getPotentialMatches(mockFilters);
 
             expect(result[0].age).toBeGreaterThanOrEqual(24);
             expect(result[0].age).toBeLessThanOrEqual(26);
@@ -931,7 +931,7 @@ describe('UserService', () => {
                 birthdate: null
             };
 
-            User.findPotentialMatches.mockResolvedValue([userWithNullBirthdate]);
+            User.getPotentialMatches.mockResolvedValue([userWithNullBirthdate]);
 
             // Reset mocks for single user
             InterestsService.getInterestsListByUserId.mockReset().mockResolvedValue([]);
@@ -940,7 +940,7 @@ describe('UserService', () => {
             mockUserInteractions.getLikeCountByUserId = jest.fn().mockResolvedValue(0);
             LocationService.getLocationByUserId.mockReset().mockResolvedValue(null);
 
-            const result = await UserService.getPotentialMatches(userId, mockFilters);
+            const result = await UserService.getPotentialMatches(mockFilters);
 
             expect(result[0].age).toBeNull();
         });
@@ -952,7 +952,7 @@ describe('UserService', () => {
                 birthdate: 'invalid-date'
             };
 
-            User.findPotentialMatches.mockResolvedValue([userWithInvalidBirthdate]);
+            User.getPotentialMatches.mockResolvedValue([userWithInvalidBirthdate]);
 
             // Reset mocks for single user
             InterestsService.getInterestsListByUserId.mockReset().mockResolvedValue([]);
@@ -961,16 +961,16 @@ describe('UserService', () => {
             mockUserInteractions.getLikeCountByUserId = jest.fn().mockResolvedValue(0);
             LocationService.getLocationByUserId.mockReset().mockResolvedValue(null);
 
-            const result = await UserService.getPotentialMatches(userId, mockFilters);
+            const result = await UserService.getPotentialMatches(mockFilters);
 
             expect(result[0].age).toBeNull();
         });
 
-        it('should handle User.findPotentialMatches database errors', async () => {
+        it('should handle User.getPotentialMatches database errors', async () => {
             const userId = 1;
-            User.findPotentialMatches.mockRejectedValue(new Error('Database connection failed'));
+            User.getPotentialMatches.mockRejectedValue(new Error('Database connection failed'));
 
-            await expect(UserService.getPotentialMatches(userId, mockFilters))
+            await expect(UserService.getPotentialMatches(mockFilters))
                 .rejects
                 .toThrow('Database connection failed');
         });
@@ -988,7 +988,7 @@ describe('UserService', () => {
                 }
             ];
 
-            User.findPotentialMatches.mockResolvedValue(mixedUsers);
+            User.getPotentialMatches.mockResolvedValue(mixedUsers);
 
             // Reset and setup mocks for two users
             InterestsService.getInterestsListByUserId.mockReset()
@@ -1008,7 +1008,7 @@ describe('UserService', () => {
                 .mockResolvedValueOnce({ latitude: 48.8566, longitude: 2.3522 })
                 .mockResolvedValueOnce(null);
 
-            const result = await UserService.getPotentialMatches(userId, mockFilters);
+            const result = await UserService.getPotentialMatches(mockFilters);
 
             expect(result).toHaveLength(2);
             expect(result[0].interests).toHaveLength(1);
@@ -1034,7 +1034,7 @@ describe('UserService', () => {
                 updated_at: '2024-01-02'
             };
 
-            User.findPotentialMatches.mockResolvedValue([userWithAllFields]);
+            User.getPotentialMatches.mockResolvedValue([userWithAllFields]);
 
             // Reset mocks for single user
             InterestsService.getInterestsListByUserId.mockReset().mockResolvedValue([]);
@@ -1043,7 +1043,7 @@ describe('UserService', () => {
             mockUserInteractions.getLikeCountByUserId = jest.fn().mockResolvedValue(0);
             LocationService.getLocationByUserId.mockReset().mockResolvedValue(null);
 
-            const result = await UserService.getPotentialMatches(userId, mockFilters);
+            const result = await UserService.getPotentialMatches(mockFilters);
 
             expect(result[0]).toEqual(
                 expect.objectContaining({

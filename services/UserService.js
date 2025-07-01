@@ -56,10 +56,8 @@ const getUserProfile = async (userId, requestedUserId) => {
     validateUserId(requestedUserId);
 
     const matchesIds = await getMatchesIdsByUserId(userId);
-    if (matchesIds && matchesIds.length > 0) {
-        if (userId == requestedUserId || matchesIds.some(id => id == requestedUserId))
-            return await getUserById(requestedUserId);
-    }
+    if ((userId == requestedUserId) || (matchesIds && matchesIds.some(id => id == requestedUserId)))
+        return await getUserById(requestedUserId);
 
     throw new ApiException(401, 'You are not allowed to view this user\'s profile');
 }
@@ -84,8 +82,8 @@ const getUserByEmail = async (email) => {
     return await getUserByEmailAndFormat(email);
 };
 
-const getPotentialMatches = async (userId, filters) => {
-    const potentialMatches = await User.findPotentialMatches(userId, filters);
+const getPotentialMatches = async (filters) => {
+    const potentialMatches = await User.getPotentialMatches(filters);
     return await formatUsers(potentialMatches);
 }
 
