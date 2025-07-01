@@ -185,13 +185,22 @@ class User {
         try {
             const query = `
                 SELECT DISTINCT u.*, 
-                    COALESCE(u.rating, 0) as rating
+                    COALESCE(u.rating, 0) as rating,
+                    EXTRACT(YEAR FROM AGE(u.birthdate)) as calculated_age
                 FROM users u
+                CROSS JOIN (
+                    SELECT age_range_min, age_range_max 
+                    FROM users 
+                    WHERE id = $1
+                ) requester
                 WHERE u.id != $1 
                     AND u.status = 'complete'
                     AND u.gender = ANY($2::text[])
                     AND COALESCE(u.rating, 0) >= $3
                     AND (u.sexual_interest = 'Any' OR u.sexual_interest = $4)
+                    AND u.birthdate IS NOT NULL
+                    AND EXTRACT(YEAR FROM AGE(u.birthdate)) >= requester.age_range_min
+                    AND EXTRACT(YEAR FROM AGE(u.birthdate)) <= requester.age_range_max
                     AND u.id NOT IN (
                         SELECT CASE WHEN user1 = $1 THEN user2 ELSE user1 END 
                         FROM user_interactions 
