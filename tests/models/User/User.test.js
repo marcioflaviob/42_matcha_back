@@ -57,7 +57,7 @@ describe('User Model', () => {
             db.query.mockResolvedValue({ rows: [] });
 
             await expect(User.findById(999)).rejects.toThrow(ApiException);
-            await expect(User.findById(999)).rejects.toThrow('Failed to fetch user by ID');
+            await expect(User.findById(999)).rejects.toThrow('User not found');
         });
     });
 
@@ -185,7 +185,7 @@ describe('User Model', () => {
             db.query.mockResolvedValue({ rows: [] });
 
             await expect(User.updateUserData(userId, updateData)).rejects.toThrow(ApiException);
-            await expect(User.updateUserData(userId, updateData)).rejects.toThrow('Failed to update user in database');
+            await expect(User.updateUserData(userId, updateData)).rejects.toThrow('User not found');
         });
     });
 
@@ -240,7 +240,7 @@ describe('User Model', () => {
             db.query.mockResolvedValue({ rows: [] });
 
             await expect(User.resetPassword(userId, newPassword)).rejects.toThrow(ApiException);
-            await expect(User.resetPassword(userId, newPassword)).rejects.toThrow('Failed to reset password');
+            await expect(User.resetPassword(userId, newPassword)).rejects.toThrow('User not found');
         });
     });
 
@@ -265,7 +265,7 @@ describe('User Model', () => {
             db.query.mockResolvedValue({ rows: [] });
 
             await expect(User.validateUser(userId)).rejects.toThrow(ApiException);
-            await expect(User.validateUser(userId)).rejects.toThrow('Failed to validate user');
+            await expect(User.validateUser(userId)).rejects.toThrow('User not found');
         });
     });
 });
