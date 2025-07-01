@@ -541,6 +541,388 @@ describe('UserService', () => {
                 .toThrow('User not found');
         });
     });
+
+    describe('getPotentialMatches', () => {
+        const mockFilters = {
+            sexual_interest: ['male', 'female'],
+            min_desired_rating: 5,
+            gender: 'female'
+        };
+
+        const mockRawMatches = [
+            {
+                id: 2,
+                first_name: 'Jane',
+                last_name: 'Doe',
+                email: 'jane@test.com',
+                gender: 'female',
+                sexual_interest: 'male',
+                rating: 8,
+                status: 'complete',
+                birthdate: '1995-01-01'
+            },
+            {
+                id: 3,
+                first_name: 'Alice',
+                last_name: 'Smith',
+                email: 'alice@test.com',
+                gender: 'female',
+                sexual_interest: 'Any',
+                rating: 6,
+                status: 'complete',
+                birthdate: '1990-01-01'
+            }
+        ];
+
+        const mockFormattedMatches = [
+            {
+                id: 2,
+                first_name: 'Jane',
+                last_name: 'Doe',
+                email: 'jane@test.com',
+                gender: 'female',
+                sexual_interest: 'male',
+                rating: 8,
+                status: 'complete',
+                birthdate: '1995-01-01',
+                age: 30,
+                interests: [{ id: 1, name: 'music' }],
+                pictures: [{ id: 1, url: 'jane.jpg' }],
+                like_count: 5,
+                location: { latitude: 48.8566, longitude: 2.3522 }
+            },
+            {
+                id: 3,
+                first_name: 'Alice',
+                last_name: 'Smith',
+                email: 'alice@test.com',
+                gender: 'female',
+                sexual_interest: 'Any',
+                rating: 6,
+                status: 'complete',
+                birthdate: '1990-01-01',
+                age: 35,
+                interests: [{ id: 2, name: 'art' }],
+                pictures: [{ id: 2, url: 'alice.jpg' }],
+                like_count: 3,
+                location: { latitude: 48.8567, longitude: 2.3523 }
+            }
+        ];
+
+        beforeEach(() => {
+            // Mock the formatting dependencies for each user
+            InterestsService.getInterestsListByUserId
+                .mockResolvedValueOnce([{ id: 1, name: 'music' }])
+                .mockResolvedValueOnce([{ id: 2, name: 'art' }]);
+
+            UserPictureService.getUserPictures
+                .mockResolvedValueOnce([{ id: 1, url: 'jane.jpg' }])
+                .mockResolvedValueOnce([{ id: 2, url: 'alice.jpg' }]);
+
+            const mockUserInteractions = require('../../models/UserInteractions/UserInteractions.js');
+            mockUserInteractions.getLikeCountByUserId = jest.fn()
+                .mockResolvedValueOnce(5)
+                .mockResolvedValueOnce(3);
+
+            LocationService.getLocationByUserId
+                .mockResolvedValueOnce({ latitude: 48.8566, longitude: 2.3522 })
+                .mockResolvedValueOnce({ latitude: 48.8567, longitude: 2.3523 });
+        });
+
+        it('should return formatted potential matches', async () => {
+            const userId = 1;
+            User.findPotentialMatches.mockResolvedValue(mockRawMatches);
+
+            const result = await UserService.getPotentialMatches(userId, mockFilters);
+
+            expect(User.findPotentialMatches).toHaveBeenCalledWith(userId, mockFilters);
+            expect(result).toHaveLength(2);
+            expect(result[0]).not.toHaveProperty('password');
+            expect(result[0]).toHaveProperty('age');
+            expect(result[0]).toHaveProperty('interests');
+            expect(result[0]).toHaveProperty('pictures');
+            expect(result[0]).toHaveProperty('like_count');
+            expect(result[0]).toHaveProperty('location');
+        });
+
+        it('should handle empty results from User.findPotentialMatches', async () => {
+            const userId = 1;
+            User.findPotentialMatches.mockResolvedValue([]);
+
+            const result = await UserService.getPotentialMatches(userId, mockFilters);
+
+            expect(User.findPotentialMatches).toHaveBeenCalledWith(userId, mockFilters);
+            expect(result).toEqual([]);
+        });
+
+        it('should pass filters correctly to User.findPotentialMatches', async () => {
+            const userId = 1;
+            const customFilters = {
+                sexual_interest: ['non-binary'],
+                min_desired_rating: 10,
+                gender: 'non-binary'
+            };
+            User.findPotentialMatches.mockResolvedValue([]);
+
+            await UserService.getPotentialMatches(userId, customFilters);
+
+            expect(User.findPotentialMatches).toHaveBeenCalledWith(userId, customFilters);
+        });
+
+        it('should format each user with all required properties', async () => {
+            const userId = 1;
+            User.findPotentialMatches.mockResolvedValue([mockRawMatches[0]]);
+
+            const result = await UserService.getPotentialMatches(userId, mockFilters);
+
+            expect(result[0]).toEqual(
+                expect.objectContaining({
+                    id: 2,
+                    first_name: 'Jane',
+                    last_name: 'Doe',
+                    email: 'jane@test.com',
+                    age: expect.any(Number),
+                    interests: expect.any(Array),
+                    pictures: expect.any(Array),
+                    like_count: expect.any(Number),
+                    location: expect.any(Object)
+                })
+            );
+            expect(result[0]).not.toHaveProperty('password');
+        });
+
+        it('should handle users with missing optional data gracefully', async () => {
+            const userId = 1;
+            const userWithMissingData = {
+                id: 4,
+                first_name: 'Minimal',
+                email: 'minimal@test.com',
+                status: 'complete'
+            };
+
+            User.findPotentialMatches.mockResolvedValue([userWithMissingData]);
+
+            // Reset mocks and set up for minimal user
+            InterestsService.getInterestsListByUserId.mockReset().mockResolvedValue([]);
+            UserPictureService.getUserPictures.mockReset().mockResolvedValue([]);
+            const mockUserInteractions = require('../../models/UserInteractions/UserInteractions.js');
+            mockUserInteractions.getLikeCountByUserId = jest.fn().mockResolvedValue(0);
+            LocationService.getLocationByUserId.mockReset().mockResolvedValue(null);
+
+            const result = await UserService.getPotentialMatches(userId, mockFilters);
+
+            expect(result[0]).toEqual(
+                expect.objectContaining({
+                    id: 4,
+                    first_name: 'Minimal',
+                    email: 'minimal@test.com',
+                    interests: [],
+                    pictures: [],
+                    like_count: 0,
+                    location: null
+                })
+            );
+        });
+
+        it('should handle service errors during formatting', async () => {
+            const userId = 1;
+            User.findPotentialMatches.mockResolvedValue([mockRawMatches[0]]);
+
+            // Mock a service error
+            InterestsService.getInterestsListByUserId.mockReset().mockRejectedValue(new Error('Service error'));
+
+            await expect(UserService.getPotentialMatches(userId, mockFilters))
+                .rejects
+                .toThrow('Service error');
+        });
+
+        it('should sort pictures with profile picture first', async () => {
+            const userId = 1;
+            const userWithMultiplePictures = { ...mockRawMatches[0] };
+
+            User.findPotentialMatches.mockResolvedValue([userWithMultiplePictures]);
+
+            // Reset mocks
+            InterestsService.getInterestsListByUserId.mockReset().mockResolvedValue([]);
+            LocationService.getLocationByUserId.mockReset().mockResolvedValue(null);
+            const mockUserInteractions = require('../../models/UserInteractions/UserInteractions.js');
+            mockUserInteractions.getLikeCountByUserId = jest.fn().mockResolvedValue(0);
+
+            // Mock pictures with profile picture not first
+            const mockPictures = [
+                { id: 1, url: 'pic1.jpg', is_profile: false },
+                { id: 2, url: 'profile.jpg', is_profile: true },
+                { id: 3, url: 'pic3.jpg', is_profile: false }
+            ];
+            UserPictureService.getUserPictures.mockReset().mockResolvedValue(mockPictures);
+
+            const result = await UserService.getPotentialMatches(userId, mockFilters);
+
+            expect(result[0].pictures[0].is_profile).toBe(true);
+            expect(result[0].pictures[0].url).toBe('profile.jpg');
+        });
+
+        it('should calculate age correctly from birthdate', async () => {
+            const userId = 1;
+            const currentYear = new Date().getFullYear();
+            const userWith25Years = {
+                ...mockRawMatches[0],
+                birthdate: `${currentYear - 25}-06-15`
+            };
+
+            User.findPotentialMatches.mockResolvedValue([userWith25Years]);
+
+            // Reset mocks for single user
+            InterestsService.getInterestsListByUserId.mockReset().mockResolvedValue([]);
+            UserPictureService.getUserPictures.mockReset().mockResolvedValue([]);
+            const mockUserInteractions = require('../../models/UserInteractions/UserInteractions.js');
+            mockUserInteractions.getLikeCountByUserId = jest.fn().mockResolvedValue(0);
+            LocationService.getLocationByUserId.mockReset().mockResolvedValue(null);
+
+            const result = await UserService.getPotentialMatches(userId, mockFilters);
+
+            expect(result[0].age).toBeGreaterThanOrEqual(24);
+            expect(result[0].age).toBeLessThanOrEqual(26);
+        });
+
+        it('should handle null birthdate gracefully', async () => {
+            const userId = 1;
+            const userWithNullBirthdate = {
+                ...mockRawMatches[0],
+                birthdate: null
+            };
+
+            User.findPotentialMatches.mockResolvedValue([userWithNullBirthdate]);
+
+            // Reset mocks for single user
+            InterestsService.getInterestsListByUserId.mockReset().mockResolvedValue([]);
+            UserPictureService.getUserPictures.mockReset().mockResolvedValue([]);
+            const mockUserInteractions = require('../../models/UserInteractions/UserInteractions.js');
+            mockUserInteractions.getLikeCountByUserId = jest.fn().mockResolvedValue(0);
+            LocationService.getLocationByUserId.mockReset().mockResolvedValue(null);
+
+            const result = await UserService.getPotentialMatches(userId, mockFilters);
+
+            expect(result[0].age).toBeNull();
+        });
+
+        it('should handle invalid birthdate gracefully', async () => {
+            const userId = 1;
+            const userWithInvalidBirthdate = {
+                ...mockRawMatches[0],
+                birthdate: 'invalid-date'
+            };
+
+            User.findPotentialMatches.mockResolvedValue([userWithInvalidBirthdate]);
+
+            // Reset mocks for single user
+            InterestsService.getInterestsListByUserId.mockReset().mockResolvedValue([]);
+            UserPictureService.getUserPictures.mockReset().mockResolvedValue([]);
+            const mockUserInteractions = require('../../models/UserInteractions/UserInteractions.js');
+            mockUserInteractions.getLikeCountByUserId = jest.fn().mockResolvedValue(0);
+            LocationService.getLocationByUserId.mockReset().mockResolvedValue(null);
+
+            const result = await UserService.getPotentialMatches(userId, mockFilters);
+
+            expect(result[0].age).toBeNull();
+        });
+
+        it('should handle User.findPotentialMatches database errors', async () => {
+            const userId = 1;
+            User.findPotentialMatches.mockRejectedValue(new Error('Database connection failed'));
+
+            await expect(UserService.getPotentialMatches(userId, mockFilters))
+                .rejects
+                .toThrow('Database connection failed');
+        });
+
+        it('should handle multiple users with mixed data completeness', async () => {
+            const userId = 1;
+            const mixedUsers = [
+                mockRawMatches[0], // Complete user
+                {
+                    id: 5,
+                    first_name: 'Incomplete',
+                    email: 'incomplete@test.com',
+                    status: 'complete'
+                    // Missing many optional fields
+                }
+            ];
+
+            User.findPotentialMatches.mockResolvedValue(mixedUsers);
+
+            // Reset and setup mocks for two users
+            InterestsService.getInterestsListByUserId.mockReset()
+                .mockResolvedValueOnce([{ id: 1, name: 'music' }])
+                .mockResolvedValueOnce([]);
+
+            UserPictureService.getUserPictures.mockReset()
+                .mockResolvedValueOnce([{ id: 1, url: 'jane.jpg' }])
+                .mockResolvedValueOnce([]);
+
+            const mockUserInteractions = require('../../models/UserInteractions/UserInteractions.js');
+            mockUserInteractions.getLikeCountByUserId = jest.fn()
+                .mockResolvedValueOnce(5)
+                .mockResolvedValueOnce(0);
+
+            LocationService.getLocationByUserId.mockReset()
+                .mockResolvedValueOnce({ latitude: 48.8566, longitude: 2.3522 })
+                .mockResolvedValueOnce(null);
+
+            const result = await UserService.getPotentialMatches(userId, mockFilters);
+
+            expect(result).toHaveLength(2);
+            expect(result[0].interests).toHaveLength(1);
+            expect(result[1].interests).toHaveLength(0);
+            expect(result[0].pictures).toHaveLength(1);
+            expect(result[1].pictures).toHaveLength(0);
+        });
+
+        it('should preserve all user fields from database', async () => {
+            const userId = 1;
+            const userWithAllFields = {
+                id: 6,
+                first_name: 'Complete',
+                last_name: 'User',
+                email: 'complete@test.com',
+                gender: 'female',
+                sexual_interest: 'male',
+                rating: 7,
+                status: 'complete',
+                birthdate: '1992-01-01',
+                bio: 'Test bio',
+                created_at: '2024-01-01',
+                updated_at: '2024-01-02'
+            };
+
+            User.findPotentialMatches.mockResolvedValue([userWithAllFields]);
+
+            // Reset mocks for single user
+            InterestsService.getInterestsListByUserId.mockReset().mockResolvedValue([]);
+            UserPictureService.getUserPictures.mockReset().mockResolvedValue([]);
+            const mockUserInteractions = require('../../models/UserInteractions/UserInteractions.js');
+            mockUserInteractions.getLikeCountByUserId = jest.fn().mockResolvedValue(0);
+            LocationService.getLocationByUserId.mockReset().mockResolvedValue(null);
+
+            const result = await UserService.getPotentialMatches(userId, mockFilters);
+
+            expect(result[0]).toEqual(
+                expect.objectContaining({
+                    id: 6,
+                    first_name: 'Complete',
+                    last_name: 'User',
+                    email: 'complete@test.com',
+                    gender: 'female',
+                    sexual_interest: 'male',
+                    rating: 7,
+                    status: 'complete',
+                    bio: 'Test bio',
+                    created_at: '2024-01-01',
+                    updated_at: '2024-01-02'
+                })
+            );
+        });
+    });
 });
 
 describe('age calculation edge cases', () => {
