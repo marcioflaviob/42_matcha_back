@@ -181,58 +181,42 @@ class User {
         }
     }
 
-    static async findPotentialMatches(userId, filters) {
+    static async getPotentialMatches(filters) {
         try {
             const query = `
-                SELECT DISTINCT u.*, 
-                    COALESCE(u.rating, 0) as rating,
-                    EXTRACT(YEAR FROM AGE(u.birthdate)) as calculated_age
-                FROM users u
-                CROSS JOIN (
-                    SELECT age_range_min, age_range_max 
-                    FROM users 
-                    WHERE id = $1
-                ) requester
-                WHERE u.id != $1 
-                    AND u.status = 'complete'
-                    AND u.gender = ANY($2::text[])
-                    AND COALESCE(u.rating, 0) >= $3
-                    AND (u.sexual_interest = 'Any' OR u.sexual_interest = $4)
-                    AND u.birthdate IS NOT NULL
-                    AND EXTRACT(YEAR FROM AGE(u.birthdate)) >= requester.age_range_min
-                    AND EXTRACT(YEAR FROM AGE(u.birthdate)) <= requester.age_range_max
-                    AND u.id NOT IN (
-                        SELECT CASE WHEN user1 = $1 THEN user2 ELSE user1 END 
-                        FROM user_interactions 
-                        WHERE (user1 = $1 OR user2 = $1) AND interaction_type = 'like'
-                    )
-                    AND u.id NOT IN (
-                        SELECT CASE WHEN user1 = $1 THEN user2 ELSE user1 END 
-                        FROM user_interactions 
-                        WHERE (user1 = $1 OR user2 = $1) AND interaction_type = 'block'
-                    )
-                    AND EXISTS (
-                        SELECT 1 FROM user_interests ui1
-                        JOIN user_interests ui2 ON ui1.interest_id = ui2.interest_id
-                        WHERE ui1.user_id = $1 AND ui2.user_id = u.id
-                    )
-                ORDER BY 
-                    COALESCE(u.rating, 0) DESC
-            `;
+                SELECT users.*
+                FROM users
+                WHERE users.id != $1
+                    AND users.status = 'complete'
+                    AND (users.sexual_interest = $2 OR  users.sexual_interest = 'Any')
+                    AND (users.gender = $3 OR $3 = 'Any')
+                    AND users.age_range_min <= $4
+                    AND users.age_range_max >= $4
+                    AND $5 <= EXTRACT(YEAR FROM AGE(users.birthdate))
+                    AND $6 >= EXTRACT(YEAR FROM AGE(users.birthdate))
+                    AND users.rating >= $7
+                    AND users.min_desired_rating <= $8
+            `
 
-            const params = [
-                userId,
-                filters.sexual_interest,
-                filters.min_desired_rating || 0,
+            const result = await db.query(query, [
+                filters.userId,
                 filters.gender,
-            ];
-
-            const result = await db.query(query, params);
+                filters.sexual_interest,
+                filters.age,
+                filters.age_range_min,
+                filters.age_range_max,
+                filters.min_desired_rating,
+                filters.rating
+            ]);
             return result.rows;
-        } catch {
-            throw new ApiException(500, 'Failed to find potential matches');
+        }
+        catch (error) {
+            console.error(`Error fetching potential matches: ${error.message}`);
+            throw new ApiException(500, 'Failed to fetch potential matches');
         }
     }
 }
+
+
 
 module.exports = User;

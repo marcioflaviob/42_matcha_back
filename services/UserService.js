@@ -50,8 +50,8 @@ const getUserByEmail = async (email) => {
     return await getUserByEmailAndFormat(email);
 };
 
-const getPotentialMatches = async (userId, filters) => {
-    const potentialMatches = await User.findPotentialMatches(userId, filters);
+const getPotentialMatches = async (filters) => {
+    const potentialMatches = await User.getPotentialMatches(filters);
     return await formatUsers(potentialMatches);
 }
 
