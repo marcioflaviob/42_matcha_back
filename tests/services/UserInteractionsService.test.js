@@ -239,9 +239,43 @@ describe('UserInteractionsService', () => {
             const result = await UserInteractionsService.blockUser(1, 2);
 
             testUtils.expectServiceCall(UserInteractions.blockUser, 'blockUser', [1, 2]);
-            testUtils.expectServiceCall(NotificationService.newBlockNotification, 'newBlockNotification', [2, 1]);
             testUtils.expectServiceCall(UserService.addFameRating, 'addFameRating', [2, -10]);
             expect(result).toEqual(mockBlock);
+        });
+    });
+
+    describe('reportUser', () => {
+        it('should throw error if user IDs are missing', async () => {
+            await testUtils.expectApiExceptionForMissingIds(UserInteractionsService.reportUser, 1, 2);
+        });
+
+        it('should throw error if user tries to report themselves', async () => {
+            await testUtils.expectSelfActionError(UserInteractionsService.reportUser, 'You cannot report yourself');
+        });
+
+        it('should report user', async () => {
+            await UserInteractionsService.reportUser(1, 2);
+            testUtils.expectServiceCall(UserService.addFameRating, 'addFameRating', [2, -15]);
+            testUtils.expectServiceCall(UserInteractions.blockUser, 'blockUser', [1, 2]);
+        });
+    })
+
+    describe('unlikeUser', () => {
+        it('should throw error if user IDs are missing', async () => {
+            await testUtils.expectApiExceptionForMissingIds(UserInteractionsService.unlikeUser, 1, 2);
+        });
+
+        it('should throw error if user tries to unlike themselves', async () => {
+            await testUtils.expectSelfActionError(UserInteractionsService.unlikeUser, 'You cannot unlike yourself');
+        });
+
+        it('should unlike user and send notification', async () => {
+            mockSetup.interactions.mockMethod('unlikeUser', true);
+            mockSetup.userService.mockAddFameRating();
+            await UserInteractionsService.unlikeUser(1, 2);
+            testUtils.expectServiceCall(UserInteractions.unlikeUser, 'unlikeUser', [1, 2]);
+            testUtils.expectServiceCall(NotificationService.newUnlikeNotification, 'newUnlikeNotification', [2, 1]);
+            testUtils.expectServiceCall(UserService.addFameRating, 'addFameRating', [2, -10]);
         });
     });
 

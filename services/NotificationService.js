@@ -109,10 +109,10 @@ exports.newSeenNotification = async (userId, senderId) => {
 	return notification;
 }
 
-exports.newBlockNotification = async (userId, senderId) => {
+exports.newUnlikeNotification = async (userId, senderId) => {
 	const user = await UserService.getUserById(senderId);
 
-	const notification = await this.createNotification(userId, senderId, 'new-block', 'New Block', `${user.first_name} blocked you`);
+	const notification = await this.createNotification(userId, senderId, 'new-unlike', 'Match undone', `${user.first_name} unliked you`);
 	return notification;
 }
 
