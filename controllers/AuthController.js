@@ -28,8 +28,10 @@ const jwt = require('jsonwebtoken');
       return res.status(401).json({ message: "User not found" });
     }
 
+    await UserService.updateLastConnection(userId);
+
     const user = await UserService.getUserById(userId);
-    
+
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }

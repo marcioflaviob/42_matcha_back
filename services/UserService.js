@@ -5,22 +5,6 @@ const LocationService = require('./LocationService.js');
 const UserPictureService = require('./UserPictureService.js');
 const bcrypt = require('bcrypt');
 
-const validateUserId = (userId) => {
-    if (!userId) throw new ApiException(400, 'User ID is required');
-};
-
-const validateEmail = (email) => {
-    if (!email) throw new ApiException(400, 'Email is required');
-};
-
-const validateUserExists = (user) => {
-    if (!user) throw new ApiException(404, 'User not found');
-};
-
-const validateUserCreated = (user) => {
-    if (!user) throw new ApiException(500, 'User not created');
-};
-
 const getUserAndFormat = async (userId) => {
     validateUserId(userId);
     const user = await User.findById(userId);
@@ -49,6 +33,11 @@ const createUser = async (userData) => {
 const getUserById = async (userId) => {
     return await getUserAndFormat(userId);
 };
+
+const updateLastConnection = async (userId) => {
+    validateUserId(userId);
+    return await User.updateLastConnection(userId);
+}
 
 const getUserByEmailWithPassword = async (email) => {
     validateEmail(email);
@@ -134,7 +123,7 @@ const validateUser = async (userId) => {
 const addFameRating = async (userId, rating) => {
     if (!userId || !rating) throw new ApiException(400, 'User ID and rating are required');
 
-    const thisUser = await this.getUserById(userId);
+    const thisUser = await getUserById(userId);
     if (thisUser.rating + rating < 0)
         rating = -thisUser.rating;
 
@@ -193,6 +182,22 @@ const formatUsers = async (users) => {
     return await Promise.all(users.map(user => formatUser(user)));
 };
 
+const validateUserId = (userId) => {
+    if (!userId) throw new ApiException(400, 'User ID is required');
+};
+
+const validateEmail = (email) => {
+    if (!email) throw new ApiException(400, 'Email is required');
+};
+
+const validateUserExists = (user) => {
+    if (!user) throw new ApiException(404, 'User not found');
+};
+
+const validateUserCreated = (user) => {
+    if (!user) throw new ApiException(500, 'User not created');
+};
+
 module.exports = {
     getAllUsers,
     createUser,
@@ -206,4 +211,5 @@ module.exports = {
     validateUser,
     addFameRating,
     getUserAndFormat,
+    updateLastConnection
 };
