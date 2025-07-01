@@ -6,14 +6,17 @@ const UserInteractionsService = require('../../services/UserInteractionsService.
 const ApiException = require('../../exceptions/ApiException.js');
 const UserService = require('../../services/UserService.js');
 const bcrypt = require('bcrypt');
+const UserInteractions = require('../../models/UserInteractions/UserInteractions.js');
 const {
     mockConsole,
     restoreConsole,
     createMockData,
     createServiceMocks
 } = require('../utils/testSetup');
+const { getMatchesIdsByUserId } = require('../../services/UserInteractionsService.js');
 
 jest.mock('../../models/User/User.js');
+jest.mock('../../models/UserInteractions/UserInteractions.js');
 jest.mock('../../services/InterestsService.js');
 jest.mock('../../services/LocationService.js');
 jest.mock('../../services/UserPictureService.js');
@@ -1318,6 +1321,86 @@ describe('handle userData null case in password deletion check', () => {
         expect(result.password).toBeUndefined();
 
         updateUserSpy.mockRestore();
+    });
+
+    describe('getUserProfile', () => {
+        const userId = 1;
+        const otherUserId = 2;
+        const matchedUserId = 3;
+
+        beforeEach(() => {
+            jest.clearAllMocks();
+        });
+
+        it('should throw an error if userId is not provided', async () => {
+            await expect(UserService.getUserProfile(null, otherUserId)).rejects.toThrow(new ApiException(400, 'User ID is required'));
+        });
+
+        it('should throw an error if requestedUserId is not provided', async () => {
+            await expect(UserService.getUserProfile(userId, null)).rejects.toThrow(new ApiException(400, 'User ID is required'));
+        });
+
+        it('should return user profile if userId and requestedUserId are the same', async () => {
+            const mockUser = { id: userId, name: 'Test User', birthdate: '1990-01-01' };
+            UserInteractionsService.getMatchesIdsByUserId.mockResolvedValue([matchedUserId]);
+            User.findById.mockResolvedValue(mockUser);
+            InterestsService.getInterestsListByUserId.mockResolvedValue([]);
+            UserPictureService.getUserPictures.mockResolvedValue([]);
+            UserInteractions.getLikeCountByUserId.mockResolvedValue(0);
+            LocationService.getLocationByUserId.mockResolvedValue(null);
+
+            const result = await UserService.getUserProfile(userId, userId);
+
+            expect(UserInteractionsService.getMatchesIdsByUserId).toHaveBeenCalledWith(userId);
+            expect(User.findById).toHaveBeenCalledWith(userId);
+            expect(result.id).toEqual(userId);
+        });
+
+        it('should return user profile if requestedUserId is in matches', async () => {
+            const mockUser = { id: matchedUserId, name: 'Matched User', birthdate: '1990-01-01' };
+            UserInteractionsService.getMatchesIdsByUserId.mockResolvedValue([matchedUserId, 4, 5]);
+            User.findById.mockResolvedValue(mockUser);
+            InterestsService.getInterestsListByUserId.mockResolvedValue([]);
+            UserPictureService.getUserPictures.mockResolvedValue([]);
+            UserInteractions.getLikeCountByUserId.mockResolvedValue(0);
+            LocationService.getLocationByUserId.mockResolvedValue(null);
+
+            const result = await UserService.getUserProfile(userId, matchedUserId);
+
+            expect(UserInteractionsService.getMatchesIdsByUserId).toHaveBeenCalledWith(userId);
+            expect(User.findById).toHaveBeenCalledWith(matchedUserId);
+            expect(result.id).toEqual(matchedUserId);
+        });
+
+        it('should throw 401 error if requestedUserId is not in matches', async () => {
+            UserInteractionsService.getMatchesIdsByUserId.mockResolvedValue([matchedUserId, 4, 5]);
+            UserService.getUserById = jest.fn();
+
+            await expect(UserService.getUserProfile(userId, otherUserId)).rejects.toThrow(new ApiException(401, 'You are not allowed to view this user\'s profile'));
+
+            expect(UserInteractionsService.getMatchesIdsByUserId).toHaveBeenCalledWith(userId);
+            expect(UserService.getUserById).not.toHaveBeenCalled();
+        });
+
+        it('should throw 401 error if user has no matches', async () => {
+            UserInteractionsService.getMatchesIdsByUserId.mockResolvedValue([]);
+            UserService.getUserById = jest.fn();
+
+            await expect(UserService.getUserProfile(userId, otherUserId)).rejects.toThrow(new ApiException(401, 'You are not allowed to view this user\'s profile'));
+
+            expect(UserInteractionsService.getMatchesIdsByUserId).toHaveBeenCalledWith(userId);
+            expect(UserService.getUserById).not.toHaveBeenCalled();
+        });
+
+        it('should throw 401 error if matches are null', async () => {
+            UserInteractionsService.getMatchesIdsByUserId.mockResolvedValue(null);
+            UserService.getUserById = jest.fn();
+
+            await expect(UserService.getUserProfile(userId, otherUserId)).rejects.toThrow(new ApiException(401, 'You are not allowed to view this user\'s profile'));
+
+            expect(UserInteractionsService.getMatchesIdsByUserId).toHaveBeenCalledWith(userId);
+            expect(UserService.getUserById).not.toHaveBeenCalled();
+        });
     });
 
     describe('updateLastConnection', () => {

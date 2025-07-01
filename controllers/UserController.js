@@ -11,14 +11,9 @@ exports.createUser = async (req, res) => {
 };
 
 exports.getUserById = async (req, res) => {
-    const user = await UserService.getUserById(req.params.id);
-    res.send(user);
+    const user = await UserService.getUserProfile(req.user.id, req.params.id);
+    res.status(200).send(user);
 };
-
-exports.getUserByEmail = async (req, res) => {
-    const user = await UserService.getUserByEmail(req.params.email);
-    res.send(user);
-}
 
 exports.updateUser = async (req, res) => {
     const user = await UserService.updateUser(req);
