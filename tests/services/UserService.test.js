@@ -1319,4 +1319,18 @@ describe('handle userData null case in password deletion check', () => {
 
         updateUserSpy.mockRestore();
     });
+
+    describe('updateLastConnection', () => {
+        it('should update last connection time successfully', async () => {
+            const userId = 1;
+            const mockTime = new Date().toISOString();
+
+            User.updateLastConnection.mockResolvedValue({ id: userId, last_connection: mockTime });
+
+            const result = await UserService.updateLastConnection(userId);
+
+            expect(User.updateLastConnection).toHaveBeenCalledWith(userId);
+            expect(result).toHaveProperty('last_connection', mockTime);
+        });
+    });
 });
