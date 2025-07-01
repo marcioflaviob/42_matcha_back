@@ -3,6 +3,7 @@ const User = require('../models/User/User.js');
 const InterestsService = require('./InterestsService.js');
 const LocationService = require('./LocationService.js');
 const UserPictureService = require('./UserPictureService.js');
+const dumbPasswords = require('dumb-passwords');
 const bcrypt = require('bcrypt');
 
 const getUserAndFormat = async (userId) => {
@@ -25,6 +26,24 @@ const getAllUsers = async () => {
 };
 
 const createUser = async (userData) => {
+
+    if (!userData || !userData.email || !userData.password)
+        throw new ApiException(400, 'Email and password are required');
+
+    if (await User.checkUserExists(userData.email))
+        throw new ApiException(400, 'Email already exists');
+    
+    try {
+        if (dumbPasswords.check(userData.password))
+            throw new ApiException(400, 'Password is too weak');
+
+        const salt = await bcrypt.genSalt(10);
+        userData.password = await bcrypt.hash(userData.password, salt);
+    } catch (error) {
+        if (error instanceof ApiException) throw error;
+        throw new ApiException(500, 'Failed to create an account, please try again later');
+    }
+
     const user = await User.create(userData);
     validateUserCreated(user);
     return user;
@@ -118,7 +137,20 @@ const resetPassword = async (userId, password) => {
         throw new ApiException(400, 'User ID and password are required');
     }
 
-    const user = await User.resetPassword(userId, password);
+    let hashedPassword;
+
+    try {
+        if (dumbPasswords.check(password))
+            throw new ApiException(400, 'Password is too weak');
+
+        const salt = await bcrypt.genSalt(10);
+        hashedPassword = await bcrypt.hash(password, salt);
+    } catch (error) {
+        if (error instanceof ApiException) throw error;
+        throw new ApiException(500, 'Failed to reset password, please try again later');
+    }
+
+    const user = await User.resetPassword(userId, hashedPassword);
     validateUserExists(user);
 
     return await formatUser(user);

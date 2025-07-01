@@ -6,6 +6,7 @@ const UserInteractionsService = require('../../services/UserInteractionsService.
 const ApiException = require('../../exceptions/ApiException.js');
 const UserService = require('../../services/UserService.js');
 const bcrypt = require('bcrypt');
+const dumbPasswords = require('dumb-passwords');
 const UserInteractions = require('../../models/UserInteractions/UserInteractions.js');
 const {
     mockConsole,
@@ -22,6 +23,7 @@ jest.mock('../../services/LocationService.js');
 jest.mock('../../services/UserPictureService.js');
 jest.mock('../../services/UserInteractionsService.js');
 jest.mock('bcrypt');
+jest.mock('dumb-passwords');
 
 let serviceMocks;
 
@@ -68,23 +70,103 @@ describe('UserService', () => {
     });
 
     describe('createUser', () => {
-        it('should create user successfully', async () => {
-            const userData = createMockData.userWithPassword({
+        beforeEach(() => {
+            bcrypt.genSalt.mockResolvedValue('mockedSalt');
+            bcrypt.hash.mockResolvedValue('hashedPassword');
+            dumbPasswords.check.mockReturnValue(false);
+            User.checkUserExists.mockResolvedValue(false);
+        });
+
+        it('should create user successfully with hashed password', async () => {
+            const userData = {
                 email: 'test@example.com',
-                password: 'password123'
-            });
-            const mockUser = createMockData.user({ ...userData, id: 1 });
+                password: 'strongPassword123!'
+            };
+            const expectedUserData = {
+                ...userData,
+                password: 'hashedPassword'
+            };
+            const mockUser = createMockData.user({ ...expectedUserData, id: 1 });
 
             User.create.mockResolvedValue(mockUser);
 
             const result = await UserService.createUser(userData);
 
-            expect(User.create).toHaveBeenCalledWith(userData);
+            expect(User.checkUserExists).toHaveBeenCalledWith('test@example.com');
+            expect(dumbPasswords.check).toHaveBeenCalledWith('strongPassword123!');
+            expect(bcrypt.genSalt).toHaveBeenCalledWith(10);
+            expect(bcrypt.hash).toHaveBeenCalledWith('strongPassword123!', 'mockedSalt');
+            expect(User.create).toHaveBeenCalledWith(expectedUserData);
             expect(result).toEqual(mockUser);
         });
 
-        it('should throw ApiException when user creation fails', async () => {
+        it('should throw ApiException when email is missing', async () => {
+            const userData = { password: 'password123' };
+
+            await expect(UserService.createUser(userData))
+                .rejects
+                .toThrow('Email and password are required');
+        });
+
+        it('should throw ApiException when password is missing', async () => {
             const userData = { email: 'test@example.com' };
+
+            await expect(UserService.createUser(userData))
+                .rejects
+                .toThrow('Email and password are required');
+        });
+
+        it('should throw ApiException when userData is null', async () => {
+            await expect(UserService.createUser(null))
+                .rejects
+                .toThrow('Email and password are required');
+        });
+
+        it('should throw ApiException when email already exists', async () => {
+            const userData = {
+                email: 'existing@example.com',
+                password: 'password123'
+            };
+
+            User.checkUserExists.mockResolvedValue(true);
+
+            await expect(UserService.createUser(userData))
+                .rejects
+                .toThrow('Email already exists');
+        });
+
+        it('should throw ApiException when password is too weak', async () => {
+            const userData = {
+                email: 'test@example.com',
+                password: 'weakpass'
+            };
+
+            dumbPasswords.check.mockReturnValue(true);
+
+            await expect(UserService.createUser(userData))
+                .rejects
+                .toThrow('Password is too weak');
+        });
+
+        it('should throw ApiException when bcrypt fails', async () => {
+            const userData = {
+                email: 'test@example.com',
+                password: 'strongPassword123!'
+            };
+
+            bcrypt.genSalt.mockRejectedValue(new Error('Bcrypt error'));
+
+            await expect(UserService.createUser(userData))
+                .rejects
+                .toThrow('Failed to create an account, please try again later');
+        });
+
+        it('should throw ApiException when user creation fails', async () => {
+            const userData = {
+                email: 'test@example.com',
+                password: 'strongPassword123!'
+            };
+
             User.create.mockResolvedValue(null);
 
             await expect(UserService.createUser(userData))
@@ -187,9 +269,15 @@ describe('UserService', () => {
     });
 
     describe('resetPassword', () => {
-        it('should reset password successfully', async () => {
+        beforeEach(() => {
+            bcrypt.genSalt.mockResolvedValue('mockedSalt');
+            bcrypt.hash.mockResolvedValue('hashedNewPassword');
+            dumbPasswords.check.mockReturnValue(false);
+        });
+
+        it('should reset password successfully with hashing', async () => {
             const userId = 1;
-            const newPassword = 'newPassword123';
+            const newPassword = 'newStrongPassword123!';
             const mockUser = { id: userId, email: 'test@example.com' };
 
             User.resetPassword.mockResolvedValue(mockUser);
@@ -200,7 +288,10 @@ describe('UserService', () => {
 
             const result = await UserService.resetPassword(userId, newPassword);
 
-            expect(User.resetPassword).toHaveBeenCalledWith(userId, newPassword);
+            expect(dumbPasswords.check).toHaveBeenCalledWith(newPassword);
+            expect(bcrypt.genSalt).toHaveBeenCalledWith(10);
+            expect(bcrypt.hash).toHaveBeenCalledWith(newPassword, 'mockedSalt');
+            expect(User.resetPassword).toHaveBeenCalledWith(userId, 'hashedNewPassword');
             expect(result).not.toHaveProperty('password');
         });
 
@@ -210,9 +301,54 @@ describe('UserService', () => {
                 .toThrow('User ID and password are required');
         });
 
+        it('should throw ApiException when userId is missing', async () => {
+            await expect(UserService.resetPassword(null, 'password123'))
+                .rejects
+                .toThrow('User ID and password are required');
+        });
+
+        it('should throw ApiException when password is missing', async () => {
+            await expect(UserService.resetPassword(1, null))
+                .rejects
+                .toThrow('User ID and password are required');
+        });
+
+        it('should throw ApiException when password is too weak', async () => {
+            const userId = 1;
+            const weakPassword = 'weak';
+
+            dumbPasswords.check.mockReturnValue(true);
+
+            await expect(UserService.resetPassword(userId, weakPassword))
+                .rejects
+                .toThrow('Password is too weak');
+        });
+
+        it('should throw ApiException when bcrypt fails', async () => {
+            const userId = 1;
+            const newPassword = 'strongPassword123!';
+
+            bcrypt.genSalt.mockRejectedValue(new Error('Bcrypt error'));
+
+            await expect(UserService.resetPassword(userId, newPassword))
+                .rejects
+                .toThrow('Failed to reset password, please try again later');
+        });
+
+        it('should throw ApiException when hash fails', async () => {
+            const userId = 1;
+            const newPassword = 'strongPassword123!';
+
+            bcrypt.hash.mockRejectedValue(new Error('Hash error'));
+
+            await expect(UserService.resetPassword(userId, newPassword))
+                .rejects
+                .toThrow('Failed to reset password, please try again later');
+        });
+
         it('should throw ApiException when user is not found', async () => {
             const userId = 999;
-            const newPassword = 'newPassword123';
+            const newPassword = 'newStrongPassword123!';
 
             User.resetPassword.mockResolvedValue(null);
 

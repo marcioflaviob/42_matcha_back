@@ -1,5 +1,4 @@
 const db = require('../../config/db.js');
-const bcrypt = require('bcrypt');
 const ApiException = require('../../exceptions/ApiException.js');
 
 class User {
@@ -50,12 +49,6 @@ class User {
 
     static async create(userData) {
         try {
-
-            if (userData.password) {
-                const salt = await bcrypt.genSalt(10);
-                userData.password = await bcrypt.hash(userData.password, salt);
-            }
-
             const keys = Object.keys(userData);
             const values = Object.values(userData);
 
@@ -71,9 +64,18 @@ class User {
             const result = await db.query(query, values);
             if (result.rows.length === 0) throw new ApiException(500, 'Failed to create user');
             return result.rows[0];
-        } catch (error) {
-            if (error instanceof ApiException) throw error;
+        } catch {
             throw new ApiException(500, 'Failed to create user');
+        }
+    }
+
+    static async checkUserExists(email) {
+        try {
+            const queryResult = await db.query('SELECT * FROM users WHERE email = $1', [email]);
+
+            return queryResult.rows.length > 0;
+        } catch {
+            throw new ApiException(500, 'Failed to check if user exists');
         }
     }
 
@@ -113,15 +115,14 @@ class User {
     }
 
     static async resetPassword(userId, newPassword) {
+        if (!userId || !newPassword) {
+            throw new ApiException(400, 'User ID and new password are required');
+        }
+        
         try {
-
-            const salt = await bcrypt.genSalt(10);
-
-            const hashedPassword = await bcrypt.hash(newPassword, salt);
-
             const result = await db.query(
                 'UPDATE users SET password = $1 WHERE id = $2 RETURNING *',
-                [hashedPassword, userId]
+                [newPassword, userId]
             );
 
             if (result.rows.length === 0) throw new ApiException(404, 'User not found');
