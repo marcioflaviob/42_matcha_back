@@ -134,6 +134,10 @@ const validateUser = async (userId) => {
 const addFameRating = async (userId, rating) => {
     if (!userId || !rating) throw new ApiException(400, 'User ID and rating are required');
 
+    const thisUser = await this.getUserById(userId);
+    if (thisUser.rating + rating < 0)
+        rating = -thisUser.rating;
+
     const user = await User.addFameRating(userId, rating);
 
     if (!user) throw new ApiException(404, 'User not found');

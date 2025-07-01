@@ -40,6 +40,29 @@ describe('MessagesService', () => {
                 timestamp: new Date(),
                 is_read: false
             };
+            const testTimestamp = new Date();
+
+            Messages.createMessage.mockResolvedValue(mockMessage);
+            PusherService.sendMessage.mockResolvedValue(true);
+            NotificationService.newMessageNotification.mockResolvedValue(true);
+
+            const result = await MessagesService.createMessage(1, 2, 'Hello!', testTimestamp);
+
+            expect(Messages.createMessage).toHaveBeenCalledWith(1, 2, 'Hello!', null, testTimestamp);
+            expect(PusherService.sendMessage).toHaveBeenCalledWith(mockMessage);
+            expect(NotificationService.newMessageNotification).toHaveBeenCalledWith(2, 1);
+            expect(result).toEqual(mockMessage);
+        });
+
+        it('should create message with undefined timestamp when not provided', async () => {
+            const mockMessage = {
+                id: 1,
+                sender_id: 1,
+                receiver_id: 2,
+                content: 'Hello!',
+                timestamp: new Date(),
+                is_read: false
+            };
 
             Messages.createMessage.mockResolvedValue(mockMessage);
             PusherService.sendMessage.mockResolvedValue(true);
@@ -47,7 +70,7 @@ describe('MessagesService', () => {
 
             const result = await MessagesService.createMessage(1, 2, 'Hello!');
 
-            expect(Messages.createMessage).toHaveBeenCalledWith(1, 2, 'Hello!', null);
+            expect(Messages.createMessage).toHaveBeenCalledWith(1, 2, 'Hello!', null, undefined);
             expect(PusherService.sendMessage).toHaveBeenCalledWith(mockMessage);
             expect(NotificationService.newMessageNotification).toHaveBeenCalledWith(2, 1);
             expect(result).toEqual(mockMessage);
