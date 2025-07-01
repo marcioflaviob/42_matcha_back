@@ -22,14 +22,23 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: List coverage files
+        run: ls -l coverage && cat coverage/lcov.info | head -20
+
       - name: Run Jest tests
         run: npx jest --coverage
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           EMAIL_API_KEY: ${{ secrets.EMAIL_API_KEY }}
+
+      - name: List coverage files
+        run: ls -l coverage && cat coverage/lcov.info | head -20
           
       - name: SonarQube Scan
         uses: SonarSource/sonarqube-scan-action@v5
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+      - name: List coverage files
+        run: ls -l coverage && cat coverage/lcov.info | head -20
 
