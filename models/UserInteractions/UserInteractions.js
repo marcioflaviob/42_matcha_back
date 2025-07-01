@@ -24,7 +24,6 @@ class UserInteractions {
 			);
 			return result.rows;
 		} catch (error) {
-			console.error('Error fetching likes:', error);
 			throw new ApiException(500, 'Failed to fetch likes');
 		}
 	}
@@ -37,7 +36,6 @@ class UserInteractions {
 			);
 			return result.rows;
 		} catch (error) {
-			console.error('Error fetching likes:', error);
 			throw new ApiException(500, 'Failed to fetch likes');
 		}
 	}
@@ -51,7 +49,6 @@ class UserInteractions {
 			if (result.rows.length === 0) throw new ApiException(500, 'Failed to like user');
 			return result.rows[0];
 		} catch (error) {
-			console.error('Error liking user:', error);
 			throw new ApiException(500, 'Failed to like user');
 		}
 	}
@@ -64,7 +61,6 @@ class UserInteractions {
 			);
 			return result.rows;
 		} catch (error) {
-			console.error('Error fetching profile views:', error);
 			throw new ApiException(500, 'Failed to fetch profile views');
 		}
 	}
@@ -78,7 +74,6 @@ class UserInteractions {
 			if (result.rows.length === 0) throw new ApiException(500, 'Failed to match users');
 			return result.rows[0];
 		} catch (error) {
-			console.error('Error matching users:', error);
 			throw new ApiException(500, 'Failed to match users');
 		}
 	}
@@ -91,7 +86,6 @@ class UserInteractions {
 			);
 			return result.rows;
 		} catch (error) {
-			console.error('Error fetching matches:', error);
 			throw new ApiException(500, 'Failed to fetch matches');
 		}
 	}
@@ -105,7 +99,6 @@ class UserInteractions {
 			if (result.rows.length === 0) throw new ApiException(500, 'Failed to block user');
 			return result.rows[0];
 		} catch (error) {
-			console.error('Error blocking user:', error);
 			throw new ApiException(500, 'Failed to block user');
 		}
 	}
@@ -118,7 +111,6 @@ class UserInteractions {
 			);
 			return result.rows;
 		} catch (error) {
-			console.error('Error fetching blocked users:', error);
 			throw new ApiException(500, 'Failed to fetch blocked users');
 		}
 	}

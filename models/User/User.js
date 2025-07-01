@@ -10,7 +10,6 @@ class User {
             return queryResult.rows;
 
         } catch (error) {
-            console.log(error);
             throw new ApiException(500, 'Failed to fetch users');
         }
     }
@@ -21,7 +20,7 @@ class User {
             if (queryResult.rows.length === 0) throw new ApiException(404, 'User not found');
             return queryResult.rows[0];
         } catch (error) {
-            console.log(error);
+            if (error instanceof ApiException) throw error;
             throw new ApiException(500, 'Failed to fetch user by ID');
         }
     }
@@ -45,7 +44,6 @@ class User {
             );
             return result.rows;
         } catch (error) {
-            console.error('Error fetching potential matches:', error);
             throw new ApiException(500, 'Failed to fetch potential matches');
         }
     }
@@ -74,7 +72,7 @@ class User {
             if (result.rows.length === 0) throw new ApiException(500, 'Failed to create user');
             return result.rows[0];
         } catch (error) {
-            console.log(error);
+            if (error instanceof ApiException) throw error;
             throw new ApiException(500, 'Failed to create user');
         }
     }
@@ -100,7 +98,7 @@ class User {
             if (result.rows.length === 0) throw new ApiException(404, 'User not found');
             return result.rows[0];
         } catch (error) {
-            console.log('Database update error:', error);
+            if (error instanceof ApiException) throw error;
             throw new ApiException(500, 'Failed to update user in database');
         }
     }
@@ -110,7 +108,6 @@ class User {
             await db.query('DELETE FROM users WHERE id = $1', [id]);
             return { success: true };
         } catch (error) {
-            console.log(error);
             throw new ApiException(500, 'Failed to delete user');
         }
     }
@@ -131,7 +128,7 @@ class User {
 
             return result.rows[0];
         } catch (error) {
-            console.log(error);
+            if (error instanceof ApiException) throw error;
             throw new ApiException(500, 'Failed to reset password');
         }
     }
@@ -147,7 +144,7 @@ class User {
 
             return result.rows[0];
         } catch (error) {
-            console.log(error);
+            if (error instanceof ApiException) throw error;
             throw new ApiException(500, 'Failed to validate user');
         }
     }
@@ -163,8 +160,24 @@ class User {
 
             return result.rows[0];
         } catch (error) {
-            console.log(error);
+            if (error instanceof ApiException) throw error;
             throw new ApiException(500, 'Failed to add fame rating');
+        }
+    }
+
+    static async updateLastConnection(userId) {
+        try {
+            const result = await db.query(
+                'UPDATE users SET last_connection = NOW() WHERE id = $1 RETURNING *',
+                [userId]
+            );
+
+            if (result.rows.length === 0) throw new ApiException(404, 'User not found');
+
+            return result.rows[0];
+        } catch (error) {
+            if (error instanceof ApiException) throw error;
+            throw new ApiException(500, 'Failed to update last connection');
         }
     }
 }
