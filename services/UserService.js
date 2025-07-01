@@ -3,6 +3,7 @@ const User = require('../models/User/User.js');
 const InterestsService = require('./InterestsService.js');
 const LocationService = require('./LocationService.js');
 const UserPictureService = require('./UserPictureService.js');
+const UserService = require('./UserService.js');
 const bcrypt = require('bcrypt');
 
 const validateUserId = (userId) => {
@@ -133,6 +134,10 @@ const validateUser = async (userId) => {
 
 const addFameRating = async (userId, rating) => {
     if (!userId || !rating) throw new ApiException(400, 'User ID and rating are required');
+
+    const thisUser = await UserService.getUserById(userId);
+    if (thisUser.rating + rating < 0)
+        rating = -thisUser.rating;
 
     const user = await User.addFameRating(userId, rating);
 
