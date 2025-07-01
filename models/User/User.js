@@ -9,7 +9,7 @@ class User {
             const queryResult = await db.query('SELECT * FROM users');
             return queryResult.rows;
 
-        } catch (error) {
+        } catch {
             throw new ApiException(500, 'Failed to fetch users');
         }
     }
@@ -43,7 +43,7 @@ class User {
                 [userId]
             );
             return result.rows;
-        } catch (error) {
+        } catch {
             throw new ApiException(500, 'Failed to fetch potential matches');
         }
     }
@@ -107,7 +107,7 @@ class User {
         try {
             await db.query('DELETE FROM users WHERE id = $1', [id]);
             return { success: true };
-        } catch (error) {
+        } catch {
             throw new ApiException(500, 'Failed to delete user');
         }
     }

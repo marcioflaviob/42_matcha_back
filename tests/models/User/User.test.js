@@ -147,6 +147,13 @@ describe('User Model', () => {
             await expect(User.create(userData)).rejects.toThrow(ApiException);
             await expect(User.create(userData)).rejects.toThrow('Failed to create user');
         });
+
+        it('should throw another exception when creation fails', async () => {
+            const userData = { email: 'new@test.com', password: 'password123' };
+            db.query.mockRejectedValue(new Error('Database error'));
+            await expect(User.create(userData)).rejects.toThrow(ApiException);
+            await expect(User.create(userData)).rejects.toThrow('Failed to create user');
+        });
     });
 
     describe('updateUserData', () => {
@@ -266,6 +273,108 @@ describe('User Model', () => {
 
             await expect(User.validateUser(userId)).rejects.toThrow(ApiException);
             await expect(User.validateUser(userId)).rejects.toThrow('User not found');
+        });
+    });
+
+    describe('updateLastConnection', () => {
+        it('should update last_connection successfully', async () => {
+            const userId = 1;
+            const mockUser = { id: userId, last_connection: '2025-07-01T12:00:00Z' };
+            db.query.mockResolvedValue({ rows: [mockUser] });
+
+            const result = await User.updateLastConnection(userId);
+
+            expect(db.query).toHaveBeenCalledWith(
+                'UPDATE users SET last_connection = NOW() WHERE id = $1 RETURNING *',
+                [userId]
+            );
+            expect(result).toEqual(mockUser);
+        });
+
+        it('should throw ApiException when user not found', async () => {
+            db.query.mockResolvedValue({ rows: [] });
+            await expect(User.updateLastConnection(999)).rejects.toThrow(ApiException);
+            await expect(User.updateLastConnection(999)).rejects.toThrow('User not found');
+        });
+
+        it('should throw ApiException on database error', async () => {
+            db.query.mockRejectedValue(new Error('DB error'));
+            await expect(User.updateLastConnection(1)).rejects.toThrow(ApiException);
+            await expect(User.updateLastConnection(1)).rejects.toThrow('Failed to update last connection');
+        });
+    });
+
+    describe('findById error handling', () => {
+        it('should throw ApiException on database error', async () => {
+            db.query.mockRejectedValue(new Error('DB error'));
+            await expect(User.findById(1)).rejects.toThrow(ApiException);
+            await expect(User.findById(1)).rejects.toThrow('Failed to fetch user by ID');
+        });
+    });
+
+    describe('delete error handling', () => {
+        it('should throw ApiException on database error', async () => {
+            db.query.mockRejectedValue(new Error('DB error'));
+            await expect(User.delete(1)).rejects.toThrow(ApiException);
+            await expect(User.delete(1)).rejects.toThrow('Failed to delete user');
+        });
+    });
+
+    describe('resetPassword error handling', () => {
+        it('should throw ApiException on database error', async () => {
+            bcrypt.genSalt.mockResolvedValue('salt');
+            bcrypt.hash.mockResolvedValue('hashedPassword');
+            db.query.mockRejectedValue(new Error('DB error'));
+            await expect(User.resetPassword(1, 'pass')).rejects.toThrow(ApiException);
+            await expect(User.resetPassword(1, 'pass')).rejects.toThrow('Failed to reset password');
+        });
+    });
+
+    describe('validateUser error handling', () => {
+        it('should throw ApiException on database error', async () => {
+            db.query.mockRejectedValue(new Error('DB error'));
+            await expect(User.validateUser(1)).rejects.toThrow(ApiException);
+            await expect(User.validateUser(1)).rejects.toThrow('Failed to validate user');
+        });
+    });
+
+    describe('addFameRating error handling', () => {
+        it('should throw ApiException on database error', async () => {
+            db.query.mockRejectedValue(new Error('DB error'));
+            await expect(User.addFameRating(1, 10)).rejects.toThrow(ApiException);
+            await expect(User.addFameRating(1, 10)).rejects.toThrow('Failed to add fame rating');
+        });
+
+        it('should throw ApiException when user not found', async () => {
+            db.query.mockResolvedValue({ rows: [] });
+            await expect(User.addFameRating(999, 10)).rejects.toThrow(ApiException);
+            await expect(User.addFameRating(999, 10)).rejects.toThrow('User not found');
+        });
+    });
+
+    describe('addFameRating should work correctly', () => {
+        it('should return updated user with fame rating', async () => {
+            const userId = 1;
+            const rating = 5;
+            const mockUser = { id: userId, rating: 10 + rating };
+
+            db.query.mockResolvedValue({ rows: [mockUser] });
+
+            const result = await User.addFameRating(userId, rating);
+
+            expect(db.query).toHaveBeenCalledWith(
+                'UPDATE users SET rating = rating + $1 WHERE id = $2 RETURNING *',
+                [rating, userId]
+            );
+            expect(result).toEqual(mockUser);
+        });
+    });
+
+    describe('updateUserData error handling', () => {
+        it('should throw ApiException on database error', async () => {
+            db.query.mockRejectedValue(new Error('DB error'));
+            await expect(User.updateUserData(1, { first_name: 'Test' })).rejects.toThrow(ApiException);
+            await expect(User.updateUserData(1, { first_name: 'Test' })).rejects.toThrow('Failed to update user in database');
         });
     });
 });

@@ -10,8 +10,7 @@ class UserInteractions {
 				[userId, 'like']
 			);
 			return result.rows.length;
-		} catch (error) {
-			console.error('Error fetching like count:', error);
+		} catch {
 			throw new ApiException(500, 'Failed to fetch like count');
 		}
 	}
@@ -23,7 +22,7 @@ class UserInteractions {
 				[userId, 'like']
 			);
 			return result.rows;
-		} catch (error) {
+		} catch {
 			throw new ApiException(500, 'Failed to fetch likes');
 		}
 	}
@@ -35,7 +34,7 @@ class UserInteractions {
 				[userId, 'like']
 			);
 			return result.rows;
-		} catch (error) {
+		} catch {
 			throw new ApiException(500, 'Failed to fetch likes');
 		}
 	}
@@ -48,7 +47,7 @@ class UserInteractions {
 			);
 			if (result.rows.length === 0) throw new ApiException(500, 'Failed to like user');
 			return result.rows[0];
-		} catch (error) {
+		} catch {
 			throw new ApiException(500, 'Failed to like user');
 		}
 	}
@@ -60,7 +59,7 @@ class UserInteractions {
 				[userId, 'view']
 			);
 			return result.rows;
-		} catch (error) {
+		} catch {
 			throw new ApiException(500, 'Failed to fetch profile views');
 		}
 	}
@@ -73,7 +72,7 @@ class UserInteractions {
 			);
 			if (result.rows.length === 0) throw new ApiException(500, 'Failed to match users');
 			return result.rows[0];
-		} catch (error) {
+		} catch {
 			throw new ApiException(500, 'Failed to match users');
 		}
 	}
@@ -85,7 +84,7 @@ class UserInteractions {
 				[userId, 'match']
 			);
 			return result.rows;
-		} catch (error) {
+		} catch {
 			throw new ApiException(500, 'Failed to fetch matches');
 		}
 	}
@@ -98,7 +97,7 @@ class UserInteractions {
 			);
 			if (result.rows.length === 0) throw new ApiException(500, 'Failed to block user');
 			return result.rows[0];
-		} catch (error) {
+		} catch {
 			throw new ApiException(500, 'Failed to block user');
 		}
 	}
@@ -110,7 +109,7 @@ class UserInteractions {
 				[userId, 'block']
 			);
 			return result.rows;
-		} catch (error) {
+		} catch {
 			throw new ApiException(500, 'Failed to fetch blocked users');
 		}
 	}
