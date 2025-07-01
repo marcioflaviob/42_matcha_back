@@ -41,8 +41,22 @@ exports.getPotentialMatches = async (req, res) => {
 exports.blockUser = async (req, res) => {
 	const userId = req.user.id;
 	const blockedUserId = req.params.id;
-	const blockResult = await UserInteractionsService.blockUser(userId, blockedUserId);
-	res.status(200).send(blockResult);
+	const block = await UserInteractionsService.blockUser(userId, blockedUserId);
+	res.status(200).send(block);
+}
+
+exports.reportUser = async (req, res) => {
+	const userId = req.user.id;
+	const reportedUserId = req.params.id;
+	const block = await UserInteractionsService.reportUser(userId, reportedUserId);
+	res.status(200).send(block);
+}
+
+exports.unlikeUser = async (req, res) => {
+	const userId = req.user.id;
+	const unlikedUser = req.params.id;
+	await UserInteractionsService.unlikeUser(userId, unlikedUser);
+	res.status(204).send();
 }
 
 exports.getBlockedUsersByUserId = async (req, res) => {

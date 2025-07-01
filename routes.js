@@ -50,6 +50,8 @@ router.get('/seen/', Authenticate, asyncHandler(UserInteractionsController.getPr
 router.get('/matches', Authenticate, asyncHandler(UserInteractionsController.getMatchesByUserId));
 router.get('/matches/potential', Authenticate, asyncHandler(UserInteractionsController.getPotentialMatches));
 router.post('/block/:id', Authenticate, asyncHandler(UserInteractionsController.blockUser));
+router.post('/report/:id', Authenticate, asyncHandler(UserInteractionsController.reportUser));
+router.delete('/unlike/:id', Authenticate, asyncHandler(UserInteractionsController.unlikeUser));
 
 // Interests
 router.get('/interests', asyncHandler(InterestsController.getAllInterests));

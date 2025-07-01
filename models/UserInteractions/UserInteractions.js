@@ -114,6 +114,19 @@ class UserInteractions {
 		}
 	}
 
+	static async unlikeUser(userId, user2Id) {
+		try {
+			const result = await db.query(
+				`DELETE FROM user_interactions WHERE ((user1 = $1 AND user2 = $2) OR (user1 = $2 AND user2 = $1)) AND (interaction_type = 'match' OR interaction_type = 'like')`,
+				[userId, user2Id]
+			);
+
+			if (result.rowCount != 3) console.error('Unexpected behaviour when unliking user, rowCount:', result.rowCount);
+		} catch {
+			throw new ApiException(500, 'Failed to unlike user');
+		}
+	}
+
 }
 
 module.exports = UserInteractions;

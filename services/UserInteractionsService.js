@@ -117,9 +117,28 @@ exports.blockUser = async (userId, user2Id) => {
 	if (userId == user2Id) throw new ApiException(400, 'You cannot block yourself');
 
 	const block = await UserInteractions.blockUser(userId, user2Id);
-	await NotificationService.newBlockNotification(user2Id, userId);
 	await UserService.addFameRating(user2Id, -10);
 	return block;
+}
+
+exports.reportUser = async (userId, user2Id) => {
+	
+	if (!userId || !user2Id) throw new ApiException(400, 'User IDs are required');
+	if (userId == user2Id) throw new ApiException(400, 'You cannot report yourself');
+	
+	const block = await UserInteractions.blockUser(userId, user2Id);
+	await UserService.addFameRating(user2Id, -15);
+	return block;
+}
+
+exports.unlikeUser = async (userId, user2Id) => {
+	
+	if (!userId || !user2Id) throw new ApiException(400, 'User IDs are required');
+	if (userId == user2Id) throw new ApiException(400, 'You cannot unlike yourself');
+	
+	await UserInteractions.unlikeUser(userId, user2Id);
+	await NotificationService.newUnlikeNotification(user2Id, userId);
+	await UserService.addFameRating(user2Id, -10);
 }
 
 exports.getBlockedUsersIdsByUserId = async (userId) => {
