@@ -658,5 +658,142 @@ describe('User Model', () => {
             const [query] = db.query.mock.calls[0];
             expect(query).toContain('COALESCE(u.rating, 0) as rating');
         });
+
+        it('should include calculated age in SELECT', async () => {
+            const userId = 1;
+            db.query.mockResolvedValue({ rows: mockMatches });
+
+            await User.findPotentialMatches(userId, mockFilters);
+
+            const [query] = db.query.mock.calls[0];
+            expect(query).toContain('EXTRACT(YEAR FROM AGE(u.birthdate)) as calculated_age');
+        });
+
+        it('should verify SQL query includes age range filtering', async () => {
+            const userId = 1;
+            db.query.mockResolvedValue({ rows: mockMatches });
+
+            await User.findPotentialMatches(userId, mockFilters);
+
+            const [query] = db.query.mock.calls[0];
+            expect(query).toContain('CROSS JOIN (');
+            expect(query).toContain('SELECT age_range_min, age_range_max');
+            expect(query).toContain('FROM users');
+            expect(query).toContain('WHERE id = $1');
+            expect(query).toContain(') requester');
+        });
+
+        it('should verify SQL query filters by age range minimum', async () => {
+            const userId = 1;
+            db.query.mockResolvedValue({ rows: mockMatches });
+
+            await User.findPotentialMatches(userId, mockFilters);
+
+            const [query] = db.query.mock.calls[0];
+            expect(query).toContain('AND EXTRACT(YEAR FROM AGE(u.birthdate)) >= requester.age_range_min');
+        });
+
+        it('should verify SQL query filters by age range maximum', async () => {
+            const userId = 1;
+            db.query.mockResolvedValue({ rows: mockMatches });
+
+            await User.findPotentialMatches(userId, mockFilters);
+
+            const [query] = db.query.mock.calls[0];
+            expect(query).toContain('AND EXTRACT(YEAR FROM AGE(u.birthdate)) <= requester.age_range_max');
+        });
+
+        it('should verify SQL query excludes users with null birthdate', async () => {
+            const userId = 1;
+            db.query.mockResolvedValue({ rows: mockMatches });
+
+            await User.findPotentialMatches(userId, mockFilters);
+
+            const [query] = db.query.mock.calls[0];
+            expect(query).toContain('AND u.birthdate IS NOT NULL');
+        });
+
+        it('should handle users within age range correctly', async () => {
+            const userId = 1;
+            const matchesWithAge = [
+                {
+                    id: 2,
+                    first_name: 'Jane',
+                    gender: 'female',
+                    sexual_interest: 'male',
+                    rating: 8,
+                    status: 'complete',
+                    birthdate: '1995-01-01',
+                    calculated_age: 30
+                },
+                {
+                    id: 3,
+                    first_name: 'Alice',
+                    gender: 'female',
+                    sexual_interest: 'Any',
+                    rating: 6,
+                    status: 'complete',
+                    birthdate: '1990-01-01',
+                    calculated_age: 35
+                }
+            ];
+
+            db.query.mockResolvedValue({ rows: matchesWithAge });
+
+            const result = await User.findPotentialMatches(userId, mockFilters);
+
+            expect(result).toEqual(matchesWithAge);
+            expect(result).toHaveLength(2);
+            expect(result[0]).toHaveProperty('calculated_age');
+            expect(result[1]).toHaveProperty('calculated_age');
+        });
+
+        it('should verify SQL query structure with age range cross join', async () => {
+            const userId = 1;
+            db.query.mockResolvedValue({ rows: mockMatches });
+
+            await User.findPotentialMatches(userId, mockFilters);
+
+            const [query] = db.query.mock.calls[0];
+
+            // Verify the cross join structure
+            expect(query).toContain('FROM users u');
+            expect(query).toContain('CROSS JOIN (');
+            expect(query).toContain('SELECT age_range_min, age_range_max');
+            expect(query).toContain('FROM users');
+            expect(query).toContain('WHERE id = $1');
+            expect(query).toContain(') requester');
+
+            // Verify age filtering conditions come after the cross join
+            expect(query).toContain('AND EXTRACT(YEAR FROM AGE(u.birthdate)) >= requester.age_range_min');
+            expect(query).toContain('AND EXTRACT(YEAR FROM AGE(u.birthdate)) <= requester.age_range_max');
+        });
+
+        it('should handle edge case with empty age range results', async () => {
+            const userId = 1;
+            db.query.mockResolvedValue({ rows: [] });
+
+            const result = await User.findPotentialMatches(userId, mockFilters);
+
+            expect(result).toEqual([]);
+            expect(result).toHaveLength(0);
+        });
+
+        it('should verify query parameters remain unchanged with age range feature', async () => {
+            const userId = 1;
+            db.query.mockResolvedValue({ rows: mockMatches });
+
+            await User.findPotentialMatches(userId, mockFilters);
+
+            expect(db.query).toHaveBeenCalledWith(
+                expect.stringContaining('SELECT DISTINCT u.*'),
+                [
+                    userId,
+                    mockFilters.sexual_interest,
+                    mockFilters.min_desired_rating,
+                    mockFilters.gender
+                ]
+            );
+        });
     });
 });
