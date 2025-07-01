@@ -42,13 +42,15 @@ describe('MessagesController', () => {
                 timestamp: new Date(),
                 is_read: false
             };
+            const testTimestamp = new Date();
             const req = {
                 user: {
                     id: 1
                 },
                 body: {
                     receiver_id: 2,
-                    content: 'Hello!'
+                    content: 'Hello!',
+                    timestamp: testTimestamp
                 }
             };
             const res = {
@@ -63,7 +65,46 @@ describe('MessagesController', () => {
             expect(MessagesService.createMessage).toHaveBeenCalledWith(
                 req.user.id,
                 req.body.receiver_id,
-                req.body.content
+                req.body.content,
+                testTimestamp
+            );
+            expect(res.status).toHaveBeenCalledWith(201);
+            expect(res.send).toHaveBeenCalledWith(mockMessage);
+        });
+
+        it('should create message with undefined timestamp when not provided', async () => {
+            const mockMessage = {
+                id: 1,
+                sender_id: 1,
+                receiver_id: 2,
+                content: 'Hello!',
+                timestamp: new Date(),
+                is_read: false
+            };
+            const req = {
+                user: {
+                    id: 1
+                },
+                body: {
+                    receiver_id: 2,
+                    content: 'Hello!'
+                    // timestamp not provided
+                }
+            };
+            const res = {
+                status: jest.fn().mockReturnThis(),
+                send: jest.fn()
+            };
+
+            MessagesService.createMessage.mockResolvedValue(mockMessage);
+
+            await MessagesController.createMessage(req, res);
+
+            expect(MessagesService.createMessage).toHaveBeenCalledWith(
+                req.user.id,
+                req.body.receiver_id,
+                req.body.content,
+                undefined
             );
             expect(res.status).toHaveBeenCalledWith(201);
             expect(res.send).toHaveBeenCalledWith(mockMessage);
