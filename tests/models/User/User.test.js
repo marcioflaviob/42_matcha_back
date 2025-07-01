@@ -401,7 +401,7 @@ describe('User Model', () => {
             db.query.mockResolvedValue({ rows: [] });
 
             await expect(User.addFameRating(userId, rating)).rejects.toThrow(ApiException);
-            await expect(User.addFameRating(userId, rating)).rejects.toThrow('Failed to add fame rating');
+            await expect(User.addFameRating(userId, rating)).rejects.toThrow('User not found');
         });
 
         it('should throw ApiException on database error', async () => {
@@ -609,7 +609,7 @@ describe('User Model', () => {
             await expect(User.findPotentialMatches(userId, mockFilters))
                 .rejects
                 .toThrow(ApiException);
-            
+
             await expect(User.findPotentialMatches(userId, mockFilters))
                 .rejects
                 .toThrow('Failed to find potential matches');
@@ -622,7 +622,7 @@ describe('User Model', () => {
                 min_desired_rating: 10,
                 gender: 'non-binary'
             };
-            
+
             db.query.mockResolvedValue({ rows: [] });
 
             const result = await User.findPotentialMatches(userId, complexFilters);
