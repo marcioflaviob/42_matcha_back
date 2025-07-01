@@ -58,7 +58,7 @@ describe('UserController', () => {
 
     describe('getUserById', () => {
         it('should get user by ID and send 200 with user data', async () => {
-            const userId = '1';
+            const userId = 1;
             const mockUser = {
                 id: 1,
                 email: 'user@test.com',
@@ -67,43 +67,22 @@ describe('UserController', () => {
             const req = {
                 params: {
                     id: userId
+                },
+                user: {
+                    id: 1
                 }
             };
             const res = {
+                status: jest.fn().mockReturnThis(),
                 send: jest.fn()
             };
 
-            UserService.getUserById.mockResolvedValue(mockUser);
+            UserService.getUserProfile.mockResolvedValue(mockUser);
 
             await UserController.getUserById(req, res);
 
-            expect(UserService.getUserById).toHaveBeenCalledWith(userId);
-            expect(res.send).toHaveBeenCalledWith(mockUser);
-        });
-    });
-
-    describe('getUserByEmail', () => {
-        it('should get user by email and send 200 with user data', async () => {
-            const email = 'user@test.com';
-            const mockUser = {
-                id: 1,
-                email: 'user@test.com',
-                name: 'Test User'
-            };
-            const req = {
-                params: {
-                    email: email
-                }
-            };
-            const res = {
-                send: jest.fn()
-            };
-
-            UserService.getUserByEmail.mockResolvedValue(mockUser);
-
-            await UserController.getUserByEmail(req, res);
-
-            expect(UserService.getUserByEmail).toHaveBeenCalledWith(email);
+            expect(UserService.getUserProfile).toHaveBeenCalledWith(userId, userId);
+            expect(res.status).toHaveBeenCalledWith(200);
             expect(res.send).toHaveBeenCalledWith(mockUser);
         });
     });
