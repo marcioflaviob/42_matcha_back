@@ -20,7 +20,7 @@ exports.uploadPicture = async (req, res) => {
 };
 
 exports.getUserPictures = async (req, res) => {
-    const userId = req.params.userId;
+    const userId = req.user.id;
     
     const pictures = await UserPictureService.getUserPictures(userId);
     
@@ -28,7 +28,8 @@ exports.getUserPictures = async (req, res) => {
 };
 
 exports.deleteUserPicture = async (req, res) => {
-    const { userId, pictureId } = req.params;
+    const userId = req.user.id;
+    const { pictureId } = req.params;
     
     const result = await UserPictureService.deleteUserPicture(userId, pictureId);
     
@@ -36,7 +37,8 @@ exports.deleteUserPicture = async (req, res) => {
 };
 
 exports.setProfilePicture = async (req, res) => {
-    const { userId, pictureId } = req.params;
+    const userId = req.user.id;
+    const { pictureId } = req.params;
     
     const updatedPicture = await UserPictureService.setProfilePicture(userId, pictureId);
     
@@ -46,6 +48,7 @@ exports.setProfilePicture = async (req, res) => {
 exports.uploadPictureFromUrl = async (req, res) => {
     const userId = req.user.id;
     const { url } = req.body;
+    
     if (!url) return res.status(400).send({ error: 'No URL provided' });
 
     const result = await UserPictureService.uploadAndPersistPictureFromUrl(userId, url);

@@ -3,7 +3,6 @@ const NotificationService = require('./NotificationService.js');
 const ApiException = require('../exceptions/ApiException.js');
 const LocationService = require('./LocationService.js');
 const UserService = require('./UserService.js');
-const User = require('../models/User/User.js');
 
 exports.getLikeCountByUserId = async (userId) => {
 	const likeCount = await UserInteractions.getLikeCountByUserId(userId);
@@ -70,7 +69,6 @@ exports.getMatchesIdsByUserId = async (userId) => {
 	const userIds = matches.map(match => {
 		return match.user1 == userId ? match.user2 : match.user1;
 	});
-
 	return userIds;
 }
 
