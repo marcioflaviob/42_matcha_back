@@ -377,4 +377,286 @@ describe('User Model', () => {
             await expect(User.updateUserData(1, { first_name: 'Test' })).rejects.toThrow('Failed to update user in database');
         });
     });
+
+    describe('addFameRating', () => {
+        it('should add fame rating successfully', async () => {
+            const userId = 1;
+            const rating = 5;
+            const mockUser = { id: userId, rating: 10 };
+
+            db.query.mockResolvedValue({ rows: [mockUser] });
+
+            const result = await User.addFameRating(userId, rating);
+
+            expect(db.query).toHaveBeenCalledWith(
+                'UPDATE users SET rating = rating + $1 WHERE id = $2 RETURNING *',
+                [rating, userId]
+            );
+            expect(result).toEqual(mockUser);
+        });
+
+        it('should throw ApiException when user not found', async () => {
+            const userId = 999;
+            const rating = 5;
+            db.query.mockResolvedValue({ rows: [] });
+
+            await expect(User.addFameRating(userId, rating)).rejects.toThrow(ApiException);
+            await expect(User.addFameRating(userId, rating)).rejects.toThrow('User not found');
+        });
+
+        it('should throw ApiException on database error', async () => {
+            const userId = 1;
+            const rating = 5;
+            db.query.mockRejectedValue(new Error('Database error'));
+
+            await expect(User.addFameRating(userId, rating)).rejects.toThrow(ApiException);
+            await expect(User.addFameRating(userId, rating)).rejects.toThrow('Failed to add fame rating');
+        });
+    });
+
+    describe('findPotentialMatches', () => {
+        const mockFilters = {
+            sexual_interest: ['male', 'female'],
+            min_desired_rating: 5,
+            gender: 'female'
+        };
+
+        const mockMatches = [
+            {
+                id: 2,
+                first_name: 'Jane',
+                gender: 'female',
+                sexual_interest: 'male',
+                rating: 8,
+                status: 'complete'
+            },
+            {
+                id: 3,
+                first_name: 'Alice',
+                gender: 'female',
+                sexual_interest: 'Any',
+                rating: 6,
+                status: 'complete'
+            }
+        ];
+
+        it('should return potential matches with valid filters', async () => {
+            const userId = 1;
+            db.query.mockResolvedValue({ rows: mockMatches });
+
+            const result = await User.findPotentialMatches(userId, mockFilters);
+
+            expect(db.query).toHaveBeenCalledWith(
+                expect.stringContaining('SELECT DISTINCT u.*'),
+                [
+                    userId,
+                    mockFilters.sexual_interest,
+                    mockFilters.min_desired_rating,
+                    mockFilters.gender
+                ]
+            );
+            expect(result).toEqual(mockMatches);
+        });
+
+        it('should handle filters with default min_desired_rating when not provided', async () => {
+            const userId = 1;
+            const filtersWithoutRating = {
+                sexual_interest: ['male'],
+                gender: 'female'
+            };
+            db.query.mockResolvedValue({ rows: mockMatches });
+
+            const result = await User.findPotentialMatches(userId, filtersWithoutRating);
+
+            expect(db.query).toHaveBeenCalledWith(
+                expect.stringContaining('SELECT DISTINCT u.*'),
+                [
+                    userId,
+                    filtersWithoutRating.sexual_interest,
+                    0, // default min_desired_rating
+                    filtersWithoutRating.gender
+                ]
+            );
+            expect(result).toEqual(mockMatches);
+        });
+
+        it('should verify SQL query excludes current user', async () => {
+            const userId = 1;
+            db.query.mockResolvedValue({ rows: mockMatches });
+
+            await User.findPotentialMatches(userId, mockFilters);
+
+            const [query] = db.query.mock.calls[0];
+            expect(query).toContain('WHERE u.id != $1');
+        });
+
+        it('should verify SQL query filters by complete status', async () => {
+            const userId = 1;
+            db.query.mockResolvedValue({ rows: mockMatches });
+
+            await User.findPotentialMatches(userId, mockFilters);
+
+            const [query] = db.query.mock.calls[0];
+            expect(query).toContain("AND u.status = 'complete'");
+        });
+
+        it('should verify SQL query filters by gender preference', async () => {
+            const userId = 1;
+            db.query.mockResolvedValue({ rows: mockMatches });
+
+            await User.findPotentialMatches(userId, mockFilters);
+
+            const [query] = db.query.mock.calls[0];
+            expect(query).toContain('AND u.gender = ANY($2::text[])');
+        });
+
+        it('should verify SQL query filters by minimum rating', async () => {
+            const userId = 1;
+            db.query.mockResolvedValue({ rows: mockMatches });
+
+            await User.findPotentialMatches(userId, mockFilters);
+
+            const [query] = db.query.mock.calls[0];
+            expect(query).toContain('AND COALESCE(u.rating, 0) >= $3');
+        });
+
+        it('should verify SQL query filters by sexual interest compatibility', async () => {
+            const userId = 1;
+            db.query.mockResolvedValue({ rows: mockMatches });
+
+            await User.findPotentialMatches(userId, mockFilters);
+
+            const [query] = db.query.mock.calls[0];
+            expect(query).toContain("AND (u.sexual_interest = 'Any' OR u.sexual_interest = $4)");
+        });
+
+        it('should verify SQL query excludes already liked users', async () => {
+            const userId = 1;
+            db.query.mockResolvedValue({ rows: mockMatches });
+
+            await User.findPotentialMatches(userId, mockFilters);
+
+            const [query] = db.query.mock.calls[0];
+            expect(query).toContain("AND u.id NOT IN");
+            expect(query).toContain("interaction_type = 'like'");
+        });
+
+        it('should verify SQL query excludes blocked users', async () => {
+            const userId = 1;
+            db.query.mockResolvedValue({ rows: mockMatches });
+
+            await User.findPotentialMatches(userId, mockFilters);
+
+            const [query] = db.query.mock.calls[0];
+            expect(query).toContain("interaction_type = 'block'");
+        });
+
+        it('should verify SQL query requires shared interests', async () => {
+            const userId = 1;
+            db.query.mockResolvedValue({ rows: mockMatches });
+
+            await User.findPotentialMatches(userId, mockFilters);
+
+            const [query] = db.query.mock.calls[0];
+            expect(query).toContain('AND EXISTS');
+            expect(query).toContain('FROM user_interests ui1');
+            expect(query).toContain('JOIN user_interests ui2 ON ui1.interest_id = ui2.interest_id');
+        });
+
+        it('should verify SQL query orders by rating descending', async () => {
+            const userId = 1;
+            db.query.mockResolvedValue({ rows: mockMatches });
+
+            await User.findPotentialMatches(userId, mockFilters);
+
+            const [query] = db.query.mock.calls[0];
+            expect(query).toContain('ORDER BY');
+            expect(query).toContain('COALESCE(u.rating, 0) DESC');
+        });
+
+        it('should return empty array when no matches found', async () => {
+            const userId = 1;
+            db.query.mockResolvedValue({ rows: [] });
+
+            const result = await User.findPotentialMatches(userId, mockFilters);
+
+            expect(result).toEqual([]);
+        });
+
+        it('should handle users with null rating', async () => {
+            const userId = 1;
+            const matchesWithNullRating = [
+                {
+                    id: 2,
+                    first_name: 'Jane',
+                    rating: null,
+                    status: 'complete'
+                }
+            ];
+            db.query.mockResolvedValue({ rows: matchesWithNullRating });
+
+            const result = await User.findPotentialMatches(userId, mockFilters);
+
+            expect(result).toEqual(matchesWithNullRating);
+            const [query] = db.query.mock.calls[0];
+            expect(query).toContain('COALESCE(u.rating, 0)');
+        });
+
+        it('should throw ApiException on database error', async () => {
+            const userId = 1;
+            db.query.mockRejectedValue(new Error('Database connection failed'));
+
+            await expect(User.findPotentialMatches(userId, mockFilters))
+                .rejects
+                .toThrow(ApiException);
+
+            await expect(User.findPotentialMatches(userId, mockFilters))
+                .rejects
+                .toThrow('Failed to find potential matches');
+        });
+
+        it('should handle complex filter combinations', async () => {
+            const userId = 1;
+            const complexFilters = {
+                sexual_interest: ['male', 'female', 'non-binary'],
+                min_desired_rating: 10,
+                gender: 'non-binary'
+            };
+
+            db.query.mockResolvedValue({ rows: [] });
+
+            const result = await User.findPotentialMatches(userId, complexFilters);
+
+            expect(db.query).toHaveBeenCalledWith(
+                expect.stringContaining('SELECT DISTINCT u.*'),
+                [
+                    userId,
+                    complexFilters.sexual_interest,
+                    complexFilters.min_desired_rating,
+                    complexFilters.gender
+                ]
+            );
+            expect(result).toEqual([]);
+        });
+
+        it('should ensure DISTINCT is used to avoid duplicate results', async () => {
+            const userId = 1;
+            db.query.mockResolvedValue({ rows: mockMatches });
+
+            await User.findPotentialMatches(userId, mockFilters);
+
+            const [query] = db.query.mock.calls[0];
+            expect(query).toContain('SELECT DISTINCT u.*');
+        });
+
+        it('should include rating in SELECT with proper COALESCE', async () => {
+            const userId = 1;
+            db.query.mockResolvedValue({ rows: mockMatches });
+
+            await User.findPotentialMatches(userId, mockFilters);
+
+            const [query] = db.query.mock.calls[0];
+            expect(query).toContain('COALESCE(u.rating, 0) as rating');
+        });
+    });
 });

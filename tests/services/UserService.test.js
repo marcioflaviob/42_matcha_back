@@ -542,427 +542,782 @@ describe('UserService', () => {
         });
     });
 
-    describe('getValidUsers', () => {
-        it('should return formatted valid users', async () => {
-            const mockUsers = [
-                { id: 2, email: 'user2@test.com', status: 'complete' },
-                { id: 3, email: 'user3@test.com', status: 'complete' }
+    describe('getPotentialMatches', () => {
+        const mockFilters = {
+            sexual_interest: ['male', 'female'],
+            min_desired_rating: 5,
+            gender: 'female'
+        };
+
+        const mockRawMatches = [
+            {
+                id: 2,
+                first_name: 'Jane',
+                last_name: 'Doe',
+                email: 'jane@test.com',
+                gender: 'female',
+                sexual_interest: 'male',
+                rating: 8,
+                status: 'complete',
+                birthdate: '1995-01-01'
+            },
+            {
+                id: 3,
+                first_name: 'Alice',
+                last_name: 'Smith',
+                email: 'alice@test.com',
+                gender: 'female',
+                sexual_interest: 'Any',
+                rating: 6,
+                status: 'complete',
+                birthdate: '1990-01-01'
+            }
+        ];
+
+        const mockFormattedMatches = [
+            {
+                id: 2,
+                first_name: 'Jane',
+                last_name: 'Doe',
+                email: 'jane@test.com',
+                gender: 'female',
+                sexual_interest: 'male',
+                rating: 8,
+                status: 'complete',
+                birthdate: '1995-01-01',
+                age: 30,
+                interests: [{ id: 1, name: 'music' }],
+                pictures: [{ id: 1, url: 'jane.jpg' }],
+                like_count: 5,
+                location: { latitude: 48.8566, longitude: 2.3522 }
+            },
+            {
+                id: 3,
+                first_name: 'Alice',
+                last_name: 'Smith',
+                email: 'alice@test.com',
+                gender: 'female',
+                sexual_interest: 'Any',
+                rating: 6,
+                status: 'complete',
+                birthdate: '1990-01-01',
+                age: 35,
+                interests: [{ id: 2, name: 'art' }],
+                pictures: [{ id: 2, url: 'alice.jpg' }],
+                like_count: 3,
+                location: { latitude: 48.8567, longitude: 2.3523 }
+            }
+        ];
+
+        beforeEach(() => {
+            // Mock the formatting dependencies for each user
+            InterestsService.getInterestsListByUserId
+                .mockResolvedValueOnce([{ id: 1, name: 'music' }])
+                .mockResolvedValueOnce([{ id: 2, name: 'art' }]);
+
+            UserPictureService.getUserPictures
+                .mockResolvedValueOnce([{ id: 1, url: 'jane.jpg' }])
+                .mockResolvedValueOnce([{ id: 2, url: 'alice.jpg' }]);
+
+            const mockUserInteractions = require('../../models/UserInteractions/UserInteractions.js');
+            mockUserInteractions.getLikeCountByUserId = jest.fn()
+                .mockResolvedValueOnce(5)
+                .mockResolvedValueOnce(3);
+
+            LocationService.getLocationByUserId
+                .mockResolvedValueOnce({ latitude: 48.8566, longitude: 2.3522 })
+                .mockResolvedValueOnce({ latitude: 48.8567, longitude: 2.3523 });
+        });
+
+        it('should return formatted potential matches', async () => {
+            const userId = 1;
+            User.findPotentialMatches.mockResolvedValue(mockRawMatches);
+
+            const result = await UserService.getPotentialMatches(userId, mockFilters);
+
+            expect(User.findPotentialMatches).toHaveBeenCalledWith(userId, mockFilters);
+            expect(result).toHaveLength(2);
+            expect(result[0]).not.toHaveProperty('password');
+            expect(result[0]).toHaveProperty('age');
+            expect(result[0]).toHaveProperty('interests');
+            expect(result[0]).toHaveProperty('pictures');
+            expect(result[0]).toHaveProperty('like_count');
+            expect(result[0]).toHaveProperty('location');
+        });
+
+        it('should handle empty results from User.findPotentialMatches', async () => {
+            const userId = 1;
+            User.findPotentialMatches.mockResolvedValue([]);
+
+            const result = await UserService.getPotentialMatches(userId, mockFilters);
+
+            expect(User.findPotentialMatches).toHaveBeenCalledWith(userId, mockFilters);
+            expect(result).toEqual([]);
+        });
+
+        it('should pass filters correctly to User.findPotentialMatches', async () => {
+            const userId = 1;
+            const customFilters = {
+                sexual_interest: ['non-binary'],
+                min_desired_rating: 10,
+                gender: 'non-binary'
+            };
+            User.findPotentialMatches.mockResolvedValue([]);
+
+            await UserService.getPotentialMatches(userId, customFilters);
+
+            expect(User.findPotentialMatches).toHaveBeenCalledWith(userId, customFilters);
+        });
+
+        it('should format each user with all required properties', async () => {
+            const userId = 1;
+            User.findPotentialMatches.mockResolvedValue([mockRawMatches[0]]);
+
+            const result = await UserService.getPotentialMatches(userId, mockFilters);
+
+            expect(result[0]).toEqual(
+                expect.objectContaining({
+                    id: 2,
+                    first_name: 'Jane',
+                    last_name: 'Doe',
+                    email: 'jane@test.com',
+                    age: expect.any(Number),
+                    interests: expect.any(Array),
+                    pictures: expect.any(Array),
+                    like_count: expect.any(Number),
+                    location: expect.any(Object)
+                })
+            );
+            expect(result[0]).not.toHaveProperty('password');
+        });
+
+        it('should handle users with missing optional data gracefully', async () => {
+            const userId = 1;
+            const userWithMissingData = {
+                id: 4,
+                first_name: 'Minimal',
+                email: 'minimal@test.com',
+                status: 'complete'
+            };
+
+            User.findPotentialMatches.mockResolvedValue([userWithMissingData]);
+
+            // Reset mocks and set up for minimal user
+            InterestsService.getInterestsListByUserId.mockReset().mockResolvedValue([]);
+            UserPictureService.getUserPictures.mockReset().mockResolvedValue([]);
+            const mockUserInteractions = require('../../models/UserInteractions/UserInteractions.js');
+            mockUserInteractions.getLikeCountByUserId = jest.fn().mockResolvedValue(0);
+            LocationService.getLocationByUserId.mockReset().mockResolvedValue(null);
+
+            const result = await UserService.getPotentialMatches(userId, mockFilters);
+
+            expect(result[0]).toEqual(
+                expect.objectContaining({
+                    id: 4,
+                    first_name: 'Minimal',
+                    email: 'minimal@test.com',
+                    interests: [],
+                    pictures: [],
+                    like_count: 0,
+                    location: null
+                })
+            );
+        });
+
+        it('should handle service errors during formatting', async () => {
+            const userId = 1;
+            User.findPotentialMatches.mockResolvedValue([mockRawMatches[0]]);
+
+            // Mock a service error
+            InterestsService.getInterestsListByUserId.mockReset().mockRejectedValue(new Error('Service error'));
+
+            await expect(UserService.getPotentialMatches(userId, mockFilters))
+                .rejects
+                .toThrow('Service error');
+        });
+
+        it('should sort pictures with profile picture first', async () => {
+            const userId = 1;
+            const userWithMultiplePictures = { ...mockRawMatches[0] };
+
+            User.findPotentialMatches.mockResolvedValue([userWithMultiplePictures]);
+
+            // Reset mocks
+            InterestsService.getInterestsListByUserId.mockReset().mockResolvedValue([]);
+            LocationService.getLocationByUserId.mockReset().mockResolvedValue(null);
+            const mockUserInteractions = require('../../models/UserInteractions/UserInteractions.js');
+            mockUserInteractions.getLikeCountByUserId = jest.fn().mockResolvedValue(0);
+
+            // Mock pictures with profile picture not first
+            const mockPictures = [
+                { id: 1, url: 'pic1.jpg', is_profile: false },
+                { id: 2, url: 'profile.jpg', is_profile: true },
+                { id: 3, url: 'pic3.jpg', is_profile: false }
+            ];
+            UserPictureService.getUserPictures.mockReset().mockResolvedValue(mockPictures);
+
+            const result = await UserService.getPotentialMatches(userId, mockFilters);
+
+            expect(result[0].pictures[0].is_profile).toBe(true);
+            expect(result[0].pictures[0].url).toBe('profile.jpg');
+        });
+
+        it('should calculate age correctly from birthdate', async () => {
+            const userId = 1;
+            const currentYear = new Date().getFullYear();
+            const userWith25Years = {
+                ...mockRawMatches[0],
+                birthdate: `${currentYear - 25}-06-15`
+            };
+
+            User.findPotentialMatches.mockResolvedValue([userWith25Years]);
+
+            // Reset mocks for single user
+            InterestsService.getInterestsListByUserId.mockReset().mockResolvedValue([]);
+            UserPictureService.getUserPictures.mockReset().mockResolvedValue([]);
+            const mockUserInteractions = require('../../models/UserInteractions/UserInteractions.js');
+            mockUserInteractions.getLikeCountByUserId = jest.fn().mockResolvedValue(0);
+            LocationService.getLocationByUserId.mockReset().mockResolvedValue(null);
+
+            const result = await UserService.getPotentialMatches(userId, mockFilters);
+
+            expect(result[0].age).toBeGreaterThanOrEqual(24);
+            expect(result[0].age).toBeLessThanOrEqual(26);
+        });
+
+        it('should handle null birthdate gracefully', async () => {
+            const userId = 1;
+            const userWithNullBirthdate = {
+                ...mockRawMatches[0],
+                birthdate: null
+            };
+
+            User.findPotentialMatches.mockResolvedValue([userWithNullBirthdate]);
+
+            // Reset mocks for single user
+            InterestsService.getInterestsListByUserId.mockReset().mockResolvedValue([]);
+            UserPictureService.getUserPictures.mockReset().mockResolvedValue([]);
+            const mockUserInteractions = require('../../models/UserInteractions/UserInteractions.js');
+            mockUserInteractions.getLikeCountByUserId = jest.fn().mockResolvedValue(0);
+            LocationService.getLocationByUserId.mockReset().mockResolvedValue(null);
+
+            const result = await UserService.getPotentialMatches(userId, mockFilters);
+
+            expect(result[0].age).toBeNull();
+        });
+
+        it('should handle invalid birthdate gracefully', async () => {
+            const userId = 1;
+            const userWithInvalidBirthdate = {
+                ...mockRawMatches[0],
+                birthdate: 'invalid-date'
+            };
+
+            User.findPotentialMatches.mockResolvedValue([userWithInvalidBirthdate]);
+
+            // Reset mocks for single user
+            InterestsService.getInterestsListByUserId.mockReset().mockResolvedValue([]);
+            UserPictureService.getUserPictures.mockReset().mockResolvedValue([]);
+            const mockUserInteractions = require('../../models/UserInteractions/UserInteractions.js');
+            mockUserInteractions.getLikeCountByUserId = jest.fn().mockResolvedValue(0);
+            LocationService.getLocationByUserId.mockReset().mockResolvedValue(null);
+
+            const result = await UserService.getPotentialMatches(userId, mockFilters);
+
+            expect(result[0].age).toBeNull();
+        });
+
+        it('should handle User.findPotentialMatches database errors', async () => {
+            const userId = 1;
+            User.findPotentialMatches.mockRejectedValue(new Error('Database connection failed'));
+
+            await expect(UserService.getPotentialMatches(userId, mockFilters))
+                .rejects
+                .toThrow('Database connection failed');
+        });
+
+        it('should handle multiple users with mixed data completeness', async () => {
+            const userId = 1;
+            const mixedUsers = [
+                mockRawMatches[0], // Complete user
+                {
+                    id: 5,
+                    first_name: 'Incomplete',
+                    email: 'incomplete@test.com',
+                    status: 'complete'
+                    // Missing many optional fields
+                }
             ];
 
-            User.findAllValidUsers.mockResolvedValue(mockUsers);
+            User.findPotentialMatches.mockResolvedValue(mixedUsers);
+
+            // Reset and setup mocks for two users
+            InterestsService.getInterestsListByUserId.mockReset()
+                .mockResolvedValueOnce([{ id: 1, name: 'music' }])
+                .mockResolvedValueOnce([]);
+
+            UserPictureService.getUserPictures.mockReset()
+                .mockResolvedValueOnce([{ id: 1, url: 'jane.jpg' }])
+                .mockResolvedValueOnce([]);
+
+            const mockUserInteractions = require('../../models/UserInteractions/UserInteractions.js');
+            mockUserInteractions.getLikeCountByUserId = jest.fn()
+                .mockResolvedValueOnce(5)
+                .mockResolvedValueOnce(0);
+
+            LocationService.getLocationByUserId.mockReset()
+                .mockResolvedValueOnce({ latitude: 48.8566, longitude: 2.3522 })
+                .mockResolvedValueOnce(null);
+
+            const result = await UserService.getPotentialMatches(userId, mockFilters);
+
+            expect(result).toHaveLength(2);
+            expect(result[0].interests).toHaveLength(1);
+            expect(result[1].interests).toHaveLength(0);
+            expect(result[0].pictures).toHaveLength(1);
+            expect(result[1].pictures).toHaveLength(0);
+        });
+
+        it('should preserve all user fields from database', async () => {
+            const userId = 1;
+            const userWithAllFields = {
+                id: 6,
+                first_name: 'Complete',
+                last_name: 'User',
+                email: 'complete@test.com',
+                gender: 'female',
+                sexual_interest: 'male',
+                rating: 7,
+                status: 'complete',
+                birthdate: '1992-01-01',
+                bio: 'Test bio',
+                created_at: '2024-01-01',
+                updated_at: '2024-01-02'
+            };
+
+            User.findPotentialMatches.mockResolvedValue([userWithAllFields]);
+
+            // Reset mocks for single user
+            InterestsService.getInterestsListByUserId.mockReset().mockResolvedValue([]);
+            UserPictureService.getUserPictures.mockReset().mockResolvedValue([]);
+            const mockUserInteractions = require('../../models/UserInteractions/UserInteractions.js');
+            mockUserInteractions.getLikeCountByUserId = jest.fn().mockResolvedValue(0);
+            LocationService.getLocationByUserId.mockReset().mockResolvedValue(null);
+
+            const result = await UserService.getPotentialMatches(userId, mockFilters);
+
+            expect(result[0]).toEqual(
+                expect.objectContaining({
+                    id: 6,
+                    first_name: 'Complete',
+                    last_name: 'User',
+                    email: 'complete@test.com',
+                    gender: 'female',
+                    sexual_interest: 'male',
+                    rating: 7,
+                    status: 'complete',
+                    bio: 'Test bio',
+                    created_at: '2024-01-01',
+                    updated_at: '2024-01-02'
+                })
+            );
+        });
+    });
+});
+
+describe('age calculation edge cases', () => {
+    const testCases = [
+        { birthdate: '1990-01-01', expectedAge: 35 },
+        { birthdate: '2025-12-31', expectedAge: null },
+        { birthdate: null, expectedAge: null },
+        { birthdate: undefined, expectedAge: null },
+        { birthdate: '', expectedAge: null },
+        { birthdate: 'invalid-date', expectedAge: null },
+        { birthdate: '1990-13-40', expectedAge: null }
+    ];
+
+    testCases.forEach(({ birthdate, expectedAge }) => {
+        it(`should calculate age correctly for birthdate: ${birthdate}`, async () => {
+            const mockUser = {
+                id: 1,
+                email: 'test@example.com',
+                birthdate: birthdate
+            };
+
+            User.findById.mockResolvedValue(mockUser);
             InterestsService.getInterestsListByUserId.mockResolvedValue([]);
             UserPictureService.getUserPictures.mockResolvedValue([]);
             UserInteractionsService.getLikeCountByUserId.mockResolvedValue(0);
             LocationService.getLocationByUserId.mockResolvedValue(null);
 
-            const result = await UserService.getValidUsers(1);
+            const result = await UserService.getUserById(1);
 
-            expect(User.findAllValidUsers).toHaveBeenCalledWith(1);
-            expect(result).toHaveLength(2);
-            expect(result[0]).not.toHaveProperty('password');
-        });
-
-        it('should throw ApiException when userId is missing', async () => {
-            await expect(UserService.getValidUsers())
-                .rejects
-                .toThrow('User ID is required');
+            if (expectedAge === null) {
+                expect(result.age).toBeNull();
+            } else {
+                expect(result.age).toBeGreaterThanOrEqual(expectedAge - 1);
+                expect(result.age).toBeLessThanOrEqual(expectedAge + 1);
+            }
         });
     });
+});
 
-    describe('age calculation edge cases', () => {
-        const testCases = [
-            { birthdate: '1990-01-01', expectedAge: 35 },
-            { birthdate: '2025-12-31', expectedAge: null },
-            { birthdate: null, expectedAge: null },
-            { birthdate: undefined, expectedAge: null },
-            { birthdate: '', expectedAge: null },
-            { birthdate: 'invalid-date', expectedAge: null },
-            { birthdate: '1990-13-40', expectedAge: null }
-        ];
+describe('error handling and edge cases', () => {
+    it('should handle updateUser with empty body gracefully', async () => {
+        const emptyReq = {
+            user: { id: 1 },
+            body: {
+                id: 1
+            }
+        };
 
-        testCases.forEach(({ birthdate, expectedAge }) => {
-            it(`should calculate age correctly for birthdate: ${birthdate}`, async () => {
-                const mockUser = {
-                    id: 1,
-                    email: 'test@example.com',
-                    birthdate: birthdate
-                };
+        User.findById.mockResolvedValue({ id: 1, email: 'test@example.com' });
+        InterestsService.updateUserInterests.mockResolvedValue([]);
+        LocationService.updateUserLocation.mockResolvedValue(null);
 
-                User.findById.mockResolvedValue(mockUser);
-                InterestsService.getInterestsListByUserId.mockResolvedValue([]);
-                UserPictureService.getUserPictures.mockResolvedValue([]);
-                UserInteractionsService.getLikeCountByUserId.mockResolvedValue(0);
-                LocationService.getLocationByUserId.mockResolvedValue(null);
+        const result = await UserService.updateUser(emptyReq);
 
-                const result = await UserService.getUserById(1);
-
-                if (expectedAge === null) {
-                    expect(result.age).toBeNull();
-                } else {
-                    expect(result.age).toBeGreaterThanOrEqual(expectedAge - 1);
-                    expect(result.age).toBeLessThanOrEqual(expectedAge + 1);
-                }
-            });
-        });
+        expect(User.findById).toHaveBeenCalledWith(1);
+        expect(result).toBeDefined();
     });
 
-    describe('error handling and edge cases', () => {
-        it('should handle updateUser with empty body gracefully', async () => {
-            const emptyReq = {
-                user: { id: 1 },
-                body: {
-                    id: 1
-                }
-            };
-
-            User.findById.mockResolvedValue({ id: 1, email: 'test@example.com' });
-            InterestsService.updateUserInterests.mockResolvedValue([]);
-            LocationService.updateUserLocation.mockResolvedValue(null);
-
-            const result = await UserService.updateUser(emptyReq);
-
-            expect(User.findById).toHaveBeenCalledWith(1);
-            expect(result).toBeDefined();
-        });
-
-        it('should handle updateUser with interests only', async () => {
-            const interestsOnlyReq = {
-                user: { id: 1 },
-                body: {
-                    id: 1,
-                    interests: [{ id: 1, name: 'coding' }]
-                }
-            };
-
-            User.findById.mockResolvedValue({ id: 1, email: 'test@example.com' });
-            InterestsService.updateUserInterests.mockResolvedValue([{ id: 1, name: 'coding' }]);
-            LocationService.updateUserLocation.mockResolvedValue(null);
-
-            const result = await UserService.updateUser(interestsOnlyReq);
-
-            expect(result.interests).toHaveLength(1);
-        });
-
-        it('should handle updateUser with location only', async () => {
-            const locationOnlyReq = {
-                user: { id: 1 },
-                body: {
-                    id: 1,
-                    location: { latitude: 48.8566, longitude: 2.3522 }
-                }
-            };
-
-            User.findById.mockResolvedValue({ id: 1, email: 'test@example.com' });
-            InterestsService.updateUserInterests.mockResolvedValue([]);
-            LocationService.getLocationByUserId.mockResolvedValue({ latitude: 48.8566, longitude: 2.3522 });
-
-            const result = await UserService.updateUser(locationOnlyReq);
-
-            expect(result.location).toBeDefined();
-            expect(result.location.latitude).toBe(48.8566);
-        });
-
-        it('should handle bcrypt errors during password update', async () => {
-            const reqWithPassword = {
-                user: { id: 1 },
-                body: {
-                    id: 1,
-                    password: 'newpassword'
-                }
-            };
-
-            bcrypt.genSalt.mockRejectedValue(new Error('Bcrypt error'));
-
-            await expect(UserService.updateUser(reqWithPassword))
-                .rejects
-                .toThrow('Failed to update user');
-        });
-
-        it('should handle User.updateUserData errors', async () => {
-            const mockReq = {
-                user: { id: 1 },
-                body: {
-                    id: 1,
-                    email: 'test@example.com'
-                }
-            };
-
-            User.updateUserData.mockRejectedValue(new Error('Database error'));
-
-            await expect(UserService.updateUser(mockReq))
-                .rejects
-                .toThrow('Failed to update user');
-        });
-
-        it('should handle formatUser with service errors gracefully during update', async () => {
-            const mockReq = {
-                user: { id: 1 },
-                body: {
-                    id: 1,
-                    name: 'Test',
-                    interests: [{ id: 1, name: 'coding' }]
-                }
-            };
-
-            User.updateUserData.mockResolvedValue({ id: 1, name: 'Test' });
-            InterestsService.updateUserInterests.mockRejectedValue(new Error('Interests service error'));
-
-            await expect(UserService.updateUser(mockReq))
-                .rejects
-                .toThrow('Failed to update user');
-        });
-
-        it('should handle email validation status update', async () => {
-            const emailUpdateReq = {
-                user: { id: 1 },
-                body: {
-                    id: 1,
-                    email: 'newemail@test.com'
-                }
-            };
-
-            User.updateUserData.mockResolvedValue({
+    it('should handle updateUser with interests only', async () => {
+        const interestsOnlyReq = {
+            user: { id: 1 },
+            body: {
                 id: 1,
+                interests: [{ id: 1, name: 'coding' }]
+            }
+        };
+
+        User.findById.mockResolvedValue({ id: 1, email: 'test@example.com' });
+        InterestsService.updateUserInterests.mockResolvedValue([{ id: 1, name: 'coding' }]);
+        LocationService.updateUserLocation.mockResolvedValue(null);
+
+        const result = await UserService.updateUser(interestsOnlyReq);
+
+        expect(result.interests).toHaveLength(1);
+    });
+
+    it('should handle updateUser with location only', async () => {
+        const locationOnlyReq = {
+            user: { id: 1 },
+            body: {
+                id: 1,
+                location: { latitude: 48.8566, longitude: 2.3522 }
+            }
+        };
+
+        User.findById.mockResolvedValue({ id: 1, email: 'test@example.com' });
+        InterestsService.updateUserInterests.mockResolvedValue([]);
+        LocationService.getLocationByUserId.mockResolvedValue({ latitude: 48.8566, longitude: 2.3522 });
+
+        const result = await UserService.updateUser(locationOnlyReq);
+
+        expect(result.location).toBeDefined();
+        expect(result.location.latitude).toBe(48.8566);
+    });
+
+    it('should handle bcrypt errors during password update', async () => {
+        const reqWithPassword = {
+            user: { id: 1 },
+            body: {
+                id: 1,
+                password: 'newpassword'
+            }
+        };
+
+        bcrypt.genSalt.mockRejectedValue(new Error('Bcrypt error'));
+
+        await expect(UserService.updateUser(reqWithPassword))
+            .rejects
+            .toThrow('Failed to update user');
+    });
+
+    it('should handle User.updateUserData errors', async () => {
+        const mockReq = {
+            user: { id: 1 },
+            body: {
+                id: 1,
+                email: 'test@example.com'
+            }
+        };
+
+        User.updateUserData.mockRejectedValue(new Error('Database error'));
+
+        await expect(UserService.updateUser(mockReq))
+            .rejects
+            .toThrow('Failed to update user');
+    });
+
+    it('should handle formatUser with service errors gracefully during update', async () => {
+        const mockReq = {
+            user: { id: 1 },
+            body: {
+                id: 1,
+                name: 'Test',
+                interests: [{ id: 1, name: 'coding' }]
+            }
+        };
+
+        User.updateUserData.mockResolvedValue({ id: 1, name: 'Test' });
+        InterestsService.updateUserInterests.mockRejectedValue(new Error('Interests service error'));
+
+        await expect(UserService.updateUser(mockReq))
+            .rejects
+            .toThrow('Failed to update user');
+    });
+
+    it('should handle email validation status update', async () => {
+        const emailUpdateReq = {
+            user: { id: 1 },
+            body: {
+                id: 1,
+                email: 'newemail@test.com'
+            }
+        };
+
+        User.updateUserData.mockResolvedValue({
+            id: 1,
+            email: 'newemail@test.com',
+            status: 'validation'
+        });
+        InterestsService.updateUserInterests.mockResolvedValue([]);
+        LocationService.updateUserLocation.mockResolvedValue(null);
+
+        await UserService.updateUser(emailUpdateReq);
+
+        expect(User.updateUserData).toHaveBeenCalledWith(1,
+            expect.objectContaining({
                 email: 'newemail@test.com',
                 status: 'validation'
-            });
-            InterestsService.updateUserInterests.mockResolvedValue([]);
-            LocationService.updateUserLocation.mockResolvedValue(null);
-
-            await UserService.updateUser(emailUpdateReq);
-
-            expect(User.updateUserData).toHaveBeenCalledWith(1,
-                expect.objectContaining({
-                    email: 'newemail@test.com',
-                    status: 'validation'
-                })
-            );
-        });
+            })
+        );
     });
+});
 
-    describe('calculateAge', () => {
-        it('should handle invalid date gracefully and return null', async () => {
-            const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => { });
+describe('calculateAge', () => {
+    it('should handle invalid date gracefully and return null', async () => {
+        const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => { });
 
-            User.findById.mockResolvedValue({
-                id: 1,
-                first_name: 'Test',
-                last_name: 'User',
-                email: 'test@example.com',
-                birthdate: 'invalid-date',
-                status: 'complete'
-            });
+        User.findById.mockResolvedValue({
+            id: 1,
+            first_name: 'Test',
+            last_name: 'User',
+            email: 'test@example.com',
+            birthdate: 'invalid-date',
+            status: 'complete'
+        });
 
-            const InterestsService = require('../../services/InterestsService.js');
-            const UserPictureService = require('../../services/UserPictureService.js');
-            const UserInteractionsService = require('../../services/UserInteractionsService.js');
-            const LocationService = require('../../services/LocationService.js');
+        const InterestsService = require('../../services/InterestsService.js');
+        const UserPictureService = require('../../services/UserPictureService.js');
+        const UserInteractionsService = require('../../services/UserInteractionsService.js');
+        const LocationService = require('../../services/LocationService.js');
 
-            InterestsService.getInterestsListByUserId = jest.fn().mockResolvedValue([]);
-            UserPictureService.getUserPictures = jest.fn().mockResolvedValue([]);
-            UserInteractionsService.getLikeCountByUserId = jest.fn().mockResolvedValue(0);
-            LocationService.getLocationByUserId = jest.fn().mockRejectedValue(new Error('No location'));
+        InterestsService.getInterestsListByUserId = jest.fn().mockResolvedValue([]);
+        UserPictureService.getUserPictures = jest.fn().mockResolvedValue([]);
+        UserInteractionsService.getLikeCountByUserId = jest.fn().mockResolvedValue(0);
+        LocationService.getLocationByUserId = jest.fn().mockRejectedValue(new Error('No location'));
 
-            const originalDate = global.Date;
-            global.Date = class extends Date {
-                constructor(...args) {
-                    if (args[0] === 'invalid-date') {
-                        throw new Error('Invalid date');
-                    }
-                    super(...args);
+        const originalDate = global.Date;
+        global.Date = class extends Date {
+            constructor(...args) {
+                if (args[0] === 'invalid-date') {
+                    throw new Error('Invalid date');
                 }
-            };
-
-            const result = await UserService.getUserById(1);
-
-            global.Date = originalDate;
-
-            expect(result.age).toBeNull();
-            expect(consoleSpy).toHaveBeenCalledWith('Age calculation error:', expect.any(Error));
-
-            consoleSpy.mockRestore();
-        });
-
-        it('should return null for future birthdates (negative age prevention)', async () => {
-            const futureDate = new Date();
-            futureDate.setFullYear(futureDate.getFullYear() + 1);
-
-            User.findById.mockResolvedValue({
-                id: 1,
-                first_name: 'Future',
-                last_name: 'User',
-                email: 'future@example.com',
-                birthdate: futureDate.toISOString().split('T')[0],
-                status: 'complete'
-            });
-
-            const InterestsService = require('../../services/InterestsService.js');
-            const UserPictureService = require('../../services/UserPictureService.js');
-            const UserInteractionsService = require('../../services/UserInteractionsService.js');
-            const LocationService = require('../../services/LocationService.js');
-
-            InterestsService.getInterestsListByUserId = jest.fn().mockResolvedValue([]);
-            UserPictureService.getUserPictures = jest.fn().mockResolvedValue([]);
-            UserInteractionsService.getLikeCountByUserId = jest.fn().mockResolvedValue(0);
-            LocationService.getLocationByUserId = jest.fn().mockRejectedValue(new Error('No location'));
-
-            const result = await UserService.getUserById(1);
-
-            expect(result.age).toBeNull();
-        });
-    });
-
-    describe('updateUser error handling', () => {
-        it('should handle errors and throw ApiException when User.updateUserData fails', async () => {
-            const userId = 1;
-            const req = {
-                body: { id: userId, first_name: 'John' },
-                user: { id: userId }
-            };
-
-            User.updateUserData.mockRejectedValue(new Error('Database error'));
-
-            await expect(UserService.updateUser(req))
-                .rejects
-                .toThrow(ApiException);
-
-            expect(User.updateUserData).toHaveBeenCalledWith(userId, { first_name: 'John' });
-        });
-
-        it('should handle case where User.findById returns null in updateUser', async () => {
-            const userId = 1;
-            const req = {
-                body: { id: userId },
-                user: { id: userId }
-            };
-
-            User.findById.mockResolvedValue(null);
-
-            InterestsService.updateUserInterests.mockResolvedValue([]);
-            LocationService.updateUserLocation.mockResolvedValue(null);
-
-            await expect(UserService.updateUser(req))
-                .rejects
-                .toThrow(ApiException);
-
-            expect(User.findById).toHaveBeenCalledWith(userId);
-        });
-
-        it('should handle case where User.updateUserData returns null in updateUser', async () => {
-            const userId = 1;
-            const req = {
-                body: { id: userId, first_name: 'John' },
-                user: { id: userId }
-            };
-
-            User.updateUserData.mockResolvedValue(null);
-
-            InterestsService.updateUserInterests.mockResolvedValue([]);
-            LocationService.updateUserLocation.mockResolvedValue(null);
-
-            await expect(UserService.updateUser(req))
-                .rejects
-                .toThrow(ApiException);
-
-            expect(User.updateUserData).toHaveBeenCalledWith(userId, { first_name: 'John' });
-        });
-    });
-
-    describe('handle userData null case in password deletion check', () => {
-        const createMockUpdateImplementation = () => {
-            return async function (req) {
-                const ApiException = require('../../exceptions/ApiException.js');
-
-                if (!req?.body?.id) {
-                    throw new ApiException(400, 'User ID is required for update');
-                }
-
-                const result = await processUserUpdate(req);
-                return testPasswordDeletionConditions(result);
-            };
-        };
-
-        const processUserUpdate = async (req) => {
-            const User = require('../../models/User/User.js');
-            const InterestsService = require('../../services/InterestsService.js');
-            const LocationService = require('../../services/LocationService.js');
-            const bcrypt = require('bcrypt');
-
-            const result = {};
-            const userData = { ...req.body };
-            const userId = req.user.id;
-            const interests = userData.interests;
-            const location = userData.location;
-
-            delete userData.interests;
-            delete userData.id;
-
-            try {
-                if (userData.password) {
-                    const salt = await bcrypt.genSalt(10);
-                    userData.password = await bcrypt.hash(userData.password, salt);
-                }
-                if (userData.email && !userData.status) userData.status = 'validation';
-
-                if (Object.keys(userData).length > 0) {
-                    result.userData = await User.updateUserData(userId, userData);
-                } else {
-                    result.userData = await User.findById(userId);
-                }
-
-                result.userData.interests = await InterestsService.updateUserInterests(interests, userId);
-                result.userData.location = await LocationService.updateUserLocation(location, userId);
-
-                return result;
-            } catch (error) {
-                console.log('User update error:', error);
-                const ApiException = require('../../exceptions/ApiException.js');
-                throw new ApiException(500, 'Failed to update user');
+                super(...args);
             }
         };
 
-        const testPasswordDeletionConditions = (result) => {
-            const originalUserData = result.userData;
+        const result = await UserService.getUserById(1);
 
-            result.userData = null;
-            if (result.userData) {
-                delete result.userData.password;
+        global.Date = originalDate;
+
+        expect(result.age).toBeNull();
+        expect(consoleSpy).toHaveBeenCalledWith('Age calculation error:', expect.any(Error));
+
+        consoleSpy.mockRestore();
+    });
+
+    it('should return null for future birthdates (negative age prevention)', async () => {
+        const futureDate = new Date();
+        futureDate.setFullYear(futureDate.getFullYear() + 1);
+
+        User.findById.mockResolvedValue({
+            id: 1,
+            first_name: 'Future',
+            last_name: 'User',
+            email: 'future@example.com',
+            birthdate: futureDate.toISOString().split('T')[0],
+            status: 'complete'
+        });
+
+        const InterestsService = require('../../services/InterestsService.js');
+        const UserPictureService = require('../../services/UserPictureService.js');
+        const UserInteractionsService = require('../../services/UserInteractionsService.js');
+        const LocationService = require('../../services/LocationService.js');
+
+        InterestsService.getInterestsListByUserId = jest.fn().mockResolvedValue([]);
+        UserPictureService.getUserPictures = jest.fn().mockResolvedValue([]);
+        UserInteractionsService.getLikeCountByUserId = jest.fn().mockResolvedValue(0);
+        LocationService.getLocationByUserId = jest.fn().mockRejectedValue(new Error('No location'));
+
+        const result = await UserService.getUserById(1);
+
+        expect(result.age).toBeNull();
+    });
+});
+
+describe('updateUser error handling', () => {
+    it('should handle errors and throw ApiException when User.updateUserData fails', async () => {
+        const userId = 1;
+        const req = {
+            body: { id: userId, first_name: 'John' },
+            user: { id: userId }
+        };
+
+        User.updateUserData.mockRejectedValue(new Error('Database error'));
+
+        await expect(UserService.updateUser(req))
+            .rejects
+            .toThrow(ApiException);
+
+        expect(User.updateUserData).toHaveBeenCalledWith(userId, { first_name: 'John' });
+    });
+
+    it('should handle case where User.findById returns null in updateUser', async () => {
+        const userId = 1;
+        const req = {
+            body: { id: userId },
+            user: { id: userId }
+        };
+
+        User.findById.mockResolvedValue(null);
+
+        InterestsService.updateUserInterests.mockResolvedValue([]);
+        LocationService.updateUserLocation.mockResolvedValue(null);
+
+        await expect(UserService.updateUser(req))
+            .rejects
+            .toThrow(ApiException);
+
+        expect(User.findById).toHaveBeenCalledWith(userId);
+    });
+
+    it('should handle case where User.updateUserData returns null in updateUser', async () => {
+        const userId = 1;
+        const req = {
+            body: { id: userId, first_name: 'John' },
+            user: { id: userId }
+        };
+
+        User.updateUserData.mockResolvedValue(null);
+
+        InterestsService.updateUserInterests.mockResolvedValue([]);
+        LocationService.updateUserLocation.mockResolvedValue(null);
+
+        await expect(UserService.updateUser(req))
+            .rejects
+            .toThrow(ApiException);
+
+        expect(User.updateUserData).toHaveBeenCalledWith(userId, { first_name: 'John' });
+    });
+});
+
+describe('handle userData null case in password deletion check', () => {
+    const createMockUpdateImplementation = () => {
+        return async function (req) {
+            const ApiException = require('../../exceptions/ApiException.js');
+
+            if (!req?.body?.id) {
+                throw new ApiException(400, 'User ID is required for update');
             }
-            result.userData = originalUserData;
-            if (result.userData) {
-                delete result.userData.password;
+
+            const result = await processUserUpdate(req);
+            return testPasswordDeletionConditions(result);
+        };
+    };
+
+    const processUserUpdate = async (req) => {
+        const User = require('../../models/User/User.js');
+        const InterestsService = require('../../services/InterestsService.js');
+        const LocationService = require('../../services/LocationService.js');
+        const bcrypt = require('bcrypt');
+
+        const result = {};
+        const userData = { ...req.body };
+        const userId = req.user.id;
+        const interests = userData.interests;
+        const location = userData.location;
+
+        delete userData.interests;
+        delete userData.id;
+
+        try {
+            if (userData.password) {
+                const salt = await bcrypt.genSalt(10);
+                userData.password = await bcrypt.hash(userData.password, salt);
             }
+            if (userData.email && !userData.status) userData.status = 'validation';
+
+            if (Object.keys(userData).length > 0) {
+                result.userData = await User.updateUserData(userId, userData);
+            } else {
+                result.userData = await User.findById(userId);
+            }
+
+            result.userData.interests = await InterestsService.updateUserInterests(interests, userId);
+            result.userData.location = await LocationService.updateUserLocation(location, userId);
 
             return result;
+        } catch (error) {
+            console.log('User update error:', error);
+            const ApiException = require('../../exceptions/ApiException.js');
+            throw new ApiException(500, 'Failed to update user');
+        }
+    };
+
+    const testPasswordDeletionConditions = (result) => {
+        const originalUserData = result.userData;
+
+        result.userData = null;
+        if (result.userData) {
+            delete result.userData.password;
+        }
+        result.userData = originalUserData;
+        if (result.userData) {
+            delete result.userData.password;
+        }
+
+        return result;
+    };
+
+    it('should handle edge case where result.userData becomes falsy during execution', async () => {
+        const req = {
+            user: { id: 1 },
+            body: { id: 1, first_name: 'Test' }
         };
 
-        it('should handle edge case where result.userData becomes falsy during execution', async () => {
-            const req = {
-                user: { id: 1 },
-                body: { id: 1, first_name: 'Test' }
-            };
-
-            User.updateUserData.mockResolvedValue({
-                id: 1,
-                first_name: 'Test',
-                password: 'hashed',
-                email: 'test@example.com'
-            });
-            InterestsService.updateUserInterests.mockResolvedValue([]);
-            LocationService.updateUserLocation.mockResolvedValue({ latitude: 48.8566, longitude: 2.3522 });
-
-            const originalUserService = require('../../services/UserService.js');
-            const updateUserSpy = jest.spyOn(originalUserService, 'updateUser');
-
-            updateUserSpy.mockImplementation(createMockUpdateImplementation());
-
-            const result = await UserService.updateUser(req);
-
-            expect(result).toBeDefined();
-            expect(result.password).toBeUndefined();
-
-            updateUserSpy.mockRestore();
+        User.updateUserData.mockResolvedValue({
+            id: 1,
+            first_name: 'Test',
+            password: 'hashed',
+            email: 'test@example.com'
         });
+        InterestsService.updateUserInterests.mockResolvedValue([]);
+        LocationService.updateUserLocation.mockResolvedValue({ latitude: 48.8566, longitude: 2.3522 });
+
+        const originalUserService = require('../../services/UserService.js');
+        const updateUserSpy = jest.spyOn(originalUserService, 'updateUser');
+
+        updateUserSpy.mockImplementation(createMockUpdateImplementation());
+
+        const result = await UserService.updateUser(req);
+
+        expect(result).toBeDefined();
+        expect(result.password).toBeUndefined();
+
+        updateUserSpy.mockRestore();
     });
 
     describe('updateLastConnection', () => {

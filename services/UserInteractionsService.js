@@ -3,6 +3,7 @@ const NotificationService = require('./NotificationService.js');
 const ApiException = require('../exceptions/ApiException.js');
 const LocationService = require('./LocationService.js');
 const UserService = require('./UserService.js');
+const User = require('../models/User/User.js');
 
 exports.getLikeCountByUserId = async (userId) => {
 	const likeCount = await UserInteractions.getLikeCountByUserId(userId);
@@ -75,25 +76,19 @@ exports.getMatchesIdsByUserId = async (userId) => {
 
 exports.getPotentialMatches = async (userId) => {
 	const userData = await UserService.getUserById(userId);
-	const validUsers = await UserService.getValidUsers(userId);
+	const filters = {
+		sexual_interest: userData.sexual_interest === 'Any'
+			? ['Female', 'Male', 'Other']
+			: [userData.sexual_interest],
+		min_desired_rating: userData.min_desired_rating || 0,
+		gender: userData.gender,
+	};
 
-	const likedProfiles = await this.getLikedProfilesIdsByUserId(userId);
-	const blockedBySet = await this.getBlockedUsersIdsByUserId(userId);
-	const unwantedMatches = new Set([...blockedBySet, ...likedProfiles]);
+	const validUsers = await UserService.getPotentialMatches(userId, filters);
 
-	const interested_genders = userData.sexual_interest == 'Any'
-		? ['Female', 'Male', 'Other']
-		: [userData.sexual_interest];
+	const filteredUsers = [];
 
-	const filteredUsers = validUsers.filter(match => {
-		const hasCommonInterest = match.interests.some(interest =>
-			userData.interests.some(userInterest => userInterest.id === interest.id)
-		);
-
-		const isInterestedInMyGender = match.sexual_interest == 'Any' ||
-			match.sexual_interest == userData.gender;
-
-		const isFameRatingSufficient = match.rating >= userData.min_desired_rating;
+	for (const match of validUsers) {
 
 		const isWithinRadius = userData.location && match.location ?
 			LocationService.calculateDistance(
@@ -103,18 +98,16 @@ exports.getPotentialMatches = async (userId) => {
 				match.location.longitude
 			) <= 10 : false;
 
-		return !unwantedMatches.has(match.id) &&
-			interested_genders.includes(match.gender) &&
-			hasCommonInterest &&
-			isInterestedInMyGender &&
-			isFameRatingSufficient &&
-			isWithinRadius;
-	});
+		if (isWithinRadius) {
+			filteredUsers.push(match);
+		}
+	}
 
 	const filteredMatches = await Promise.all(filteredUsers.map(async (match) => {
 		match.liked_me = await isUserAlreadyLiked(userId, match.id);
 		return match;
 	}));
+
 	return filteredMatches;
 }
 
