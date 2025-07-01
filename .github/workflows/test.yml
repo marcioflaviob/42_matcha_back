@@ -22,9 +22,6 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: List coverage files
-        run: ls -l coverage && cat coverage/lcov.info | head -20
-
       - name: Run Jest tests
         run: npx jest --coverage
         env:
