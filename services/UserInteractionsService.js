@@ -75,45 +75,40 @@ exports.getMatchesIdsByUserId = async (userId) => {
 }
 
 exports.getPotentialMatches = async (userId) => {
-	try {
-		const userData = await UserService.getUserById(userId);
-		const filters = {
-			sexual_interest: userData.sexual_interest === 'Any'
-				? ['Female', 'Male', 'Other']
-				: [userData.sexual_interest],
-			min_desired_rating: userData.min_desired_rating || 0,
-			gender: userData.gender,
-		};
+	const userData = await UserService.getUserById(userId);
+	const filters = {
+		sexual_interest: userData.sexual_interest === 'Any'
+			? ['Female', 'Male', 'Other']
+			: [userData.sexual_interest],
+		min_desired_rating: userData.min_desired_rating || 0,
+		gender: userData.gender,
+	};
 
-		const validUsers = await UserService.getPotentialMatches(userId, filters);
+	const validUsers = await UserService.getPotentialMatches(userId, filters);
 
-		const filteredUsers = [];
+	const filteredUsers = [];
 
-		for (const match of validUsers) {
+	for (const match of validUsers) {
 
-			const isWithinRadius = userData.location && match.location ?
-				LocationService.calculateDistance(
-					userData.location.latitude,
-					userData.location.longitude,
-					match.location.latitude,
-					match.location.longitude
-				) <= 10 : false;
+		const isWithinRadius = userData.location && match.location ?
+			LocationService.calculateDistance(
+				userData.location.latitude,
+				userData.location.longitude,
+				match.location.latitude,
+				match.location.longitude
+			) <= 10 : false;
 
-			if (isWithinRadius) {
-				filteredUsers.push(match);
-			}
+		if (isWithinRadius) {
+			filteredUsers.push(match);
 		}
-
-		const filteredMatches = await Promise.all(filteredUsers.map(async (match) => {
-			match.liked_me = await isUserAlreadyLiked(userId, match.id);
-			return match;
-		}));
-
-		return filteredMatches;
-	} catch (error) {
-		console.error('Error in getPotentialMatches:', error);
-		throw new ApiException(500, 'Failed to get potential matches');
 	}
+
+	const filteredMatches = await Promise.all(filteredUsers.map(async (match) => {
+		match.liked_me = await isUserAlreadyLiked(userId, match.id);
+		return match;
+	}));
+
+	return filteredMatches;
 }
 
 exports.blockUser = async (userId, user2Id) => {

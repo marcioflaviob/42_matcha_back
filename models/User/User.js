@@ -220,8 +220,7 @@ class User {
 
             const result = await db.query(query, params);
             return result.rows;
-        } catch (error) {
-            console.error('Error finding potential matches:', error);
+        } catch {
             throw new ApiException(500, 'Failed to find potential matches');
         }
     }
