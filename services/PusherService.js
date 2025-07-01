@@ -15,6 +15,9 @@ exports.broadcastStatusChange = async (userId, status) => {
 
 exports.sendMessage = async (messageData) => {
 	try {
+		if (JSON.stringify(messageData).length > 10240) {
+			throw new ApiException(400, 'Message too large');
+		}
 		await pusher.trigger(`private-user-${messageData.receiver_id}`, 'new-message', {
 			id: messageData.id,
 			sender_id: messageData.sender_id,
@@ -24,7 +27,7 @@ exports.sendMessage = async (messageData) => {
 			is_read: false,
 		});
 	} catch (error) {
-		throw new ApiException('Failed to send message', 500);
+		throw new ApiException(500, 'Failed to send message');
 	}
 }
 
@@ -40,7 +43,7 @@ exports.sendNotification = async (notificationData) => {
 			seen: false,
 		});
 	} catch (error) {
-		throw new ApiException('Failed to send message', 500);
+		throw new ApiException(500, 'Failed to send notification');
 	}
 }
 
@@ -52,7 +55,7 @@ exports.sendStatusChange = async (senderId, receiverId, status) => {
 		});
 	} catch (error) {
 		console.error('Error sending status change:', error);
-		throw new ApiException('Failed to send message', 500);
+		throw new ApiException(500, 'Failed to send status change');
 	}
 }
 
@@ -67,19 +70,19 @@ exports.requestStatus = async (userId) => {
 		})
 	} catch (error) {
 		console.error('Error requesting status:', error);
-		throw new ApiException('Failed to send message', 500);
+		throw new ApiException(500, 'Failed to request status');
 	}
 }
 
 exports.authenticatePusher = async (userId, socketId, channelName) => {
 	try {
 		const { authenticate } = require("../utils/PusherMiddleware.js");
-    	const auth = await authenticate(userId, socketId, channelName);
+		const auth = await authenticate(userId, socketId, channelName);
 
 		if (!auth) throw new ApiException(403, 'Authentication failed');
 
 		return auth;
 	} catch (error) {
-		throw new ApiException('Failed to authenticate', 500);
+		throw new ApiException(500, 'Failed to authenticate');
 	}
 }
