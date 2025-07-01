@@ -282,21 +282,21 @@ describe('NotificationService', () => {
         });
     });
 
-    describe('newBlockNotification', () => {
-        it('should create a new block notification', async () => {
+    describe('newUnlikeNotification', () => {
+        it('should create a new unlike notification', async () => {
             UserService.getUserById.mockResolvedValue(mockUser);
-            const mockNotification = { id: 1, type: 'new-block' };
+            const mockNotification = { id: 1, type: 'new-unlike' };
             NotificationService.createNotification = jest.fn().mockResolvedValue(mockNotification);
 
-            const result = await NotificationService.newBlockNotification(2, 1);
+            const result = await NotificationService.newUnlikeNotification(2, 1);
 
             expect(UserService.getUserById).toHaveBeenCalledWith(1);
             expect(NotificationService.createNotification).toHaveBeenCalledWith(
                 2,
                 1,
-                'new-block',
-                'New Block',
-                `${mockUser.first_name} blocked you`
+                'new-unlike',
+                'Match undone',
+                `${mockUser.first_name} unliked you`
             );
             expect(result).toEqual(mockNotification);
         });
