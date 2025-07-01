@@ -310,8 +310,6 @@ describe('User Model', () => {
         });
 
         it('should throw ApiException on database error', async () => {
-            bcrypt.genSalt.mockResolvedValue('salt');
-            bcrypt.hash.mockResolvedValue('hashedPassword');
             db.query.mockRejectedValue(new Error('DB error'));
             await expect(User.resetPassword(1, 'pass')).rejects.toThrow(ApiException);
             await expect(User.resetPassword(1, 'pass')).rejects.toThrow('Failed to reset password');
