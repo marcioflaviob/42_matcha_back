@@ -30,6 +30,21 @@ const createUser = async (userData) => {
     return user;
 };
 
+const getUserProfile = async (userId, requestedUserId) => {
+    const { getMatchesIdsByUserId } = require('./UserInteractionsService.js');
+
+    validateUserId(userId);
+    validateUserId(requestedUserId);
+
+    const matchesIds = await getMatchesIdsByUserId(userId);
+    if (matchesIds && matchesIds.length > 0) {
+        if (userId == requestedUserId || matchesIds.some(id => id == requestedUserId))
+            return await getUserById(requestedUserId);
+    }
+
+    throw new ApiException(401, 'You are not allowed to view this user\'s profile');
+}
+
 const getUserById = async (userId) => {
     return await getUserAndFormat(userId);
 };
@@ -201,6 +216,7 @@ module.exports = {
     getAllUsers,
     createUser,
     getUserById,
+    getUserProfile,
     getUserByEmail,
     updateUser,
     deleteUser,

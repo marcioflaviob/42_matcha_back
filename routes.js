@@ -30,18 +30,17 @@ router.post('/status/online', Authenticate, asyncHandler(PusherController.broadc
 router.post('/status/offline', Authenticate, asyncHandler(PusherController.broadcastOfflineStatus));
 
 // User
-router.get('/users', asyncHandler(UserController.getAllUsers));
+// router.get('/users', asyncHandler(UserController.getAllUsers));
 router.post('/new-user', ValidateUser, asyncHandler(UserController.createUser));
-router.get('/users/:id', asyncHandler(UserController.getUserById));
-router.get('/users/email/:email', asyncHandler(UserController.getUserByEmail));
+router.get('/users/:id', Authenticate, asyncHandler(UserController.getUserById));
 router.put('/update-user', Authenticate, ValidateUser, asyncHandler(UserController.updateUser));
 router.patch('/users/reset-password', Authenticate, asyncHandler(UserController.resetPassword));
 
 // User Pictures
 router.post('/upload/single', Authenticate, upload.single('picture'), asyncHandler(UserPicturesController.uploadPicture));
-router.get('/pictures/:userId', asyncHandler(UserPicturesController.getUserPictures));
-router.delete('/pictures/:userId/:pictureId', asyncHandler(UserPicturesController.deleteUserPicture));
-router.put('/pictures/:userId/:pictureId/profile', asyncHandler(UserPicturesController.setProfilePicture));
+router.get('/pictures/:userId', Authenticate, asyncHandler(UserPicturesController.getUserPictures));
+router.delete('/pictures/:userId/:pictureId', Authenticate, asyncHandler(UserPicturesController.deleteUserPicture));
+router.put('/pictures/:userId/:pictureId/profile', Authenticate, asyncHandler(UserPicturesController.setProfilePicture));
 router.post('/pictures/upload-from-url', Authenticate, asyncHandler(UserPicturesController.uploadPictureFromUrl));
 
 // User Interactions
@@ -50,6 +49,8 @@ router.get('/seen/', Authenticate, asyncHandler(UserInteractionsController.getPr
 router.get('/matches', Authenticate, asyncHandler(UserInteractionsController.getMatchesByUserId));
 router.get('/matches/potential', Authenticate, asyncHandler(UserInteractionsController.getPotentialMatches));
 router.post('/block/:id', Authenticate, asyncHandler(UserInteractionsController.blockUser));
+router.post('/report/:id', Authenticate, asyncHandler(UserInteractionsController.reportUser));
+router.delete('/unlike/:id', Authenticate, asyncHandler(UserInteractionsController.unlikeUser));
 
 // Interests
 router.get('/interests', asyncHandler(InterestsController.getAllInterests));
