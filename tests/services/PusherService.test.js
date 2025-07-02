@@ -201,19 +201,18 @@ describe('PusherService', () => {
             expect(result).toBe(mockAuth);
         });
 
-        it('should throw error when authentication returns null/undefined', async () => {
+        it('should throw error when authentication returns null/undefined', () => {
             const userId = 'user123';
             const socketId = 'socket456';
             const channelName = 'private-channel';
 
             authenticate.mockReturnValue(null);
 
-            await expect(PusherService.authenticatePusher(userId, socketId, channelName))
-                .rejects
+            expect(() => PusherService.authenticatePusher(userId, socketId, channelName))
                 .toThrow(ApiException);
         });
 
-        it('should throw error when authentication fails with exception', async () => {
+        it('should throw error when authentication fails with exception', () => {
             const userId = 'user123';
             const socketId = 'socket456';
             const channelName = 'private-channel';
@@ -222,8 +221,7 @@ describe('PusherService', () => {
                 throw new Error('Authentication service unavailable');
             });
 
-            await expect(PusherService.authenticatePusher(userId, socketId, channelName))
-                .rejects
+            expect(() => PusherService.authenticatePusher(userId, socketId, channelName))
                 .toThrow(ApiException);
         });
     });
