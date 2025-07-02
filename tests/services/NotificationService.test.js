@@ -136,7 +136,7 @@ describe('NotificationService', () => {
                 'New Match',
                 `You have a new match with ${mockUser2.first_name}`
             );
-            expect(Notification.createNotification).toHaveBeenCalledWith(
+            expect(NotificationService.createNotification).toHaveBeenCalledWith(
                 2,
                 1,
                 'new-match',
