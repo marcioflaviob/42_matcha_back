@@ -11,8 +11,8 @@ CREATE TABLE IF NOT EXISTS users (
 	biography TEXT,
 	rating INT DEFAULT 0,
 	min_desired_rating INT DEFAULT 0,
-	age_range_min INT DEFAULT 0,
-	age_range_max INT DEFAULT 100,
+	age_range_min INT DEFAULT 18,
+	age_range_max INT DEFAULT 99,
 	last_connection TIMESTAMPTZ DEFAULT NOW(),
 	location_range INT DEFAULT 20
 );
