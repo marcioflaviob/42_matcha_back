@@ -88,12 +88,13 @@ describe('MessagesService', () => {
                 timestamp: new Date(),
                 is_read: false
             };
+            const mockDate = { id: 123 };
 
             Messages.createMessage.mockResolvedValue(mockMessage);
 
-            const result = await MessagesService.createDateMessage(1, 2, 'Date', 123);
+            const result = await MessagesService.createDateMessage(1, 2, 'Date', mockDate);
 
-            expect(Messages.createMessage).toHaveBeenCalledWith(1, 2, 'Date', 123);
+            expect(Messages.createMessage).toHaveBeenCalledWith(1, 2, 'Date', 123, expect.any(String));
             expect(result).toEqual(mockMessage);
         });
     });

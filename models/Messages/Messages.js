@@ -2,13 +2,13 @@ const db = require('../../config/db.js');
 const ApiException = require('../../exceptions/ApiException.js');
 
 class Messages {
-	static async createMessage(senderId, receiverId, content, dateId, timestamp) {
+	static async createMessage(senderId, receiverId, content, date_id, timestamp) {
 		try {
 			const result = await db.query(`
 				INSERT INTO messages (sender_id, receiver_id, content, date_id, timestamp)
 				VALUES ($1, $2, $3, $4, $5::timestamptz)
 				RETURNING *;
-			`, [senderId, receiverId, content, dateId, timestamp]);
+			`, [senderId, receiverId, content, date_id, timestamp]);
 			return result.rows[0];
 		} catch (error) {
 			console.error('Error creating message:', error);

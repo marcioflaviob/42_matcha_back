@@ -109,7 +109,7 @@ exports.getPotentialMatches = async (userId) => {
 			user.location.latitude,
 			user.location.longitude
 		);
-		return distance <= 20;
+		return distance <= userData.location_range;
 	});
 
 
