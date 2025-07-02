@@ -18,10 +18,6 @@ exports.getMessagesByUserId = async (userId, friendId) => {
 
 exports.createMessage = async (senderId, receiverId, content, timestamp) => {
 	const message = await Messages.createMessage(senderId, receiverId, content, null, timestamp);
-	if (message.date_id) {
-		const date = await DatesService.getDateById(message.date_id);
-		message.date = date;
-	}
 	await PusherService.sendMessage(message);
 	await NotificationService.newMessageNotification(receiverId, senderId);
 	return message;
