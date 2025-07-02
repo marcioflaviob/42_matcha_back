@@ -1,12 +1,12 @@
 const Dates = require('../models/Dates/Dates.js');
 const NotificationService = require('./NotificationService.js');
-const MessagesService = require('./MessagesService.js');
 const ApiException = require('../exceptions/ApiException.js');
 const UserService = require('./UserService.js');
 const PusherService = require('./PusherService.js');
 
 
 exports.createDate = async (userId, date) => {
+    const MessagesService = require('./MessagesService.js');
     if (userId !== date.senderId)
         throw new ApiException(403, "You are not allowed to create this date");
     const newDate = await Dates.createDate(date);

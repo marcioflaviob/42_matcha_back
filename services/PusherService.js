@@ -1,9 +1,9 @@
 const { pusher } = require('../utils/PusherMiddleware.js');
-const UserInteractionsService = require('../services/UserInteractionsService.js');
 const ApiException = require('../exceptions/ApiException.js');
 
 
 exports.broadcastStatusChange = async (userId, status) => {
+	const UserInteractionsService = require('../services/UserInteractionsService.js');
 	const matchesIds = await UserInteractionsService.getMatchesIdsByUserId(userId);
 
 	matchesIds.forEach(async (matchId) => {
@@ -54,7 +54,7 @@ exports.sendDateMessage = async (messageData) => {
 			timestamp: new Date(),
 			is_read: false,
 		});
-	} catch (error) {
+	} catch {
 		throw new ApiException(500, 'Failed to send message');
 	}
 }
@@ -88,6 +88,7 @@ exports.sendStatusChange = async (senderId, receiverId, status) => {
 }
 
 exports.requestStatus = async (userId) => {
+	const UserInteractionsService = require('../services/UserInteractionsService.js');
 	try {
 		const matchesIds = await UserInteractionsService.getMatchesIdsByUserId(userId);
 
@@ -102,10 +103,10 @@ exports.requestStatus = async (userId) => {
 	}
 }
 
-exports.authenticatePusher = async (userId, socketId, channelName) => {
+exports.authenticatePusher = (userId, socketId, channelName) => {
 	try {
 		const { authenticate } = require("../utils/PusherMiddleware.js");
-		const auth = await authenticate(userId, socketId, channelName);
+		const auth = authenticate(userId, socketId, channelName);
 
 		if (!auth) throw new ApiException(403, 'Authentication failed');
 
