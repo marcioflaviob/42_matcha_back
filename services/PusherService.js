@@ -31,6 +31,34 @@ exports.sendMessage = async (messageData) => {
 	}
 }
 
+exports.sendDateMessage = async (messageData) => {
+	try {
+		if (JSON.stringify(messageData).length > 10240) {
+			throw new ApiException(400, 'Message too large');
+		}
+		await pusher.trigger(`private-user-${messageData.receiver_id}`, 'new-message', {
+			id: messageData.id,
+			sender_id: messageData.sender_id,
+			date: messageData.date,
+			receiver_id: messageData.receiver_id,
+			content: messageData.content,
+			timestamp: new Date(),
+			is_read: false,
+		});
+		await pusher.trigger(`private-user-${messageData.sender_id}`, 'new-message', {
+			id: messageData.id,
+			sender_id: messageData.sender_id,
+			date: messageData.date,
+			receiver_id: messageData.receiver_id,
+			content: messageData.content,
+			timestamp: new Date(),
+			is_read: false,
+		});
+	} catch (error) {
+		throw new ApiException(500, 'Failed to send message');
+	}
+}
+
 exports.sendNotification = async (notificationData) => {
 	try {
 		await pusher.trigger(`private-user-${notificationData.user_id}`, 'new-notification', {
