@@ -90,7 +90,7 @@ exports.newMatchNotification = async (userId, senderId) => {
 	const user = await UserService.getUserById(userId);
 
 	const notification = await this.createNotification(userId, senderId, 'new-match', 'New Match', `You have a new match with ${sender.first_name}`);
-	await Notification.createNotification(senderId, userId, 'new-match', 'New Match', `You have a new match with ${user.first_name}`);
+	await this.createNotification(senderId, userId, 'new-match', 'New Match', `You have a new match with ${user.first_name}`);
 
 	return notification;
 }
