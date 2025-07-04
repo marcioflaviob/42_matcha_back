@@ -12,12 +12,13 @@ exports.markAllAsSeen = async (userId) => {
 	return notifications;
 }
 
-exports.createNotification = async (userId, senderId, type, title, message) => {
+exports.createNotification = async (userId, senderId, type, title, message, body) => {
 	if (await alreadyHaveNotification(userId, message)) {
 		return;
 	}
 
 	const notification = await Notification.createNotification(userId, senderId, type, title, message);
+	notification.body = body || null;
 	await PusherService.sendNotification(notification);
 
 	return notification;
@@ -89,8 +90,8 @@ exports.newMatchNotification = async (userId, senderId) => {
 	const sender = await UserService.getUserById(senderId);
 	const user = await UserService.getUserById(userId);
 
-	const notification = await this.createNotification(userId, senderId, 'new-match', 'New Match', `You have a new match with ${sender.first_name}`);
-	await this.createNotification(senderId, userId, 'new-match', 'New Match', `You have a new match with ${user.first_name}`);
+	const notification = await this.createNotification(userId, senderId, 'new-match', 'New Match', `You have a new match with ${sender.first_name}`, sender);
+	await this.createNotification(senderId, userId, 'new-match', 'New Match', `You have a new match with ${user.first_name}`, user);
 
 	return notification;
 }

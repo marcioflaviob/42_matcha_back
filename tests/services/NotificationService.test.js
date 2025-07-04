@@ -134,14 +134,16 @@ describe('NotificationService', () => {
                 2,
                 'new-match',
                 'New Match',
-                `You have a new match with ${mockUser2.first_name}`
+                `You have a new match with ${mockUser2.first_name}`,
+                mockUser2
             );
             expect(NotificationService.createNotification).toHaveBeenCalledWith(
                 2,
                 1,
                 'new-match',
                 'New Match',
-                `You have a new match with ${mockUser.first_name}`
+                `You have a new match with ${mockUser.first_name}`,
+                mockUser
             );
             expect(result).toEqual(mockNotification);
         });

@@ -68,6 +68,7 @@ exports.sendNotification = async (notificationData) => {
 			type: notificationData.type,
 			title: notificationData.title,
 			message: notificationData.message,
+			body: notificationData.body || null,
 			seen: false,
 		});
 	} catch (error) {
