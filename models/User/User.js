@@ -186,9 +186,23 @@ class User {
             const query = `
                 SELECT users.*
                 FROM users
+                LEFT JOIN locations user_location 
+                    ON users.id = user_location.user_id
+                LEFT JOIN locations current_user_location 
+                    ON current_user_location.user_id = $1
+                JOIN (
+                    SELECT DISTINCT ui.user_id 
+                    FROM user_interests ui
+                    WHERE ui.interest_id IN (
+                        SELECT interest_id 
+                        FROM user_interests 
+                        WHERE user_id = $1
+                    )
+                ) matching_interests ON matching_interests.user_id = users.id
+                
                 WHERE users.id != $1
                     AND users.status = 'complete'
-                    AND (users.sexual_interest = $2 OR  users.sexual_interest = 'Any')
+                    AND (users.sexual_interest = $2 OR users.sexual_interest = 'Any')
                     AND (users.gender = $3 OR $3 = 'Any')
                     AND users.age_range_min <= $4
                     AND users.age_range_max >= $4
@@ -196,7 +210,40 @@ class User {
                     AND $6 >= EXTRACT(YEAR FROM AGE(users.birthdate))
                     AND users.rating >= $7
                     AND users.min_desired_rating <= $8
-            `
+                    
+                    -- Location distance filter using Haversine formula
+                    AND (
+                        user_location.latitude IS NULL 
+                        OR current_user_location.latitude IS NULL
+                        OR (
+                            6371 * acos(
+                                cos(radians(current_user_location.latitude)) 
+                                * cos(radians(user_location.latitude)) 
+                                * cos(radians(user_location.longitude) - radians(current_user_location.longitude)) 
+                                + sin(radians(current_user_location.latitude)) 
+                                * sin(radians(user_location.latitude))
+                            ) <= $10
+                        )
+                    )
+                    AND users.id NOT IN (
+                        SELECT CASE 
+                            WHEN user1 = $1 THEN user2 
+                            ELSE user1 
+                        END
+                        FROM user_interactions 
+                        WHERE (user1 = $1 OR user2 = $1) 
+                        AND interaction_type = 'block'
+                    )
+                    AND users.id NOT IN (
+                        SELECT user2 
+                        FROM user_interactions 
+                        WHERE user1 = $1 
+                        AND interaction_type = 'like'
+                    )
+                    
+                ORDER BY users.rating DESC
+                LIMIT $9
+            `;
 
             const result = await db.query(query, [
                 filters.userId,
@@ -206,12 +253,15 @@ class User {
                 filters.age_range_min,
                 filters.age_range_max,
                 filters.min_desired_rating,
-                filters.rating
+                filters.rating,
+                10,
+                filters.location_range || 20
             ]);
+
             return result.rows;
         }
         catch (error) {
-            console.error(`Error fetching potential matches: ${error.message}`);
+            if (error instanceof ApiException) throw error;
             throw new ApiException(500, 'Failed to fetch potential matches');
         }
     }

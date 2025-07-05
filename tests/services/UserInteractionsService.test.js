@@ -324,10 +324,10 @@ describe('UserInteractionsService', () => {
                 age_range_min: undefined,
                 age_range_max: undefined,
                 rating: undefined,
-                min_desired_rating: 0
+                min_desired_rating: 0,
+                location_range: 10
             });
-            // LocationService.getLocationByUserId is no longer called - location comes from UserService
-            expect(LocationService.calculateDistance).toHaveBeenCalledTimes(2); // Only for users with location
+            // Location filtering is now handled by the database query with Haversine formula
             expect(result).toHaveLength(2); // Users 2 and 3 have location and are within radius
             expect(result.map(u => u.id)).toEqual(expect.arrayContaining([2, 3]));
             expect(result[0].liked_me).toBe(false);
@@ -347,10 +347,10 @@ describe('UserInteractionsService', () => {
 
             mockSetup.setupMatchingScenario(mockUser, mockValidUsers, { receivedLikes: [] });
 
-            // Should throw error when trying to access location.latitude on null
-            await expect(UserInteractionsService.getPotentialMatches(1))
-                .rejects
-                .toThrow();
+            // Should handle null location gracefully and return results
+            const result = await UserInteractionsService.getPotentialMatches(1);
+            expect(result).toBeDefined();
+            expect(Array.isArray(result)).toBe(true);
         });
 
         it('should handle current user without location', async () => {
@@ -363,10 +363,10 @@ describe('UserInteractionsService', () => {
 
             mockSetup.setupMatchingScenario(mockUser, mockValidUsers, { receivedLikes: [] });
 
-            // Should throw error when user has no location but tries to filter by distance
-            await expect(UserInteractionsService.getPotentialMatches(1))
-                .rejects
-                .toThrow();
+            // Should handle null location gracefully for current user
+            const result = await UserInteractionsService.getPotentialMatches(1);
+            expect(result).toBeDefined();
+            expect(Array.isArray(result)).toBe(true);
         });
 
         it('should handle specific sexual preference (not Any)', async () => {
@@ -388,7 +388,8 @@ describe('UserInteractionsService', () => {
                 age_range_min: undefined,
                 age_range_max: undefined,
                 rating: undefined,
-                min_desired_rating: 0
+                min_desired_rating: 0,
+                location_range: 10
             });
             expect(result).toHaveLength(1);
             expect(result[0].id).toBe(2);
@@ -417,7 +418,8 @@ describe('UserInteractionsService', () => {
                 age_range_min: undefined,
                 age_range_max: undefined,
                 rating: undefined,
-                min_desired_rating: 0
+                min_desired_rating: 0,
+                location_range: 10
             });
             expect(result).toHaveLength(3);
             expect(result.map(u => u.id)).toEqual(expect.arrayContaining([2, 3, 4]));

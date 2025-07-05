@@ -6,10 +6,10 @@ class Location {
     static async createLocation(locationData) {
         try {
             const result = await db.query(
-                'INSERT INTO locations (user_id, longitude, latitude, city, country) VALUES ($1, $2, $3, $4, $5) RETURNING user_id',
+                'INSERT INTO locations (user_id, longitude, latitude, city, country) VALUES ($1, $2, $3, $4, $5) RETURNING *',
                 [locationData.userId, locationData.longitude, locationData.latitude, locationData.city, locationData.country]
             );
-            return result.rows[0].user_id;
+            return result.rows[0];
         } catch (error) {
             console.log(error);
             throw new ApiException(500, 'Failed to create location');

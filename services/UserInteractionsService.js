@@ -84,36 +84,12 @@ exports.getPotentialMatches = async (userId) => {
 		age_range_max: userData.age_range_max,
 		rating: userData.rating,
 		min_desired_rating: userData.min_desired_rating,
+		location_range: userData.location_range
 	};
 
 	const validUsers = await UserService.getPotentialMatches(filters);
-	const formattedUsers = await formatFilteredUsers(validUsers);
 
-	const blockedUserIds = await this.getBlockedUsersIdsByUserId(userId);
-	const likedUserIds = await this.getLikedProfilesIdsByUserId(userId);
-
-	const potentialMatches = formattedUsers.filter(user =>
-		!blockedUserIds.has(user.id) && !likedUserIds.has(user.id)
-	);
-
-	const usersWithMatchingInterests = potentialMatches.filter(user =>
-		user.interests.some(userInterest =>
-			userData.interests.some(dataInterest => dataInterest.id === userInterest.id)
-		)
-	);
-
-	const filteredMatches = usersWithMatchingInterests.filter(user => {
-		const distance = LocationService.calculateDistance(
-			userData.location.latitude,
-			userData.location.longitude,
-			user.location.latitude,
-			user.location.longitude
-		);
-		return distance <= userData.location_range;
-	});
-
-
-	const finalMatches = await Promise.all(filteredMatches.map(async (match) => {
+	const finalMatches = await Promise.all(validUsers.map(async (match) => {
 		match.liked_me = await isUserAlreadyLiked(userId, match.id);
 		return match;
 	}));

@@ -159,7 +159,7 @@ describe('LocationService', () => {
                 latitude: 52.52,
                 longitude: 13.405
             });
-            expect(result).toEqual(mockApiResponse);
+            expect(result).toBe('newLocationId');
         });
 
         it('should update existing user location with fetched data', async () => {
@@ -175,7 +175,7 @@ describe('LocationService', () => {
                 latitude: 38.7169,
                 longitude: -9.1399
             });
-            expect(result).toEqual(mockApiResponse);
+            expect(result).toBe('updatedLocationId');
         });
 
         it('should use town as fallback when city is not available', async () => {
@@ -189,7 +189,7 @@ describe('LocationService', () => {
                 latitude: 52.52,
                 longitude: 13.405
             });
-            expect(result).toEqual(mockApiResponse);
+            expect(result).toBe('newLocationId');
         });
 
         it('should use village as fallback when city and town are not available', async () => {
@@ -203,7 +203,7 @@ describe('LocationService', () => {
                 latitude: 52.52,
                 longitude: 13.405
             });
-            expect(result).toEqual(mockApiResponse);
+            expect(result).toBe('newLocationId');
         });
 
         it('should use Unknown as fallback when no location components are available', async () => {
@@ -220,7 +220,7 @@ describe('LocationService', () => {
                 latitude: 52.52,
                 longitude: 13.405
             });
-            expect(result).toEqual(mockApiResponse);
+            expect(result).toBe('newLocationId');
         });
 
         it('should return default values when fetch fails', async () => {

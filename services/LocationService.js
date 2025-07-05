@@ -135,8 +135,8 @@ const getCityAndCountry = async (latitude, longitude, userId) => {
                 extractCityFromComponents(components),
                 components.country
             );
-            await createLocation(locationData);
-            return data;
+            const result = await createLocation(locationData);
+            return result;
         } else {
             throw new ApiException(500, 'Failed to fetch location');
         }

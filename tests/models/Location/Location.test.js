@@ -33,7 +33,7 @@ describe('Location model', () => {
                 expect.stringContaining('INSERT INTO location'),
                 [mockData.userId, mockData.longitude, mockData.latitude, mockData.city, mockData.country]
             );
-            expect(result).toBe(mockData.userId);
+            expect(result).toEqual({ user_id: mockData.userId });
         });
 
         it('should throw ApiException on error', async () => {
