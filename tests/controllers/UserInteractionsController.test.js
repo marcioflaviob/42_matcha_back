@@ -130,4 +130,31 @@ describe('UserInteractionsController', () => {
             expect(mockRes.send).toHaveBeenCalledWith(mockBlockedUsers);
         });
     });
+
+    describe('reportUser', () => {
+        it('should report another user', async () => {
+            const mockReport = { id: 1, user1: 1, user2: 2, interaction_type: 'report' };
+            mockReq.params.id = '2';
+            UserInteractionsService.reportUser.mockResolvedValue(mockReport);
+
+            await UserInteractionsController.reportUser(mockReq, mockRes);
+
+            expect(UserInteractionsService.reportUser).toHaveBeenCalledWith(1, '2');
+            expect(mockRes.status).toHaveBeenCalledWith(200);
+            expect(mockRes.send).toHaveBeenCalledWith(mockReport);
+        });
+    });
+
+    describe('unlikeUser', () => {
+        it('should unlike a user', async () => {
+            mockReq.params.id = '2';
+            UserInteractionsService.unlikeUser.mockResolvedValue();
+
+            await UserInteractionsController.unlikeUser(mockReq, mockRes);
+
+            expect(UserInteractionsService.unlikeUser).toHaveBeenCalledWith(1, '2');
+            expect(mockRes.status).toHaveBeenCalledWith(204);
+            expect(mockRes.send).toHaveBeenCalledWith();
+        });
+    });
 });
