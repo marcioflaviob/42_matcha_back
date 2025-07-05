@@ -27,26 +27,62 @@ const extractCityFromComponents = (components) => {
 };
 
 const fetchGeocodeData = async (latitude, longitude) => {
-    const response = await fetch(
-        `https://api.opencagedata.com/geocode/v1/json?q=${latitude}+${longitude}&key=${process.env.GEOCODE_API_KEY}`
-    );
-    return await response.json();
+    try {
+        const response = await fetch(
+            `https://api.opencagedata.com/geocode/v1/json?q=${latitude}+${longitude}&key=${process.env.GEOCODE_API_KEY}`
+        );
+        
+        if (!response.ok) {
+            throw new ApiException(500, 'Failed to fetch geocode data');
+        }
+        
+        return await response.json();
+    } catch {
+        throw new ApiException(500, 'Failed to fetch geocode data');
+    }
 };
 
 const fetchPublicIP = async () => {
-    const response = await fetch('https://api.ipify.org?format=json');
-    const data = await response.json();
-    return data.ip;
+    try {
+        const response = await fetch('https://api.ipify.org?format=json');
+        
+        if (!response.ok) {
+            throw new ApiException(500, 'Failed to fetch public IP');
+        }
+        
+        const data = await response.json();
+        return data.ip;
+    } catch {
+        throw new ApiException(500, 'Failed to fetch public IP');
+    }
 };
 
 const fetchLocationFromIPApi = async (ip) => {
-    const response = await fetch(`http://ip-api.com/json/${ip}`);
-    return await response.json();
+    try {
+        const response = await fetch(`http://ip-api.com/json/${ip}`);
+        
+        if (!response.ok) {
+            throw new ApiException(500, 'Failed to fetch location from IP-API');
+        }
+        
+        return await response.json();
+    } catch {
+        throw new ApiException(500, 'Failed to fetch location from IP-API');
+    }
 };
 
 const fetchLocationFromFallbackApi = async (ip) => {
-    const response = await fetch(`https://ipapi.co/${ip}/json/`);
-    return await response.json();
+    try {
+        const response = await fetch(`https://ipapi.co/${ip}/json/`);
+        
+        if (!response.ok) {
+            throw new ApiException(500, 'Failed to fetch location from fallback API');
+        }
+        
+        return await response.json();
+    } catch {
+        throw new ApiException(500, 'Failed to fetch location from fallback API');
+    }
 };
 
 const getLocationByUserId = async (userId) => {
@@ -78,9 +114,8 @@ const updateUserLocation = async (location, userId) => {
                 const result = await getLocationByUserId(userId);
                 return result;
             }
-        } catch (locationError) {
-            console.log('Location update error:', locationError);
-            throw new Error(locationError);
+        } catch {
+            throw new ApiException(500, "Failed to update user location");
         }
     }
 }
@@ -141,8 +176,8 @@ const getLocationFromIP = async (userId) => {
                 );
                 return await createLocation(locationData);
             }
-        } catch (ipApiError) {
-            console.log('ip-api.com failed:', ipApiError.message);
+        } catch {
+            throw new ApiException(500, 'Failed to fetch location IP API');
         }
 
         try {
@@ -157,8 +192,8 @@ const getLocationFromIP = async (userId) => {
                 );
                 return await createLocation(locationData);
             }
-        } catch (ipapiError) {
-            console.log('ipapi.co failed:', ipapiError.message);
+        } catch {
+            throw new ApiException(500, 'Failed to fetch location from fallback API');
         }
 
         const parisLocationData = createLocationData(
@@ -169,8 +204,8 @@ const getLocationFromIP = async (userId) => {
             'France'
         );
         return await createLocation(parisLocationData);
-    } catch (err) {
-        console.error('Error getting location from IP:', err);
+    } catch {
+        throw new ApiException(500, 'Failed to create a fallback location');
     }
 };
 

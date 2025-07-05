@@ -27,10 +27,9 @@ class User {
     static async findByEmail(email) {
         try {
             const queryResult = await db.query('SELECT * FROM users WHERE email = $1', [email]);
-            if (queryResult.rows.length === 0) throw new ApiException(404, 'User not found');
+
             return queryResult.rows[0];
         } catch (error) {
-            if (error instanceof ApiException) throw error;
             throw new ApiException(500, 'Failed to fetch user by email');
         }
     }
