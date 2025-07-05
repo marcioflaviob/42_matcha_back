@@ -32,7 +32,7 @@ const createUser = async (userData) => {
 
     if (await User.checkUserExists(userData.email))
         throw new ApiException(400, 'Email already exists');
-    
+
     try {
         if (dumbPasswords.check(userData.password))
             throw new ApiException(400, 'Password is too weak');
@@ -170,9 +170,9 @@ const addFameRating = async (userId, rating) => {
     const thisUser = await getUserById(userId);
     if (thisUser.rating + rating < 0)
         rating = -thisUser.rating;
-
+    else if (thisUser.rating + rating > 100)
+        thisUser.rating = 100;
     const user = await User.addFameRating(userId, rating);
-
     if (!user) throw new ApiException(404, 'User not found');
 
     const formattedUser = await formatUser(user);
