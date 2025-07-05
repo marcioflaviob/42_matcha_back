@@ -16,7 +16,7 @@ const getUserAndFormat = async (userId) => {
 const getUserByEmailAndFormat = async (email) => {
     validateEmail(email);
     const user = await User.findByEmail(email);
-    validateUserExists(user);
+    if (!user) return null;
     return await formatUser(user);
 };
 

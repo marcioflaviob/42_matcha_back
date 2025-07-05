@@ -672,12 +672,11 @@ describe('UserService', () => {
                 .toThrow('Email is required');
         });
 
-        it('should throw ApiException when user not found', async () => {
+        it('should return null when user not found', async () => {
             User.findByEmail.mockResolvedValue(null);
 
-            await expect(UserService.getUserByEmail('notfound@example.com'))
-                .rejects
-                .toThrow('User not found');
+            const result = await UserService.getUserByEmail('notfound@example.com');
+            expect(result).toBeNull();
         });
     });
 

@@ -85,12 +85,11 @@ describe('User Model', () => {
                 .toThrow('Failed to fetch user by email');
         });
 
-        it('should throw ApiException when user not found', async () => {
+        it('should return undefined when user not found', async () => {
             db.query.mockResolvedValue({ rows: [] });
 
-            await expect(User.findByEmail('nonexistent@example.com'))
-                .rejects
-                .toThrow('User not found');
+            const result = await User.findByEmail('nonexistent@example.com');
+            expect(result).toBeUndefined();
         });
     });
 
