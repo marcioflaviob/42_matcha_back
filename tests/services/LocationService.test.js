@@ -335,7 +335,7 @@ describe('LocationService', () => {
 
             await expect(LocationService.updateUserLocation(mockLocationData, userId))
                 .rejects
-                .toThrow('Update failed');
+                .toThrow('Failed to update user location');
 
             expect(Location.updateLocation).toHaveBeenCalled();
         });
