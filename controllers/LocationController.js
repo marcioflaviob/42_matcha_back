@@ -3,7 +3,7 @@ const LocationService = require('../services/LocationService.js');
 exports.setUserLocation = async (req, res) => {
     const userId = req.user.id;
     const location = await LocationService.getLocationFromIP(userId);
-    res.status(200).send(location);
+    res.status(200).send({ location });
 };
 
 exports.setCityAndCountry = async (req, res) => {

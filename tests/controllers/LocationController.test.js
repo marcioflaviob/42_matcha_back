@@ -26,7 +26,7 @@ describe('LocationController', () => {
 
             expect(LocationService.getLocationFromIP).toHaveBeenCalledWith(mockReq.user.id);
             expect(mockRes.status).toHaveBeenCalledWith(200);
-            expect(mockRes.send).toHaveBeenCalledWith(mockLocation);
+            expect(mockRes.send).toHaveBeenCalledWith({ location: mockLocation });
         });
     });
 

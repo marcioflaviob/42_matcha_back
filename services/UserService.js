@@ -84,7 +84,8 @@ const getUserByEmail = async (email) => {
 
 const getPotentialMatches = async (filters) => {
     const potentialMatches = await User.getPotentialMatches(filters);
-    return await formatUsers(potentialMatches);
+    const formatted = await formatUsers(potentialMatches);
+    return formatted;
 }
 
 const updateUser = async (req) => {

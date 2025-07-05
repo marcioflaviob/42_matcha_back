@@ -480,7 +480,9 @@ describe('User Model', () => {
                     mockFilters.age_range_min,
                     mockFilters.age_range_max,
                     mockFilters.min_desired_rating,
-                    mockFilters.rating
+                    mockFilters.rating,
+                    10,
+                    20
                 ]
             );
             expect(result).toEqual(mockMatches);
@@ -513,7 +515,7 @@ describe('User Model', () => {
             await User.getPotentialMatches(mockFilters);
 
             const [query] = db.query.mock.calls[0];
-            expect(query).toContain("AND (users.sexual_interest = $2 OR  users.sexual_interest = 'Any')");
+            expect(query).toContain("AND (users.sexual_interest = $2 OR users.sexual_interest = 'Any')");
         });
 
         it('should verify SQL query filters by gender', async () => {
@@ -594,7 +596,9 @@ describe('User Model', () => {
                     customFilters.age_range_min,
                     customFilters.age_range_max,
                     customFilters.min_desired_rating,
-                    customFilters.rating
+                    customFilters.rating,
+                    10,
+                    20
                 ]
             );
         });
