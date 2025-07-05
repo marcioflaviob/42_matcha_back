@@ -163,36 +163,28 @@ const getLocationFromIP = async (userId) => {
 
     const publicIp = await fetchPublicIP();
 
-    try {
-        const data = await fetchLocationFromIPApi(publicIp);
-        if (data.status === 'success') {
-            const locationData = createLocationData(
-                userId,
-                data.lat,
-                data.lon,
-                data.city,
-                data.country
-            );
-            return await createLocation(locationData);
-        }
-    } catch {
-        // IP API failed, continue to fallback
+    const data = await fetchLocationFromIPApi(publicIp);
+    if (data.status === 'success') {
+        const locationData = createLocationData(
+            userId,
+            data.lat,
+            data.lon,
+            data.city,
+            data.country
+        );
+        return await createLocation(locationData);
     }
 
-    try {
-        const fallbackData = await fetchLocationFromFallbackApi(publicIp);
-        if (!fallbackData.error && fallbackData.latitude && fallbackData.longitude) {
-            const locationData = createLocationData(
-                userId,
-                fallbackData.latitude,
-                fallbackData.longitude,
-                fallbackData.city,
-                fallbackData.country
-            );
-            return await createLocation(locationData);
-        }
-    } catch {
-        // Fallback API failed, continue to Paris default
+    const fallbackData = await fetchLocationFromFallbackApi(publicIp);
+    if (!fallbackData.error && fallbackData.latitude && fallbackData.longitude) {
+        const locationData = createLocationData(
+            userId,
+            fallbackData.latitude,
+            fallbackData.longitude,
+            fallbackData.city,
+            fallbackData.country
+        );
+        return await createLocation(locationData);
     }
 
     const parisLocationData = createLocationData(
