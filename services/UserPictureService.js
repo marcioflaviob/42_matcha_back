@@ -137,7 +137,7 @@ exports.uploadAndPersistPictureFromUrl = async (userId, url) => {
     };
     const photo = {
         file,
-        isProfilePicture: false
+        isProfilePicture: userPictures.length === 0 // Set as profile picture if no other pictures exist
     };
     return await exports.uploadAndPersistPicture(userId, photo);
 };
