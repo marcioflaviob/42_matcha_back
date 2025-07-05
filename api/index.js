@@ -8,6 +8,9 @@ const passport = require('../utils/PassportSetup.js');
 const errorHandler = require('../utils/ErrorHandler.js');
 const swaggerUi = require('swagger-ui-express');
 const swaggerSpecs = require('../swagger.js');
+const fs = require('fs');
+const https = require('https');
+const path = require('path');
 
 app.set('trust proxy', true);
 
@@ -36,9 +39,23 @@ app.use('', routes);
 
 app.use(errorHandler);
 
-app.listen(PORT, () => {
-    console.log(`Server is running on http://localhost:${PORT}`);
-    console.log(`API Documentation available at http://localhost:${PORT}/api-docs`);
-});
+const useHttps = process.env.USE_HTTPS;
+if (useHttps && useHttps == 'true') {
+    const certPath = path.join(__dirname, '../cert/cert.pem');
+    const keyPath = path.join(__dirname, '../cert/key.pem');
+    const httpsOptions = {
+        key: fs.readFileSync(keyPath),
+        cert: fs.readFileSync(certPath)
+    };
+    https.createServer(httpsOptions, app).listen(PORT, () => {
+        console.log(`HTTPS Server is running on https://localhost:${PORT}`);
+        console.log(`API Documentation available at https://localhost:${PORT}/api-docs`);
+    });
+} else {
+    app.listen(PORT, () => {
+        console.log(`Server is running on http://localhost:${PORT}`);
+        console.log(`API Documentation available at http://localhost:${PORT}/api-docs`);
+    });
+}
 
 db.initDB();
