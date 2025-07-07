@@ -70,6 +70,7 @@ class Notification {
 			if (queryResult.rows.length === 0) throw new ApiException(404, 'No notifications found for the specified criteria');
 			return queryResult.rows;
 		} catch (error) {
+			if (error instanceof ApiException) throw error;
 			throw new ApiException(500, 'Failed to fetch notifications by user and type');
 		}
 	}

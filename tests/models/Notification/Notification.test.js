@@ -219,7 +219,7 @@ describe('Notification Model', () => {
                 Notification.findAllNotificationsByUserIdAndConcernedUserIdAndType(1, 2, 'new-like')
             )
                 .rejects
-                .toThrow(new ApiException(500, 'Failed to fetch notifications by user and type'));
+                .toThrow(new ApiException(500, 'No notifications found for the specified criteria'));
         });
 
         it('should throw ApiException on database error', async () => {
