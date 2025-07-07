@@ -347,7 +347,7 @@ router.get('/users/:id', Authenticate, asyncHandler(UserController.getUserById))
  *       404:
  *         description: User not found
  */
-router.get('/profile/:id', Authenticate, asyncHandler(UserController.getUserById));
+router.get('/profile/:id', Authenticate, asyncHandler(UserController.getUserProfileById));
 
 /**
  * @swagger
