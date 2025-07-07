@@ -159,15 +159,3 @@ const isUserAlreadyLiked = async (userId, user2Id) => {
 
 	return isLiked ? true : false;
 }
-
-const formatFilteredUser = async (data) => {
-	const interestsList = await InterestsService.getInterestsListByUserId(data.id);
-	const location = await LocationService.getLocationByUserId(data.id).catch(() => null);
-	data.interests = interestsList;
-	data.location = location || null;
-	return data;
-}
-
-const formatFilteredUsers = async (users) => {
-	return await Promise.all(users.map(user => formatFilteredUser(user)));
-}
