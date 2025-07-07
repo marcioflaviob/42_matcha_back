@@ -1,8 +1,6 @@
 const UserInteractions = require('../models/UserInteractions/UserInteractions.js');
 const NotificationService = require('./NotificationService.js');
 const ApiException = require('../exceptions/ApiException.js');
-const LocationService = require('./LocationService.js');
-const InterestsService = require('./InterestsService.js');
 const UserService = require('./UserService.js');
 
 exports.getLikeCountByUserId = async (userId) => {
