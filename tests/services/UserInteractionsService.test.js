@@ -105,7 +105,7 @@ describe('UserInteractionsService', () => {
         LocationService.calculateDistance.mockReturnValue(5); // 5km, within the 10km limit
         LocationService.getLocationByUserId.mockResolvedValue({ latitude: 48.8566, longitude: 2.3522 });
         InterestsService.getInterestsListByUserId.mockResolvedValue([{ id: 1, name: 'Music' }]);
-        
+
         // Mock NotificationService methods that are used in matchUsers
         NotificationService.newMatchNotification.mockResolvedValue({ id: 1, type: 'new-match' });
         NotificationService.getNotificationByUserIdAndConcernedUserIdAndType.mockResolvedValue({ id: 1 });
