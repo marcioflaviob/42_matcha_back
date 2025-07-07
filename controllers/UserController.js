@@ -11,7 +11,8 @@ exports.createUser = async (req, res) => {
 };
 
 exports.getUserById = async (req, res) => {
-    const user = await UserService.getUserById(req.params.id);
+    const userId = req.user.id;
+    const user = await UserService.fetchUserById(userId, req.params.id);
     res.status(200).send(user);
 };
 

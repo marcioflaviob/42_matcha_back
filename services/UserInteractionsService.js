@@ -16,12 +16,13 @@ exports.likeUser = async (userId, user2Id) => {
 	if (userId == user2Id) throw new ApiException(400, 'You cannot like yourself');
 
 	const like = await UserInteractions.likeUser(userId, user2Id);
+	await NotificationService.newLikeNotification(user2Id, userId);
+
 	await UserService.addFameRating(user2Id, 10);
+
 	if (await isUserAlreadyLiked(userId, user2Id)) {
 		return await this.matchUsers(userId, user2Id);
 	}
-
-	await NotificationService.newLikeNotification(user2Id, userId);
 
 	return like;
 }
@@ -41,6 +42,13 @@ exports.getProfileViewsByUserId = async (userId) => {
 exports.matchUsers = async (userId, user2Id) => {
 	const match = await UserInteractions.matchUsers(userId, user2Id);
 	await NotificationService.newMatchNotification(userId, user2Id);
+
+	const notification1 = await NotificationService.getNotificationByUserIdAndConcernedUserIdAndType(userId, user2Id, 'new-like');
+	const notification2 = await NotificationService.getNotificationByUserIdAndConcernedUserIdAndType(user2Id, userId, 'new-like');
+
+	await NotificationService.deleteNotification(notification1.id);
+	await NotificationService.deleteNotification(notification2.id);
+
 	return match;
 }
 

@@ -62,6 +62,20 @@ const getUserProfile = async (userId, requestedUserId) => {
     throw new ApiException(401, 'You are not allowed to view this user\'s profile');
 }
 
+const fetchUserById = async (userId, requestedUserId) => {
+    const { getBlockedUsersIdsByUserId } = require('./UserInteractionsService.js');
+
+    const blocks = await getBlockedUsersIdsByUserId(userId);
+
+    for (const blockedUserId of blocks) {
+        if (blockedUserId == requestedUserId) {
+            throw new ApiException(403, 'You cannot view this user\'s profile');
+        }
+    }
+
+    return await getUserById(requestedUserId);
+}
+
 const getUserById = async (userId) => {
     return await getUserAndFormat(userId);
 };
@@ -247,6 +261,7 @@ module.exports = {
     getAllUsers,
     createUser,
     getUserById,
+    fetchUserById,
     getUserProfile,
     getUserByEmail,
     updateUser,

@@ -20,8 +20,6 @@ function errorHandler(err, req, res, next) {
     success: false,
     message: err.message || 'Internal Server Error',
   });
-
-  console.error('Error:', err);
 }
 
 module.exports = errorHandler;
