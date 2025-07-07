@@ -45,6 +45,35 @@ class Notification {
 		}
 	}
 
+	static async deleteNotification(notificationId) {
+		try {
+			const queryResult = await db.query(
+				'DELETE FROM notifications WHERE id = $1 RETURNING *',
+				[notificationId]
+			);
+			if (queryResult.rows.length === 0) {
+				throw new ApiException(404, 'Notification not found');
+			}
+			return queryResult.rows[0];
+		} catch (error) {
+			if (error instanceof ApiException) throw error;
+			throw new ApiException(500, 'Failed to delete notification');
+		}
+	}
+
+	static async findAllNotificationsByUserIdAndConcernedUserIdAndType(userId, concernedUserId, type) {
+		try {
+			const queryResult = await db.query(
+				'SELECT * FROM notifications WHERE user_id = $1 AND concerned_user_id = $2 AND type = $3',
+				[userId, concernedUserId, type]
+			);
+			if (queryResult.rows.length === 0) throw new ApiException(404, 'No notifications found for the specified criteria');
+			return queryResult.rows;
+		} catch (error) {
+			throw new ApiException(500, 'Failed to fetch notifications by user and type');
+		}
+	}
+
 }
 
 module.exports = Notification;

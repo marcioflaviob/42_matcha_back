@@ -130,3 +130,13 @@ exports.newDateNotification = async (senderId, receiverId) => {
 	const notification = await this.createNotification(receiverId, senderId, 'new-date', 'New date', `${user.first_name} scheduled a date with you`);
 	return notification;
 }
+
+exports.deleteNotification = async (notificationId) => {
+	const notification = await Notification.deleteNotification(notificationId);
+	return notification;
+}
+
+exports.getNotificationByUserIdAndConcernedUserIdAndType = async (userId, concernedUserId, type) => {
+	const notifications = await Notification.findAllNotificationsByUserIdAndConcernedUserIdAndType(userId, concernedUserId, type);
+	return notifications[0];
+}
