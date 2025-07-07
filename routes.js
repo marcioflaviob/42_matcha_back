@@ -324,6 +324,33 @@ router.get('/users/:id', Authenticate, asyncHandler(UserController.getUserById))
 
 /**
  * @swagger
+ * /profile/{id}:
+ *   get:
+ *     summary: Get a user by ID
+ *     tags: [User]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: The user ID
+ *     responses:
+ *       200:
+ *         description: The user data
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/User'
+ *       404:
+ *         description: User not found
+ */
+router.get('/profile/:id', Authenticate, asyncHandler(UserController.getUserById));
+
+/**
+ * @swagger
  * /update-user:
  *   put:
  *     summary: Update the current user's profile
