@@ -63,13 +63,20 @@ const getUserProfile = async (userId, requestedUserId) => {
 }
 
 const fetchUserById = async (userId, requestedUserId) => {
-    const { getBlockedUsersIdsByUserId } = require('./UserInteractionsService.js');
+    const { getBlockedUsersIdsByUserId, getMatchesIdsByUserId } = require('./UserInteractionsService.js');
 
     const blocks = await getBlockedUsersIdsByUserId(userId);
+    const matches = await getMatchesIdsByUserId(userId);
 
     for (const blockedUserId of blocks) {
         if (blockedUserId == requestedUserId) {
             throw new ApiException(403, 'You cannot view this user\'s profile');
+        }
+    }
+
+    for (const matchId of matches) {
+        if (matchId == requestedUserId) {
+            throw new ApiException(403, 'You already matched with this user');
         }
     }
 
