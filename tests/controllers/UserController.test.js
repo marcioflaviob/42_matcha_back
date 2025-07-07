@@ -77,11 +77,11 @@ describe('UserController', () => {
                 send: jest.fn()
             };
 
-            UserService.getUserProfile.mockResolvedValue(mockUser);
+            UserService.getUserById.mockResolvedValue(mockUser);
 
             await UserController.getUserById(req, res);
 
-            expect(UserService.getUserProfile).toHaveBeenCalledWith(userId, userId);
+            expect(UserService.getUserById).toHaveBeenCalledWith(userId);
             expect(res.status).toHaveBeenCalledWith(200);
             expect(res.send).toHaveBeenCalledWith(mockUser);
         });

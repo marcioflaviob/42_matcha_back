@@ -11,6 +11,11 @@ exports.createUser = async (req, res) => {
 };
 
 exports.getUserById = async (req, res) => {
+    const user = await UserService.getUserById(req.params.id);
+    res.status(200).send(user);
+};
+
+exports.getUserProfileById = async (req, res) => {
     const user = await UserService.getUserProfile(req.user.id, req.params.id);
     res.status(200).send(user);
 };
