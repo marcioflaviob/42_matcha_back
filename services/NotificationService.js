@@ -7,6 +7,17 @@ exports.getNotSeenNotificationsByUserId = async (userId) => {
 	return notifications;
 }
 
+exports.getAllProfileViewNotificationsByUserIdWithPictures = async (userId) => {
+	const UserPicturesService = require('./UserPictureService.js');
+
+	const notifications = await Notification.getAllProfileViewNotificationsByUserId(userId);
+	const notificationsWithPictures = await Promise.all(notifications.map(async notification => {
+		notification.pictures = await UserPicturesService.getUserPictures(notification.concerned_user_id);
+		return notification;
+	}));
+	return notificationsWithPictures;
+}
+
 exports.markAllAsSeen = async (userId) => {
 	const notifications = await Notification.markAllAsSeen(userId);
 	return notifications;
@@ -93,13 +104,6 @@ exports.newMatchNotification = async (userId, senderId) => {
 	const notification = await this.createNotification(userId, senderId, 'new-match', 'New Match', `You have a new match with ${sender.first_name}`, sender);
 	await this.createNotification(senderId, userId, 'new-match', 'New Match', `You have a new match with ${user.first_name}`, user);
 
-	return notification;
-}
-
-exports.newProfileViewNotification = async (userId, senderId) => {
-	const user = await UserService.getUserById(senderId);
-
-	const notification = await this.createNotification(userId, senderId, 'new-profile-view', 'New Profile View', `${user.first_name} viewed your profile`);
 	return notification;
 }
 

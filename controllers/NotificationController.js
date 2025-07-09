@@ -7,6 +7,13 @@ exports.getNotSeenNotificationsByUserId = async (req, res) => {
 	res.status(200).send(notifications);
 }
 
+exports.getAllProfileViewNotificationsByUserIdWithPictures = async (req, res) => {
+	const userId = req.user.id;
+
+	const notifications = await NotificationService.getAllProfileViewNotificationsByUserIdWithPictures(userId);
+	res.status(200).send(notifications);
+}
+
 exports.sendNewCallNotification = async (req, res) => {
 	const senderId = req.user.id;
 	const receiverId = req.params.id;
@@ -50,14 +57,14 @@ exports.sendDateNotification = async (req, res) => {
 	const scheduled_date = req.body.dateData;
 	const latitude = req.body.latitude;
 	const longitude = req.body.longitude;
-	const {notification, date} = await NotificationService.newDateNotification(sender_id, receiver_id, scheduled_date, address, latitude, longitude);
-	res.status(200).send({notification, date});
+	const { notification, date } = await NotificationService.newDateNotification(sender_id, receiver_id, scheduled_date, address, latitude, longitude);
+	res.status(200).send({ notification, date });
 }
 
 exports.newUnansweredDate = async (req, res) => {
 	const dateId = req.params.id;
-	const {notification, date} = await NotificationService.newUnansweredDate(dateId);
-	res.status(200).send({notification, date});
+	const { notification, date } = await NotificationService.newUnansweredDate(dateId);
+	res.status(200).send({ notification, date });
 }
 
 exports.markNotificationAsSeen = async (req, res) => {

@@ -193,7 +193,7 @@ const addFameRating = async (userId, rating) => {
     if (thisUser.rating + rating < 0)
         rating = -thisUser.rating;
     else if (thisUser.rating + rating > 100)
-        thisUser.rating = 100;
+        rating = 100;
     const user = await User.addFameRating(userId, rating);
     if (!user) throw new ApiException(404, 'User not found');
 
