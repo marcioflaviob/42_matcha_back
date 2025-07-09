@@ -25,6 +25,9 @@ exports.sendPasswordRecoveryEmail = async (email) => {
 	if (!email) throw new ApiException(400, 'Email is required');
 
 	const user = await UserService.getUserByEmail(email);
+
+	if (!user) throw new ApiException(200, 'Email sent'); // Do not reveal if the email exists
+
 	const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, { expiresIn: '1h' });
 	const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
 	const subject = 'Password Recovery';
