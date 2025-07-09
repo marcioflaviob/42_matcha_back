@@ -843,6 +843,26 @@ router.get('/notifications', Authenticate, asyncHandler(NotificationController.g
 
 /**
  * @swagger
+ * /notifications/all-profile-views:
+ *   get:
+ *     summary: Get all profile view notifications for the current user
+ *     tags: [Notification]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: A list of profile view notifications
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Notification'
+ */
+router.get('/notifications/profile-views', Authenticate, asyncHandler(NotificationController.getAllProfileViewNotificationsByUserIdWithPictures));
+
+/**
+ * @swagger
  * /notifications:
  *   patch:
  *     summary: Mark a notification as seen

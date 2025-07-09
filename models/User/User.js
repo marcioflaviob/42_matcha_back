@@ -184,7 +184,17 @@ class User {
     static async getPotentialMatches(filters) {
         try {
             const query = `
-                SELECT users.*
+                SELECT users.*,
+                    CASE 
+                        WHEN user_location.latitude IS NULL OR current_user_location.latitude IS NULL THEN 999999
+                        ELSE 6371 * acos(
+                            cos(radians(current_user_location.latitude)) 
+                            * cos(radians(user_location.latitude)) 
+                            * cos(radians(user_location.longitude) - radians(current_user_location.longitude)) 
+                            + sin(radians(current_user_location.latitude)) 
+                            * sin(radians(user_location.latitude))
+                        )
+                    END AS distance_km
                 FROM users
                 LEFT JOIN locations user_location 
                     ON users.id = user_location.user_id
@@ -241,7 +251,7 @@ class User {
                         AND interaction_type = 'like'
                     )
                     
-                ORDER BY users.rating DESC
+                ORDER BY distance_km ASC, users.rating DESC
                 LIMIT $9
             `;
 

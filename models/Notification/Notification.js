@@ -75,6 +75,19 @@ class Notification {
 		}
 	}
 
+	static async getAllProfileViewNotificationsByUserId(userId) {
+		try {
+			const queryResult = await db.query(
+				'SELECT * FROM notifications WHERE user_id = $1 AND type = $2',
+				[userId, 'new-seen']
+			);
+			return queryResult.rows;
+		} catch (error) {
+			if (error instanceof ApiException) throw error;
+			throw new ApiException(500, 'Failed to fetch profile viewed notifications');
+		}
+	}
+
 }
 
 module.exports = Notification;

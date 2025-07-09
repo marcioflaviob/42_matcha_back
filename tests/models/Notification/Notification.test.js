@@ -279,4 +279,150 @@ describe('Notification Model', () => {
             expect(result).toEqual(mockMultipleNotifications);
         });
     });
+
+    describe('getAllProfileViewNotificationsByUserId', () => {
+        it('should return all profile view notifications for a user', async () => {
+            const mockProfileViewNotifications = [
+                {
+                    id: 1,
+                    user_id: 1,
+                    concerned_user_id: 2,
+                    type: 'new-seen',
+                    title: 'Profile Viewed',
+                    message: 'Someone viewed your profile',
+                    seen: false
+                },
+                {
+                    id: 2,
+                    user_id: 1,
+                    concerned_user_id: 3,
+                    type: 'new-seen',
+                    title: 'Profile Viewed',
+                    message: 'Another user viewed your profile',
+                    seen: true
+                }
+            ];
+
+            db.query.mockResolvedValue({ rows: mockProfileViewNotifications });
+
+            const result = await Notification.getAllProfileViewNotificationsByUserId(1);
+
+            expect(db.query).toHaveBeenCalledWith(
+                'SELECT * FROM notifications WHERE user_id = $1 AND type = $2',
+                [1, 'new-seen']
+            );
+            expect(result).toEqual(mockProfileViewNotifications);
+        });
+
+        it('should return empty array when no profile view notifications exist', async () => {
+            db.query.mockResolvedValue({ rows: [] });
+
+            const result = await Notification.getAllProfileViewNotificationsByUserId(1);
+
+            expect(db.query).toHaveBeenCalledWith(
+                'SELECT * FROM notifications WHERE user_id = $1 AND type = $2',
+                [1, 'new-seen']
+            );
+            expect(result).toEqual([]);
+        });
+
+        it('should handle multiple profile view notifications correctly', async () => {
+            const mockMultipleViewNotifications = Array.from({ length: 10 }, (_, i) => ({
+                id: i + 1,
+                user_id: 1,
+                concerned_user_id: i + 2,
+                type: 'new-seen',
+                title: 'Profile Viewed',
+                message: `User ${i + 2} viewed your profile`,
+                seen: i % 2 === 0
+            }));
+
+            db.query.mockResolvedValue({ rows: mockMultipleViewNotifications });
+
+            const result = await Notification.getAllProfileViewNotificationsByUserId(1);
+
+            expect(result).toHaveLength(10);
+            expect(result).toEqual(mockMultipleViewNotifications);
+            expect(result.every(notification => notification.type === 'new-seen')).toBe(true);
+        });
+
+        it('should throw ApiException on database error', async () => {
+            db.query.mockRejectedValue(new Error('Database connection failed'));
+
+            await expect(Notification.getAllProfileViewNotificationsByUserId(1))
+                .rejects
+                .toThrow(new ApiException(500, 'Failed to fetch profile viewed notifications'));
+        });
+
+        it('should re-throw ApiException if it is already an ApiException', async () => {
+            const apiError = new ApiException(503, 'Service temporarily unavailable');
+            db.query.mockRejectedValue(apiError);
+
+            await expect(Notification.getAllProfileViewNotificationsByUserId(1))
+                .rejects
+                .toThrow(apiError);
+        });
+
+        it('should handle different user IDs correctly', async () => {
+            const mockNotifications = [
+                {
+                    id: 1,
+                    user_id: 5,
+                    concerned_user_id: 10,
+                    type: 'new-seen',
+                    title: 'Profile Viewed',
+                    message: 'User viewed your profile',
+                    seen: false
+                }
+            ];
+
+            db.query.mockResolvedValue({ rows: mockNotifications });
+
+            const result = await Notification.getAllProfileViewNotificationsByUserId(5);
+
+            expect(db.query).toHaveBeenCalledWith(
+                'SELECT * FROM notifications WHERE user_id = $1 AND type = $2',
+                [5, 'new-seen']
+            );
+            expect(result).toEqual(mockNotifications);
+        });
+
+        it('should only return notifications with type "new-seen"', async () => {
+            const mockNotifications = [
+                {
+                    id: 1,
+                    user_id: 1,
+                    concerned_user_id: 2,
+                    type: 'new-seen',
+                    title: 'Profile Viewed',
+                    message: 'User viewed your profile',
+                    seen: false
+                }
+            ];
+
+            db.query.mockResolvedValue({ rows: mockNotifications });
+
+            await Notification.getAllProfileViewNotificationsByUserId(1);
+
+            // Verify that the query specifically filters by type 'new-seen'
+            expect(db.query).toHaveBeenCalledWith(
+                'SELECT * FROM notifications WHERE user_id = $1 AND type = $2',
+                [1, 'new-seen']
+            );
+        });
+
+        it('should handle SQL injection attempts safely', async () => {
+            const maliciousUserId = "1; DROP TABLE notifications; --";
+
+            db.query.mockResolvedValue({ rows: [] });
+
+            await Notification.getAllProfileViewNotificationsByUserId(maliciousUserId);
+
+            // Verify that parameterized query is used correctly
+            expect(db.query).toHaveBeenCalledWith(
+                'SELECT * FROM notifications WHERE user_id = $1 AND type = $2',
+                [maliciousUserId, 'new-seen']
+            );
+        });
+    });
 });

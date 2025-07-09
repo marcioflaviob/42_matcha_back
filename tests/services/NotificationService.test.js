@@ -6,6 +6,7 @@ const NotificationService = require('../../services/NotificationService');
 jest.mock('../../models/Notification/Notification');
 jest.mock('../../services/UserService');
 jest.mock('../../services/PusherService');
+jest.mock('../../services/UserPictureService');
 
 const originalGetNotSeenNotificationsByUserId = NotificationService.getNotSeenNotificationsByUserId;
 const originalCreateNotification = NotificationService.createNotification;
@@ -244,26 +245,6 @@ describe('NotificationService', () => {
         });
     });
 
-    describe('newProfileViewNotification', () => {
-        it('should create a new profile view notification', async () => {
-            UserService.getUserById.mockResolvedValue(mockUser);
-            const mockNotification = { id: 1, type: 'new-profile-view' };
-            NotificationService.createNotification = jest.fn().mockResolvedValue(mockNotification);
-
-            const result = await NotificationService.newProfileViewNotification(2, 1);
-
-            expect(UserService.getUserById).toHaveBeenCalledWith(1);
-            expect(NotificationService.createNotification).toHaveBeenCalledWith(
-                2,
-                1,
-                'new-profile-view',
-                'New Profile View',
-                `${mockUser.first_name} viewed your profile`
-            );
-            expect(result).toEqual(mockNotification);
-        });
-    });
-
     describe('newSeenNotification', () => {
         it('should create a new seen notification', async () => {
             UserService.getUserById.mockResolvedValue(mockUser);
@@ -321,6 +302,354 @@ describe('NotificationService', () => {
                 `${mockUser.first_name} scheduled a date with you`
             );
             expect(result).toEqual(mockNotification);
+        });
+    });
+
+    describe('getAllProfileViewNotificationsByUserIdWithPictures', () => {
+        const UserPicturesService = require('../../services/UserPictureService');
+
+        beforeEach(() => {
+            jest.clearAllMocks();
+        });
+
+        it('should return profile view notifications with pictures', async () => {
+            const mockNotifications = [
+                {
+                    id: 1,
+                    user_id: 1,
+                    concerned_user_id: 2,
+                    type: 'new-seen',
+                    title: 'Profile Viewed',
+                    message: 'Someone viewed your profile'
+                },
+                {
+                    id: 2,
+                    user_id: 1,
+                    concerned_user_id: 3,
+                    type: 'new-seen',
+                    title: 'Profile Viewed',
+                    message: 'Another user viewed your profile'
+                }
+            ];
+
+            const mockPictures1 = [
+                { id: 1, user_id: 2, url: 'picture1.jpg' },
+                { id: 2, user_id: 2, url: 'picture2.jpg' }
+            ];
+
+            const mockPictures2 = [
+                { id: 3, user_id: 3, url: 'picture3.jpg' }
+            ];
+
+            Notification.getAllProfileViewNotificationsByUserId.mockResolvedValue(mockNotifications);
+            UserPicturesService.getUserPictures
+                .mockResolvedValueOnce(mockPictures1)
+                .mockResolvedValueOnce(mockPictures2);
+
+            const result = await NotificationService.getAllProfileViewNotificationsByUserIdWithPictures(1);
+
+            expect(Notification.getAllProfileViewNotificationsByUserId).toHaveBeenCalledWith(1);
+            expect(UserPicturesService.getUserPictures).toHaveBeenCalledWith(2);
+            expect(UserPicturesService.getUserPictures).toHaveBeenCalledWith(3);
+            expect(result).toEqual([
+                {
+                    ...mockNotifications[0],
+                    pictures: mockPictures1
+                },
+                {
+                    ...mockNotifications[1],
+                    pictures: mockPictures2
+                }
+            ]);
+        });
+
+        it('should return empty array when no notifications exist', async () => {
+            Notification.getAllProfileViewNotificationsByUserId.mockResolvedValue([]);
+
+            const result = await NotificationService.getAllProfileViewNotificationsByUserIdWithPictures(1);
+
+            expect(Notification.getAllProfileViewNotificationsByUserId).toHaveBeenCalledWith(1);
+            expect(UserPicturesService.getUserPictures).not.toHaveBeenCalled();
+            expect(result).toEqual([]);
+        });
+
+        it('should handle notifications with empty pictures arrays', async () => {
+            const mockNotifications = [
+                {
+                    id: 1,
+                    user_id: 1,
+                    concerned_user_id: 2,
+                    type: 'new-seen',
+                    title: 'Profile Viewed',
+                    message: 'Someone viewed your profile'
+                }
+            ];
+
+            Notification.getAllProfileViewNotificationsByUserId.mockResolvedValue(mockNotifications);
+            UserPicturesService.getUserPictures.mockResolvedValue([]);
+
+            const result = await NotificationService.getAllProfileViewNotificationsByUserIdWithPictures(1);
+
+            expect(result).toEqual([
+                {
+                    ...mockNotifications[0],
+                    pictures: []
+                }
+            ]);
+        });
+
+        it('should handle UserPicturesService errors gracefully', async () => {
+            const mockNotifications = [
+                {
+                    id: 1,
+                    user_id: 1,
+                    concerned_user_id: 2,
+                    type: 'new-seen',
+                    title: 'Profile Viewed',
+                    message: 'Someone viewed your profile'
+                }
+            ];
+
+            Notification.getAllProfileViewNotificationsByUserId.mockResolvedValue(mockNotifications);
+            UserPicturesService.getUserPictures.mockRejectedValue(new Error('Pictures service error'));
+
+            await expect(NotificationService.getAllProfileViewNotificationsByUserIdWithPictures(1))
+                .rejects
+                .toThrow('Pictures service error');
+        });
+
+        it('should handle Notification model errors', async () => {
+            Notification.getAllProfileViewNotificationsByUserId.mockRejectedValue(new Error('Database error'));
+
+            await expect(NotificationService.getAllProfileViewNotificationsByUserIdWithPictures(1))
+                .rejects
+                .toThrow('Database error');
+        });
+
+        it('should handle multiple notifications with mixed picture results', async () => {
+            const mockNotifications = [
+                {
+                    id: 1,
+                    user_id: 1,
+                    concerned_user_id: 2,
+                    type: 'new-seen',
+                    title: 'Profile Viewed',
+                    message: 'User 2 viewed your profile'
+                },
+                {
+                    id: 2,
+                    user_id: 1,
+                    concerned_user_id: 3,
+                    type: 'new-seen',
+                    title: 'Profile Viewed',
+                    message: 'User 3 viewed your profile'
+                },
+                {
+                    id: 3,
+                    user_id: 1,
+                    concerned_user_id: 4,
+                    type: 'new-seen',
+                    title: 'Profile Viewed',
+                    message: 'User 4 viewed your profile'
+                }
+            ];
+
+            const mockPictures1 = [{ id: 1, user_id: 2, url: 'picture1.jpg' }];
+            const mockPictures2 = [];
+            const mockPictures3 = [
+                { id: 2, user_id: 4, url: 'picture2.jpg' },
+                { id: 3, user_id: 4, url: 'picture3.jpg' }
+            ];
+
+            Notification.getAllProfileViewNotificationsByUserId.mockResolvedValue(mockNotifications);
+            UserPicturesService.getUserPictures
+                .mockResolvedValueOnce(mockPictures1)
+                .mockResolvedValueOnce(mockPictures2)
+                .mockResolvedValueOnce(mockPictures3);
+
+            const result = await NotificationService.getAllProfileViewNotificationsByUserIdWithPictures(1);
+
+            expect(result).toHaveLength(3);
+            expect(result[0].pictures).toEqual(mockPictures1);
+            expect(result[1].pictures).toEqual(mockPictures2);
+            expect(result[2].pictures).toEqual(mockPictures3);
+        });
+    });
+
+    describe('deleteNotification', () => {
+        it('should delete a notification successfully', async () => {
+            const mockDeletedNotification = {
+                id: 1,
+                user_id: 1,
+                concerned_user_id: 2,
+                type: 'new-like',
+                title: 'New Like',
+                message: 'Someone liked your profile'
+            };
+
+            Notification.deleteNotification.mockResolvedValue(mockDeletedNotification);
+
+            const result = await NotificationService.deleteNotification(1);
+
+            expect(Notification.deleteNotification).toHaveBeenCalledWith(1);
+            expect(result).toEqual(mockDeletedNotification);
+        });
+
+        it('should handle deletion errors', async () => {
+            const error = new Error('Notification not found');
+            Notification.deleteNotification.mockRejectedValue(error);
+
+            await expect(NotificationService.deleteNotification(999))
+                .rejects
+                .toThrow('Notification not found');
+        });
+
+        it('should handle database errors during deletion', async () => {
+            const error = new Error('Database connection failed');
+            Notification.deleteNotification.mockRejectedValue(error);
+
+            await expect(NotificationService.deleteNotification(1))
+                .rejects
+                .toThrow('Database connection failed');
+        });
+
+        it('should handle different notification IDs', async () => {
+            const mockNotification1 = { id: 5, message: 'Notification 5' };
+            const mockNotification2 = { id: 10, message: 'Notification 10' };
+
+            Notification.deleteNotification
+                .mockResolvedValueOnce(mockNotification1)
+                .mockResolvedValueOnce(mockNotification2);
+
+            const result1 = await NotificationService.deleteNotification(5);
+            const result2 = await NotificationService.deleteNotification(10);
+
+            expect(Notification.deleteNotification).toHaveBeenCalledWith(5);
+            expect(Notification.deleteNotification).toHaveBeenCalledWith(10);
+            expect(result1).toEqual(mockNotification1);
+            expect(result2).toEqual(mockNotification2);
+        });
+    });
+
+    describe('getNotificationByUserIdAndConcernedUserIdAndType', () => {
+        it('should return the first notification matching criteria', async () => {
+            const mockNotifications = [
+                {
+                    id: 1,
+                    user_id: 1,
+                    concerned_user_id: 2,
+                    type: 'new-like',
+                    title: 'New Like',
+                    message: 'Someone liked your profile'
+                },
+                {
+                    id: 2,
+                    user_id: 1,
+                    concerned_user_id: 2,
+                    type: 'new-like',
+                    title: 'New Like',
+                    message: 'Another like notification'
+                }
+            ];
+
+            Notification.findAllNotificationsByUserIdAndConcernedUserIdAndType.mockResolvedValue(mockNotifications);
+
+            const result = await NotificationService.getNotificationByUserIdAndConcernedUserIdAndType(1, 2, 'new-like');
+
+            expect(Notification.findAllNotificationsByUserIdAndConcernedUserIdAndType)
+                .toHaveBeenCalledWith(1, 2, 'new-like');
+            expect(result).toEqual(mockNotifications[0]);
+        });
+
+        it('should handle when no notifications are found', async () => {
+            Notification.findAllNotificationsByUserIdAndConcernedUserIdAndType.mockRejectedValue(
+                new Error('No notifications found for the specified criteria')
+            );
+
+            await expect(
+                NotificationService.getNotificationByUserIdAndConcernedUserIdAndType(1, 2, 'new-like')
+            ).rejects.toThrow('No notifications found for the specified criteria');
+        });
+
+        it('should handle different notification types', async () => {
+            const mockMatchNotifications = [
+                {
+                    id: 3,
+                    user_id: 1,
+                    concerned_user_id: 3,
+                    type: 'new-match',
+                    title: 'New Match',
+                    message: 'You have a new match'
+                }
+            ];
+
+            const mockMessageNotifications = [
+                {
+                    id: 4,
+                    user_id: 1,
+                    concerned_user_id: 3,
+                    type: 'new-message',
+                    title: 'New Message',
+                    message: 'You have a new message'
+                }
+            ];
+
+            Notification.findAllNotificationsByUserIdAndConcernedUserIdAndType
+                .mockResolvedValueOnce(mockMatchNotifications)
+                .mockResolvedValueOnce(mockMessageNotifications);
+
+            const matchResult = await NotificationService.getNotificationByUserIdAndConcernedUserIdAndType(1, 3, 'new-match');
+            const messageResult = await NotificationService.getNotificationByUserIdAndConcernedUserIdAndType(1, 3, 'new-message');
+
+            expect(matchResult).toEqual(mockMatchNotifications[0]);
+            expect(messageResult).toEqual(mockMessageNotifications[0]);
+        });
+
+        it('should handle database errors', async () => {
+            const error = new Error('Database connection failed');
+            Notification.findAllNotificationsByUserIdAndConcernedUserIdAndType.mockRejectedValue(error);
+
+            await expect(
+                NotificationService.getNotificationByUserIdAndConcernedUserIdAndType(1, 2, 'new-like')
+            ).rejects.toThrow('Database connection failed');
+        });
+
+        it('should handle single notification result', async () => {
+            const mockSingleNotification = [
+                {
+                    id: 5,
+                    user_id: 1,
+                    concerned_user_id: 4,
+                    type: 'new-seen',
+                    title: 'Profile Viewed',
+                    message: 'User viewed your profile'
+                }
+            ];
+
+            Notification.findAllNotificationsByUserIdAndConcernedUserIdAndType.mockResolvedValue(mockSingleNotification);
+
+            const result = await NotificationService.getNotificationByUserIdAndConcernedUserIdAndType(1, 4, 'new-seen');
+
+            expect(result).toEqual(mockSingleNotification[0]);
+        });
+
+        it('should handle edge case with different user combinations', async () => {
+            const mockNotifications1 = [{ id: 1, user_id: 10, concerned_user_id: 20, type: 'new-like' }];
+            const mockNotifications2 = [{ id: 2, user_id: 30, concerned_user_id: 40, type: 'new-match' }];
+
+            Notification.findAllNotificationsByUserIdAndConcernedUserIdAndType
+                .mockResolvedValueOnce(mockNotifications1)
+                .mockResolvedValueOnce(mockNotifications2);
+
+            const result1 = await NotificationService.getNotificationByUserIdAndConcernedUserIdAndType(10, 20, 'new-like');
+            const result2 = await NotificationService.getNotificationByUserIdAndConcernedUserIdAndType(30, 40, 'new-match');
+
+            expect(Notification.findAllNotificationsByUserIdAndConcernedUserIdAndType)
+                .toHaveBeenCalledWith(10, 20, 'new-like');
+            expect(Notification.findAllNotificationsByUserIdAndConcernedUserIdAndType)
+                .toHaveBeenCalledWith(30, 40, 'new-match');
+            expect(result1).toEqual(mockNotifications1[0]);
+            expect(result2).toEqual(mockNotifications2[0]);
         });
     });
 
